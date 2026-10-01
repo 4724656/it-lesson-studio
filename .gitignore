@@ -3,3 +3,5 @@ node_modules/
 *.tmp.md
 .DS_Store
 Thumbs.db
+*.pdf
+*_00001.txt
