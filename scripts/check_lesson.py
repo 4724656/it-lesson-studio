@@ -220,6 +220,9 @@ def main():
         return 2
     total_f = total_w = 0
     for p in sys.argv[1:]:
+        if p in ('-h', '--help'):
+            print(__doc__)
+            return 0
         f, w = check(p)
         total_f += f
         total_w += w
@@ -230,3 +233,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
