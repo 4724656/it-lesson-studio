@@ -21,6 +21,14 @@ metadata:
 
 ---
 
+
+## 📚 权威参考知识库 (Authoritative References)
+在为具体课节生成任何教学产物前，必须精准对齐以下基线标准：
+1. **国家新课程标准**：[references/curriculum-standard-2022.md](../../references/curriculum-standard-2022.md)（教育部2022年版：核心素养、学段进阶目标、学业质量标准与评价建议）。
+2. **教材体系知识图谱**：[references/textbook-zj2026.md](../../references/textbook-zj2026.md)（浙教版2026新课标 3~8 年级 180 课时完整目录及认知约束）。
+3. **课堂作业交互模式**：[references/patterns.md](../../references/patterns.md)（机房单文件离线 HTML 作业题型模式与自评报告规范）。
+
+---
 ## 📥 输入参数 (Inputs)
 用户会提供以下一项或多项：
 1. **课本图片 / 截图**（推荐！自动提取课题、章节、学习目标、插图与特色栏目）；
