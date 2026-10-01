@@ -6,6 +6,7 @@ from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn, nsdecls
 import sys
 import os
+import re
 
 def set_font(run, font_name='宋体', size_pt=11, bold=False, color_rgb=None):
     run.font.name = font_name
@@ -242,14 +243,42 @@ def beautify_lesson_plan_docx(docx_path):
 def beautify_worksheet_docx(docx_path):
     doc = docx.Document(docx_path)
     
-    # 导学单页面设置：紧凑 A4 (上下 15mm, 左右 18mm)，保证低段 1 页、高段 2 页不溢出
+    # 1. 统计全部有效文字量，精确判断是单面 A4 还是双面 A4
+    full_text = ''.join(p.text for p in doc.paragraphs)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                full_text += cell.text
+    
+    clean_text = re.sub(r'&[a-zA-Z0-9#]+;|<[^>]+>', ' ', full_text)
+    zh_count = len(re.findall(r'[\u4e00-\u9fa5]', clean_text))
+    en_count = len(re.findall(r'[a-zA-Z0-9]+', clean_text))
+    total_len = zh_count + en_count
+    
+    # 检查是否存在显式分页符
+    has_page_break = any(p._p.xpath('.//w:br[@w:type="page"]') for p in doc.paragraphs)
+    
+    # 低年级或字数 <= 650 且无显式分页符，判定为单页导学单 (严格单面 A4)
+    # 若字数较少，自适应增大段间距、行距与表格内边距，让单页版面充实饱满，避免底部大面积空旷
+    # 若字数 > 650 或双页导学单，则采用紧凑排版，严格防止溢出到第 3 页
+    is_single_page = (total_len <= 650 and not has_page_break)
+    
+    # 2. 导学单页面设置
     for section in doc.sections:
         section.page_width = Inches(8.27)   # 210 mm
         section.page_height = Inches(11.69) # 297 mm
-        section.top_margin = Inches(0.59)   # 15 mm
-        section.bottom_margin = Inches(0.59)
-        section.left_margin = Inches(0.71)  # 18 mm
-        section.right_margin = Inches(0.71)
+        if is_single_page:
+            # 单页导学单：上下 20mm (0.79 in)，左右 20mm (0.79 in)，版面收拢更匀称
+            section.top_margin = Inches(0.79)
+            section.bottom_margin = Inches(0.79)
+            section.left_margin = Inches(0.79)
+            section.right_margin = Inches(0.79)
+        else:
+            # 双面导学单：上下 15mm (0.59 in)，左右 18mm (0.71 in)，紧凑防溢出
+            section.top_margin = Inches(0.59)
+            section.bottom_margin = Inches(0.59)
+            section.left_margin = Inches(0.71)
+            section.right_margin = Inches(0.71)
 
     for p in doc.paragraphs:
         replace_checkboxes(p)
@@ -265,42 +294,68 @@ def beautify_worksheet_docx(docx_path):
         if 'heading 1' in style_name or 'title' in style_name:
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.paragraph_format.first_line_indent = Pt(0)
-            p.paragraph_format.space_before = Pt(4)
-            p.paragraph_format.space_after = Pt(8)
-            p.paragraph_format.line_spacing = 1.2
-            for run in p.runs:
-                set_font(run, font_name='黑体', size_pt=16, bold=True, color_rgb=RGBColor(0x1F, 0x2A, 0x44))
+            if is_single_page:
+                p.paragraph_format.space_before = Pt(6)
+                p.paragraph_format.space_after = Pt(14)
+                p.paragraph_format.line_spacing = 1.3
+                for run in p.runs:
+                    set_font(run, font_name='黑体', size_pt=17, bold=True, color_rgb=RGBColor(0x1F, 0x2A, 0x44))
+            else:
+                p.paragraph_format.space_before = Pt(4)
+                p.paragraph_format.space_after = Pt(8)
+                p.paragraph_format.line_spacing = 1.2
+                for run in p.runs:
+                    set_font(run, font_name='黑体', size_pt=16, bold=True, color_rgb=RGBColor(0x1F, 0x2A, 0x44))
         
-        # 班级姓名信息行：留出足够空间（相当于空出一行）
+        # 班级姓名信息行：留出足够空间
         elif '班级' in text and '姓名' in text:
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.paragraph_format.first_line_indent = Pt(0)
-            p.paragraph_format.space_before = Pt(2)
-            p.paragraph_format.space_after = Pt(12) # 留出明显呼吸空间
-            p.paragraph_format.line_spacing = 1.2
+            if is_single_page:
+                p.paragraph_format.space_before = Pt(4)
+                p.paragraph_format.space_after = Pt(16) # 单页模式下拉大间距，更显通透
+                p.paragraph_format.line_spacing = 1.3
+            else:
+                p.paragraph_format.space_before = Pt(2)
+                p.paragraph_format.space_after = Pt(10)
+                p.paragraph_format.line_spacing = 1.2
             for run in p.runs:
                 set_font(run, font_name='楷体', size_pt=10.5, color_rgb=RGBColor(0x33, 0x33, 0x33))
                 
-        # 通关目标 / 引用块：与正文第一关充分隔开（空一行）
-        elif 'quote' in style_name or text.startswith('>'):
+        # 通关目标 / 引用块：与正文第一关充分隔开
+        elif 'quote' in style_name or 'block text' in style_name or text.startswith('>') or '通关目标' in text:
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
             p.paragraph_format.first_line_indent = Pt(0)
-            p.paragraph_format.left_indent = Pt(6)
-            p.paragraph_format.space_before = Pt(4)
-            p.paragraph_format.space_after = Pt(14) # 与正文第一关充分空开
-            p.paragraph_format.line_spacing = 1.25
+            p.paragraph_format.left_indent = Pt(8)
+            if is_single_page:
+                p.paragraph_format.space_before = Pt(6)
+                p.paragraph_format.space_after = Pt(16) # 与正文第一关充分空开
+                p.paragraph_format.line_spacing = 1.35
+                size_pt = 10.5
+            else:
+                p.paragraph_format.space_before = Pt(4)
+                p.paragraph_format.space_after = Pt(10)
+                p.paragraph_format.line_spacing = 1.25
+                size_pt = 10
             for run in p.runs:
-                set_font(run, font_name='楷体', size_pt=10, bold=run.bold, color_rgb=RGBColor(0x2E, 0x40, 0x5E))
+                set_font(run, font_name='楷体', size_pt=size_pt, bold=run.bold, color_rgb=RGBColor(0x2E, 0x40, 0x5E))
                 
         # 关卡标题 (Heading 3，例如 ### ⭐ 第一关...)
         elif 'heading 3' in style_name or 'heading 2' in style_name or text.startswith('###') or '关：' in text or '打卡' in text:
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
             p.paragraph_format.first_line_indent = Pt(0)
-            p.paragraph_format.space_before = Pt(12) # 各关卡前明显间隔
-            p.paragraph_format.space_after = Pt(4)
-            p.paragraph_format.line_spacing = 1.2
+            if is_single_page:
+                p.paragraph_format.space_before = Pt(16) # 各关卡前明显呼吸间隔
+                p.paragraph_format.space_after = Pt(6)
+                p.paragraph_format.line_spacing = 1.25
+                size_pt = 12.5
+            else:
+                p.paragraph_format.space_before = Pt(10)
+                p.paragraph_format.space_after = Pt(4)
+                p.paragraph_format.line_spacing = 1.2
+                size_pt = 12
             for run in p.runs:
-                set_font(run, font_name='黑体', size_pt=12, bold=True, color_rgb=RGBColor(0x1F, 0x3A, 0x60))
+                set_font(run, font_name='黑体', size_pt=size_pt, bold=True, color_rgb=RGBColor(0x1F, 0x3A, 0x60))
 
         # 自评总结行 (例如: 今日我的自评：□ ⭐ 基础通关 ...)
         elif '今日我的自评' in text or ('自评' in text and ('⭐' in text or '□' in text)):
@@ -309,32 +364,61 @@ def beautify_worksheet_docx(docx_path):
                 pPr.remove(numPr)
             p.paragraph_format.first_line_indent = Pt(0)
             p.paragraph_format.left_indent = Pt(0)
-            p.paragraph_format.space_before = Pt(4)
-            p.paragraph_format.space_after = Pt(4)
-            p.paragraph_format.line_spacing = 1.2
+            if is_single_page:
+                p.paragraph_format.space_before = Pt(8)
+                p.paragraph_format.space_after = Pt(6)
+                p.paragraph_format.line_spacing = 1.3
+                size_pt = 10.5
+            else:
+                p.paragraph_format.space_before = Pt(4)
+                p.paragraph_format.space_after = Pt(3)
+                p.paragraph_format.line_spacing = 1.2
+                size_pt = 10
             for run in p.runs:
-                set_font(run, font_name='宋体', size_pt=10, bold=run.bold)
+                set_font(run, font_name='宋体', size_pt=size_pt, bold=run.bold)
                 
-        # 勾选列表项
-        elif text.startswith('□') or text.startswith('☑') or text.startswith('- □') or text.startswith('- [ ]') or ('□' in text and text.startswith('-')):
+        # 列表条目 / 选项勾选项 / 序号步骤 (保持悬挂对齐，首行不缩进)
+        elif (
+            text.startswith('□') or text.startswith('☑') or text.startswith('- □') 
+            or text.startswith('- [ ]') or ('□' in text and text.startswith('-'))
+            or text.startswith('- ') or text.startswith('•')
+            or 'compact' in style_name
+            or bool(re.match(r'^[0-9]+[\.、\)]', text))
+            or bool(re.match(r'^[A-Za-z][\.、\)]', text))
+            or bool(re.match(r'^[①-⑩]', text))
+        ):
             # 移除 Pandoc 自动生成的项目符号列表，避免显示双重符号 (• □)
             pPr = p._p.get_or_add_pPr()
             for numPr in pPr.xpath('w:numPr'):
                 pPr.remove(numPr)
-            p.paragraph_format.first_line_indent = Pt(0)
-            p.paragraph_format.left_indent = Pt(12)
-            p.paragraph_format.space_before = Pt(1)
-            p.paragraph_format.space_after = Pt(1.5)
-            p.paragraph_format.line_spacing = 1.18
+            p.paragraph_format.first_line_indent = Pt(0) # 列表项保持左侧悬挂对齐
+            p.paragraph_format.left_indent = Pt(14)
+            if is_single_page:
+                p.paragraph_format.space_before = Pt(2)
+                p.paragraph_format.space_after = Pt(4)
+                p.paragraph_format.line_spacing = 1.3
+                size_pt = 10.5
+            else:
+                p.paragraph_format.space_before = Pt(1)
+                p.paragraph_format.space_after = Pt(1.5)
+                p.paragraph_format.line_spacing = 1.18
+                size_pt = 10
             for run in p.runs:
-                set_font(run, font_name='宋体', size_pt=10, bold=run.bold)
+                set_font(run, font_name='宋体', size_pt=size_pt, bold=run.bold)
                 
-        # 普通题干说明与题目
+        # 核心改动：普通题干与引导正文段落（用户诉求 1：导学案需要缩进）
         else:
-            p.paragraph_format.first_line_indent = Pt(0) # 导学单题干顶格更规整
-            p.paragraph_format.space_before = Pt(1)
-            p.paragraph_format.space_after = Pt(2)
-            p.paragraph_format.line_spacing = 1.2
+            # 关键：正文自然段/题干说明首行空两格 (2 * 10.5pt = 21pt)
+            p.paragraph_format.first_line_indent = Pt(21)
+            p.paragraph_format.left_indent = Pt(0)
+            if is_single_page:
+                p.paragraph_format.space_before = Pt(3)
+                p.paragraph_format.space_after = Pt(6) # 单页模式下增加段后距，更饱满
+                p.paragraph_format.line_spacing = 1.38 # 舒适的中文行距
+            else:
+                p.paragraph_format.space_before = Pt(1)
+                p.paragraph_format.space_after = Pt(2.5)
+                p.paragraph_format.line_spacing = 1.2
             for run in p.runs:
                 set_font(run, font_name='宋体', size_pt=10.5, bold=run.bold)
 
@@ -357,14 +441,17 @@ def beautify_worksheet_docx(docx_path):
         '''
         tblPr.append(parse_xml(borders_xml))
         
+        # 单元格内边距自适应：单页模式增大上下内边距，方便手写勾连
+        cell_top = "130" if is_single_page else "80"
+        cell_side = "150" if is_single_page else "120"
         for m in tblPr.xpath('w:tblCellMar'):
             tblPr.remove(m)
         cell_mar_xml = f'''
         <w:tblCellMar {nsdecls("w")}>
-            <w:top w:w="80" w:type="dxa"/>
-            <w:bottom w:w="80" w:type="dxa"/>
-            <w:left w:w="120" w:type="dxa"/>
-            <w:right w:w="120" w:type="dxa"/>
+            <w:top w:w="{cell_top}" w:type="dxa"/>
+            <w:bottom w:w="{cell_top}" w:type="dxa"/>
+            <w:left w:w="{cell_side}" w:type="dxa"/>
+            <w:right w:w="{cell_side}" w:type="dxa"/>
         </w:tblCellMar>
         '''
         tblPr.append(parse_xml(cell_mar_xml))
@@ -382,10 +469,11 @@ def beautify_worksheet_docx(docx_path):
                     p.paragraph_format.first_line_indent = Pt(0)
                     p.paragraph_format.space_before = Pt(1)
                     p.paragraph_format.space_after = Pt(1)
-                    p.paragraph_format.line_spacing = 1.15
+                    p.paragraph_format.line_spacing = 1.22 if is_single_page else 1.15
                     for run in p.runs:
                         is_h = (r_idx == 0)
-                        set_font(run, font_name='黑体' if is_h else '宋体', size_pt=9.5, bold=is_h or run.bold)
+                        size_pt = 10 if is_single_page else 9.5
+                        set_font(run, font_name='黑体' if is_h else '宋体', size_pt=size_pt, bold=is_h or run.bold)
 
     doc.save(docx_path)
     print(f"SUCCESS: Beautified worksheet docx: {docx_path}")
