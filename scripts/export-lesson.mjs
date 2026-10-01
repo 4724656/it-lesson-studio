@@ -15,7 +15,7 @@ const pandocTemplate = path.join(rootDir, 'resources', 'pandoc', '模板.docx');
 const luaFilter = path.join(rootDir, 'resources', 'pandoc', 'br.lua');
 const marpTheme = path.join(rootDir, 'resources', 'themes', 'edu-lesson.css');
 
-// 自动渲染 Mermaid 图像到本地
+// 自动渲染 Mermaid 图像到本地 (带离线机房 3 秒快速超时降级保护)
 async function downloadMermaidPng(mermaidText, outputPath) {
   const state = JSON.stringify({ code: mermaidText, mermaid: { theme: 'default' } });
   const data = Buffer.from(state, 'utf8');
@@ -24,9 +24,9 @@ async function downloadMermaidPng(mermaidText, outputPath) {
   const url = `https://mermaid.ink/img/pako:${encoded}`;
   
   return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
+    const req = https.get(url, { timeout: 3000 }, (res) => {
       if (res.statusCode !== 200) {
-         reject(new Error(`Mermaid.ink returned HTTP ${res.statusCode}`));
+         reject(new Error(`Mermaid 服务返回 HTTP ${res.statusCode}`));
          return;
       }
       const fileStream = fs.createWriteStream(outputPath);
@@ -35,7 +35,12 @@ async function downloadMermaidPng(mermaidText, outputPath) {
          fileStream.close();
          resolve();
       });
-    }).on('error', reject);
+    });
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('网络请求超时(3s)，机房离线保护生效，已优雅跳过'));
+    });
+    req.on('error', reject);
   });
 }
 
@@ -164,8 +169,8 @@ for (const mdFile of mdFiles) {
              // 返回 Markdown 插入图片的语法（留空 alt 避免 Pandoc 在 Word 图片下方输出图注标题）
              return `![](${relToImg})`;
          } catch(e) {
-             console.error(`   ✖ 渲染 Mermaid 失败: ${e.message}`);
-             return match; // 失败则原样返回
+             console.warn(`   ⚠️ 跳过 Mermaid 渲染 (机房离线保护): ${e.message}`);
+             return match; // 失败则原样保留代码块，绝不挂起导出流水线
          }
       });
       
@@ -185,6 +190,21 @@ for (const mdFile of mdFiles) {
       if (hasLua) cmd += ` --lua-filter="${luaFilter}"`;
 
       execSync(cmd, { stdio: ['ignore', 'inherit', 'inherit'], cwd: rootDir });
+
+      // 中文专业排版后处理（首行缩进两格、黑体标题、宋体正文、表格防断裂）
+      const beautifyScript = path.join(rootDir, 'scripts', 'beautify_docx.py');
+      if (fs.existsSync(beautifyScript)) {
+        try {
+          execSync(`uv run --with python-docx python "${beautifyScript}" "${docxOut}"`, {
+            stdio: ['ignore', 'ignore', 'inherit'],
+            cwd: rootDir
+          });
+          console.log(`   ✨ 已自动应用中文公文级排版 (首行缩进2格·黑体大纲·宋体正文·表格美化)`);
+        } catch (postErr) {
+          console.warn(`   ⚠️ 后处理排版优化跳过: ${postErr.message}`);
+        }
+      }
+
       console.log(`   ✔ 成功生成 Word: ${docxRel}\n`);
       successCount++;
       

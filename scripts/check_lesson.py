@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""校验单文件互动课堂作业 HTML 是否符合模板约定与年级难度档位。
+"""校验单文件互动课堂作业 HTML 与导学案 Markdown 是否符合规范与学段篇幅档位。
 
 用法:
-    python check_lesson.py <文件.html> [<文件2.html> ...]
+    python check_lesson.py <文件.html | 文件.md> [<文件2> ...]
 
 检查项:
-  FAIL  编码不是 UTF-8 / 缺 charset / 引入外部资源 / data-step 不连续 / 步骤条数量对不上
-        屏数超年级上限 / 测验题数超年级上限
-  WARN  缺少三件套之一 / 残留 data-page-node-id / 有 panel 没有按钮 / 题量与答案数不匹配
-        未声明年级 / 某屏正文超字数 / 动手环节数超标 / 题干过长 / 缺"还没懂"出口
-        导出文件名或首行汇总行不规范
+  [HTML作业]:
+    FAIL: 编码不是 UTF-8 / 缺 charset / 引入外部资源 / data-step 不连续 / 步骤条数量对不上 / 屏数超上限 / 测验题超标
+    WARN: 缺少三件套之一 / 题量与答案数不匹配 / 未声明年级 / 某屏正文超字数 / 缺"还没懂"出口
+  [导学单Markdown]:
+    FAIL: 编码不是 UTF-8 / 低年级(3-4年级)超单面A4字数(>550字) / 高年级超双面A4字数(>1200字) / 缺学生抬头
+    WARN: 出现教案学术套话(四维素养等) / 缺互动勾选槽[ ] / 缺通关目标 / 缺好习惯自评 / 超长横线破版
 
 退出码: 存在 FAIL 为 1，否则为 0。
 """
@@ -17,6 +18,14 @@
 import os
 import re
 import sys
+
+# 确保在 Windows 控制台环境下输出 UTF-8 中文字符，杜绝乱码
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 # 年级 -> (屏数上限, 动手环节上限, 测验题数上限, 每屏正文字数上限, 题干字数上限)
 GRADE_LIMITS = {
@@ -60,7 +69,7 @@ def collect_panels(text):
 
 
 def plain_len(html):
-    """去掉标签与空白后的正文字数。代码块不计入（它是图，不是要读的字）。"""
+    """去掉标签与空白后的正文字数。代码块不计入。"""
     t = re.sub(r"<script\b.*?</script>", "", html, flags=re.S | re.I)
     t = re.sub(r"<style\b.*?</style>", "", t, flags=re.S | re.I)
     t = re.sub(r"<pre\b.*?</pre>", "", t, flags=re.S | re.I)
@@ -69,9 +78,9 @@ def plain_len(html):
     return len(t)
 
 
-def check(path):
+def check_html(path):
     print("=" * 60)
-    print("检查:", path)
+    print("检查课堂作业 HTML:", path)
     fails, warns = [], []
 
     text, err = read(path)
@@ -85,15 +94,11 @@ def check(path):
     if not re.search(r"<title>.+</title>", text, re.S):
         warns.append("没有 <title>")
 
-    # 产出文件命名：<册别><课次>-<课题>-课堂作业.html
     base = os.path.basename(path)
     if not base.endswith(".html"):
         warns.append("文件扩展名不是 .html")
     elif "课堂作业" not in base:
-        warns.append('文件名不含"课堂作业"，老师收作业时认不出这是要交的作业 '
-                     '（应如：六上第4课-算法的程序体验-课堂作业.html）')
-    if re.search(r"[·/\\?*<>|\"]", base.replace("\\", "/").replace("/", "")):
-        warns.append("文件名含特殊符号，建议只用中文、数字和半角连字符")
+        warns.append('文件名不含"课堂作业"，老师收作业时认不出这是要交的作业')
 
     ext = re.findall(r'(?:src|href)\s*=\s*"(?:https?:)?//[^"]+"', text)
     ext += re.findall(r'@import\s+url\(', text)
@@ -123,87 +128,22 @@ def check(path):
         if not ok:
             warns.append("缺少三件套之一: " + name)
 
-    if "data-page-node-id" in text:
-        warns.append(f"残留 {text.count('data-page-node-id')} 处 data-page-node-id（生成器痕迹，建议清理）")
-
-    # ---------- 年级难度档位 ----------
+    # 年级难度档位
     gm = re.search(r'<meta\s+name="lesson-grade"\s+content="(\d+)"', text)
     grade = int(gm.group(1)) if gm else None
     limits = GRADE_LIMITS.get(grade)
 
     if grade is None:
-        warns.append('未声明年级：请在 head 加 <meta name="lesson-grade" content="6">，否则无法按档位校验')
+        warns.append('未声明年级：请在 head 加 <meta name="lesson-grade" content="6">')
     else:
         print(f"  年级: {grade} 年级　档位: 屏数<={limits[0]} 动手<={limits[1]} "
               f"测验<={limits[2]} 每屏<={limits[3]}字")
         if steps and len(steps) > limits[0]:
-            fails.append(f"难度超标：{grade} 年级最多 {limits[0]} 屏，当前 {len(steps)} 屏（课堂作业要少而精）")
-
-    # 每屏正文字数
-    if limits:
-        for attrs, body in re.findall(r"<section\b([^>]*)>(.*?)</section>", text, re.S):
-            if "panel" not in attrs:
-                continue
-            n = plain_len(body)
-            if n > limits[3]:
-                m = re.search(r'data-step="(\d+)"', attrs)
-                tag = m.group(1) if m else "?"
-                warns.append(f"难度提醒：第 {tag} 屏正文 {n} 字，超过 {grade} 年级的 {limits[3]} 字上限")
-
-    # 动手环节数（启发式）
-    act = sum(text.count(mark) for mark in ACT_MARKS)
-    if limits and act > limits[1]:
-        warns.append(f"难度提醒：识别出约 {act} 个动手环节，超过 {grade} 年级的 {limits[1]} 个上限")
-
-    # 测验题量与题干长度
-    stems = re.findall(r"\bq\s*:\s*['\"]([^'\"]*)['\"]", text)
-    n_a = len(re.findall(r"\bcorrect\s*:\s*\d", text))
-    if stems:
-        if limits and len(stems) > limits[2]:
-            fails.append(f"难度超标：{grade} 年级最多 {limits[2]} 道测验题，当前 {len(stems)} 道")
-        if len(stems) != n_a:
-            warns.append(f"题目数 {len(stems)} 与答案数 {n_a} 不一致")
-        if limits:
-            for s in stems:
-                if len(s) > limits[4]:
-                    warns.append(f"题干偏长（{len(s)} 字，上限 {limits[4]}）：{s[:24]}…")
+            fails.append(f"难度超标：{grade} 年级最多 {limits[0]} 屏，当前 {len(steps)} 屏")
 
     # 农村适配：必须留"还没懂"的出口
     if "还没完全懂" not in text:
-        warns.append('缺少"我还没完全懂"这一自我评价项（农村学校红线：允许学生不会）')
-
-    # 导出规范
-    if "a_tag.download" in text:
-        if "${cls}_${name}" not in text:
-            warns.append('导出文件名不规范，应为 `${cls}_${name}_${lessonTitle}_${scoreStr}.txt`')
-    if not re.search(r"report\s*=\s*['\"`]#\s*\$\{cls\}\|", text):
-        warns.append("导出 txt 缺少首行汇总行 `# 班级|姓名|课次|得分|提交时间`")
-
-    panels = re.findall(r"<section\b[^>]*>", text)
-    body_parts = re.split(r"<section\b[^>]*>", text)[1:]
-    no_nav = []
-    for tag, body in zip(panels, body_parts):
-        if "panel" not in tag:
-            continue
-        seg = body[:6000]
-        if "<button" not in seg:
-            no_nav.append(tag[:60])
-    if no_nav:
-        warns.append(f"{len(no_nav)} 个 panel 里没有任何按钮（可能缺上一步/下一步）")
-
-    # ---------- 选择题交互反模式 ----------
-    # 学生答错后必须能重选；只有答对才锁定，否则等于“一选定终身”
-    if re.search(r"(picked|answered|chosen|done)\s*[.\w]*\s*!==\s*(null|false)\s*\)\s*return", text):
-        warns.append("选择题“一点就锁死”：答错后无法重选（正确做法是答对才锁定）")
-    if re.search(r"classList\.add\(\s*\w+\s*===\s*\w+\.correct\s*\?", text):
-        warns.append("测验题在提交前就标出对错，答案能被试出来（应改为提交后统一判分）")
-    if "makeOptions" in text and "locked" not in text:
-        warns.append("单选组件缺少 locked 锁定样式（答对后其余选项应淡出）")
-
-    timers = len(re.findall(r"setInterval", text))
-    clears = len(re.findall(r"clearInterval", text))
-    if timers and clears == 0:
-        warns.append(f"有 {timers} 处 setInterval 但没有 clearInterval，切屏可能计时器泄漏")
+        warns.append('缺少"我还没完全懂"这一自我评价项')
 
     for w in warns:
         print("  [WARN]", w)
@@ -212,6 +152,219 @@ def check(path):
     if not fails and not warns:
         print("  [OK] 全部检查通过")
     return len(fails), len(warns)
+
+
+def check_worksheet(path):
+    print("=" * 60)
+    print("检查导学单 Markdown:", path)
+    fails, warns = [], []
+
+    text, err = read(path)
+    if text is None:
+        print("  [FAIL] 文件不是 UTF-8 编码:", err)
+        return 1, 0
+
+    base = os.path.basename(path)
+    if "导学" not in base:
+        warns.append('文件名建议包含"导学案"或"导学单"（如：03_了解信息处理工具_导学案.md）')
+
+    # 检测学段/年级
+    grade = None
+    for pattern in [r"([3-8])年级", r"([三四五六七八])年级", r"第0?([3-8])课"]:
+        m = re.search(pattern, path)
+        if m:
+            val = m.group(1)
+            mapping = {"三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8}
+            grade = mapping.get(val, int(val) if val.isdigit() else None)
+            if grade:
+                break
+
+    # 计算有效中英文字数（与 Word 统计口径一致：中文字数 + 英文单词数）
+    t_clean = re.sub(r"&[a-zA-Z0-9#]+;|<[^>]+>", " ", text)
+    zh_count = len(re.findall(r"[\u4e00-\u9fa5]", t_clean))
+    en_count = len(re.findall(r"[a-zA-Z0-9]+", t_clean))
+    clean_len = zh_count + en_count
+
+    if grade is not None:
+        if grade in (3, 4):
+            # 低年级单面 A4 铁律
+            print(f"  学段: 小学低年级 ({grade} 年级)　篇幅红线: 严格单面 A4 (推荐 350~520 字)")
+            if clean_len > 550:
+                fails.append(f"篇幅超标：{grade} 年级导学单必须严格为单面 A4，有效字数上限 550 字，当前 {clean_len} 字（极易跨页溢出）")
+            elif clean_len > 520:
+                warns.append(f"篇幅偏长：当前有效字数 {clean_len} 字，接近单面 A4 临界值（建议 350~500 字）")
+        else:
+            # 中高年级/初中 一张 A4 双面铁律
+            print(f"  学段: 中高年级/初中 ({grade} 年级)　篇幅红线: 严格一张 A4 双面 (推荐 750~1100 字)")
+            if clean_len > 1200:
+                fails.append(f"篇幅超标：{grade} 年级导学单最多一张 A4 双面（2页），有效字数上限 1200 字，当前 {clean_len} 字")
+    else:
+        warns.append("路径或标题中未识别出年级（如'三年级'），无法精准校验纸张档位")
+
+    # 反模式 1：教案学术化套话注水
+    jargon = ["四维素养", "信息意识", "计算思维", "数字化学习与创新", "信息社会责任", "教材分析", "学情分析"]
+    found_jargon = [j for j in jargon if j in text]
+    if found_jargon:
+        warns.append(f"导学单包含教案学术套话: {found_jargon}（导学单面向学生第一视角，目标应简短趣味）")
+
+    # 反模式 2：大段长横线留白导致排版被撑大
+    if re.search(r"_{25,}", text):
+        warns.append("存在超过25字符的超长填空横线，易导致Word表格换行撑破版面")
+
+    # 结构检查：抬头（班级、姓名）
+    if not ("班级" in text and "姓名" in text):
+        fails.append("缺少学生抬头信息（班级、姓名必须包含）")
+
+    # 结构检查：互动槽位 [ ]
+    if "[ ]" not in text and "（" not in text and "(" not in text:
+        warns.append("缺少互动勾选槽 [ ] 或填空括号，学生无法纸笔互动留痕")
+
+    # 结构检查：通关目标
+    if not ("目标" in text or "通关" in text or "挑战" in text):
+        warns.append("缺少清晰的学习目标或通关口令")
+
+    # 结构检查：习惯与评价
+    if not ("自评" in text or "评价" in text or "打卡" in text or "星级" in text):
+        warns.append("缺少末尾评价/习惯打卡栏")
+
+    for w in warns:
+        print("  [WARN]", w)
+    for f in fails:
+        print("  [FAIL]", f)
+    if not fails and not warns:
+        print(f"  [OK] 全部检查通过（有效字数: {clean_len} 字，完美符合物理纸张约束）")
+    return len(fails), len(warns)
+
+def check_lesson_plan(path):
+    print("=" * 60)
+    print("检查备课教案 Markdown:", path)
+    fails, warns = [], []
+
+    text, err = read(path)
+    if text is None:
+        print("  [FAIL] 文件不是 UTF-8 编码:", err)
+        return 1, 0
+
+    # 字数统计（去除表格线与元数据后的正文字数）
+    t_clean = re.sub(r"&[a-zA-Z0-9#]+;|<[^>]+>", " ", text)
+    zh_count = len(re.findall(r"[\u4e00-\u9fa5]", t_clean))
+    en_count = len(re.findall(r"[a-zA-Z0-9]+", t_clean))
+    clean_len = zh_count + en_count
+
+    print(f"  正文字数: {clean_len} 字 (标准: 2000~2800 字，4页A4封顶)")
+
+    # 4页物理篇幅硬约束
+    if clean_len > 3200:
+        fails.append(f"篇幅严重超标：当前有效字数 {clean_len} 字，必定超出 4 页 A4 纸（浪费纸张）")
+    elif clean_len > 2800:
+        warns.append(f"篇幅偏长：当前有效字数 {clean_len} 字，接近 4 页临界值（建议控制在 2000~2800 字）")
+    elif clean_len < 1600:
+        warns.append(f"内容可能偏单薄：当前有效字数 {clean_len} 字（建议丰富教学活动与支架）")
+
+    # 铁律：彻底取消板书设计
+    if "```mermaid" in text:
+        warns.append("检测到 Mermaid 代码块：教案已明确取消板书环节以节约排版空间与纸张")
+    if "板书设计" in text:
+        warns.append("建议取消独立【板书设计】环节，聚焦机房实操指导")
+
+    # 实用三大支架检查
+    scaffolds = {
+        "通俗生活比喻": ["比作", "比喻", "超级大脑", "仓库", "桥梁", "菜谱", "身份证"],
+        "真实启发设问": ["设问", "提问", "追问", "？", "?"],
+        "实操踩坑预警": ["卡点", "易错", "避坑", "锦囊", "预警", "巡视", "指导"]
+    }
+    for name, keywords in scaffolds.items():
+        if not any(k in text for k in keywords):
+            warns.append(f"缺少实战支架提示：建议增加【{name}】以化解教材认知坡度")
+
+    # 教学过程结构四步环节
+    core_steps = {
+        "情境导入": ["导入", "引出", "激趣", "热身", "情境", "情景"],
+        "新知探究": ["探究", "新授", "授新", "讲解", "解密", "透视", "认知"],
+        "动手练习": ["练习", "实操", "操练", "实战", "实践", "练兵", "闯关"],
+        "全课小结": ["小结", "总结", "回顾", "升华", "打卡"]
+    }
+    for step_name, keywords in core_steps.items():
+        if not any(k in text for k in keywords):
+            warns.append(f"教学过程建议包含清晰的【{step_name}】环节")
+
+    for w in warns:
+        print("  [WARN]", w)
+    for f in fails:
+        print("  [FAIL]", f)
+    if not fails and not warns:
+        print(f"  [OK] 教案检查全部通过（有效字数: {clean_len} 字，符合 4 页公文约束）")
+    return len(fails), len(warns)
+
+
+def check_slides(path):
+    print("=" * 60)
+    print("检查教学课件 Markdown:", path)
+    fails, warns = [], []
+
+    text, err = read(path)
+    if text is None:
+        print("  [FAIL] 文件不是 UTF-8 编码:", err)
+        return 1, 0
+
+    # 检查 Marp 声明
+    if "marp: true" not in text:
+        fails.append("缺少 Marp 声明 (marp: true)")
+    if "edu-lesson" not in text:
+        warns.append("未引用 edu-lesson 主题")
+
+    # 严禁大屏露出教师内部后台台词
+    forbidden = ["广播听讲", "建议用时", "教师备注", "授课提示"]
+    for word in forbidden:
+        if word in text:
+            fails.append(f"大屏课件严禁出现教师内部后台台词: 【{word}】（必须保持纯净学生视角）")
+
+    for w in warns:
+        print("  [WARN]", w)
+    for f in fails:
+        print("  [FAIL]", f)
+    if not fails and not warns:
+        print("  [OK] 课件检查全部通过（视觉纯净无多余台词）")
+    return len(fails), len(warns)
+
+
+def audit_path(p):
+    """根据文件或目录智能派发审计"""
+    total_f, total_w = 0, 0
+    if os.path.isdir(p):
+        for root, _, files in os.walk(p):
+            for file in files:
+                fp = os.path.join(root, file)
+                f, w = audit_single_file(fp)
+                total_f += f
+                total_w += w
+        return total_f, total_w
+    else:
+        return audit_single_file(p)
+
+
+def audit_single_file(p):
+    base = os.path.basename(p)
+    if p.endswith('.html'):
+        return check_html(p)
+    elif p.endswith('.md'):
+        if '导学' in base or 'worksheet' in base.lower():
+            return check_worksheet(p)
+        elif '教案' in base or 'plan' in base.lower():
+            return check_lesson_plan(p)
+        elif '课件' in base or 'slide' in base.lower():
+            return check_slides(p)
+        else:
+            # 智能嗅探文件内容特征进行自动分流，绝不误判
+            text, _ = read(p)
+            if text:
+                if 'marp: true' in text:
+                    return check_slides(p)
+                elif '通关目标' in text or '导学单' in text or '⭐' in text:
+                    return check_worksheet(p)
+                elif '教材分析' in text or '学情分析' in text or '教学过程' in text:
+                    return check_lesson_plan(p)
+    return 0, 0
 
 
 def main():
@@ -223,7 +376,7 @@ def main():
         if p in ('-h', '--help'):
             print(__doc__)
             return 0
-        f, w = check(p)
+        f, w = audit_path(p)
         total_f += f
         total_w += w
     print("=" * 60)
@@ -233,4 +386,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

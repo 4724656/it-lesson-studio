@@ -241,13 +241,8 @@ section.invert h2 {
   border-color: rgba(255, 255, 255, 0.6);
 }
 
-/* 14. 封面页(.lead,新增)
-   用于课题封面(第一页)。以前的做法是在 md 里手写
-   _backgroundColor: #0f172a(深藏青,接近黑色)+ _color 白字,
-   看起来太暗、太严肃,不适合小朋友。
-   现在把封面配色统一放进主题:用品牌蓝渐变(比全黑柔和很多),
-   并让内层 h1/p/span 就算不写内联颜色也能保持白色可读。
-   用法:md 里只需要 <!-- _class: lead -->,不用再写 _backgroundColor/_color。 */
+/* 14. 封面页(.lead)
+   用于课题封面(第一页) */
 section.lead {
   background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
   color: #f8fafc;
@@ -259,12 +254,191 @@ section.lead {
 }
 section.lead h1 {
   color: #ffffff;
+  font-size: 2.3em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 section.lead p {
   color: #dbeafe;
+  font-size: 1.1em;
 }
 section.lead .tag {
-  background: rgba(255, 255, 255, 0.15);
-  color: #dbeafe;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 4px 18px;
+  font-size: 0.9em;
+}
+
+/* ============================================
+   15. 课堂互动与机房教学专属增强组件 (升级新增)
+   ============================================ */
+
+/* 4列并排容器 (用于4大部件、4大工具等) */
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* 机房课堂状态指示徽章 (固定在幻灯片右上角或内容顶栏) */
+.badge-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-size: 0.75em;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+/* 状态1: 广播听讲 (蓝色科技风) */
+.badge-broadcast {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1.5px solid #93c5fd;
+}
+/* 状态2: 导学探究 (琥珀暖橙，提示动笔) */
+.badge-worksheet {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1.5px solid #fdba74;
+}
+/* 状态3: 上机实操 (生机翠绿，一人一机开练) */
+.badge-practice {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1.5px solid #86efac;
+}
+/* 状态4: 倒计时胶囊 */
+.badge-timer {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1.5px solid #fca5a5;
+}
+
+/* 核心设问聚焦框 (激发思考，给学生发言留白) */
+.question-box {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdfa 100%);
+  border-left: 6px solid #2563eb;
+  border-radius: 12px;
+  padding: 20px 28px;
+  margin: 20px 0;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+}
+.question-box h3 {
+  color: #1e40af;
+  margin-bottom: 8px;
+  font-size: 1.15em;
+}
+.question-box p {
+  color: #1e293b;
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: 500;
+}
+
+/* 拟人化比喻/角色卡片 (专为硬件通俗化设计) */
+.card-avatar {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 16px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border: 1.5px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.card-avatar .avatar-icon {
+  font-size: 2.2em;
+  margin-bottom: 6px;
+}
+.card-avatar h4 {
+  margin: 4px 0 8px 0;
+  color: #1e3a8a;
+  font-size: 0.95em;
+}
+.card-avatar p {
+  font-size: 0.78em;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0;
+}
+.card-avatar .role-tag {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.72em;
+  font-weight: bold;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-top: 8px;
+}
+
+/* 实操指引横向步骤条 */
+.steps-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin: 20px 0;
+}
+.step-item {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  border: 1.5px solid #cbd5e1;
+  position: relative;
+}
+.step-item.active {
+  border-color: #3b82f6;
+  background: #f8faff;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.12);
+}
+.step-num {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 28px;
+  font-weight: bold;
+  font-size: 0.75em;
+  margin-bottom: 8px;
+}
+.step-item h4 {
+  margin: 0 0 6px 0;
+  color: #1e293b;
+  font-size: 0.92em;
+}
+.step-item p {
+  margin: 0;
+  font-size: 0.8em;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* 键盘按键与代码高亮小标签 */
+kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: monospace;
+  font-size: 0.85em;
+  font-weight: bold;
+  color: #1e293b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 2px 0 #94a3b8;
+  margin: 0 2px;
 }
