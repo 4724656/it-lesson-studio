@@ -1,0 +1,5 @@
+node_modules/
+.vscode/
+*.tmp.md
+.DS_Store
+Thumbs.db

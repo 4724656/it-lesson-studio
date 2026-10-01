@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="lesson-grade" content="__年级数字，如 6__">
+<meta name="lesson-book" content="浙教版2026版__年级__上册·第N课 __课题__">
+<title>__单元名__ · 第N课 · __课题__</title>
+<style>
+  :root{
+    --paper:#F7F4EC;
+    --panel:#FFFFFF;
+    --ink:#22333B;
+    --ink-soft:#5C6B73;
+    --river:#2F6C8E;
+    --river-deep:#1F4E66;
+    --grass:#6E9B5E;
+    --grass-deep:#4F7A41;
+    --sun:#E3A038;
+    --sun-deep:#C6821F;
+    --danger:#C1554D;
+    --line:#E1DACB;
+    --radius:14px;
+    --shadow:0 4px 0 rgba(34,51,59,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Heiti SC",sans-serif;
+    line-height:1.6; padding-bottom:60px;
+  }
+  .code{ font-family:"SFMono-Regular",Consolas,"Courier New",monospace; }
+
+  /* ---------- Header / Stepper ---------- */
+  header.top{
+    position:sticky; top:0; z-index:50;
+    background:linear-gradient(135deg,#2E5E3F,#4F7A41);
+    color:#fff; padding:14px 20px 10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+  }
+  .top-title{ display:flex; align-items:baseline; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
+  .top-title h1{ font-size:19px; margin:0; font-weight:700; letter-spacing:0.5px; }
+  .top-title span{ font-size:12px; color:#D8E9CE; }
+  .stepper{ display:flex; justify-content:center; gap:4px; flex-wrap:wrap; max-width:900px; margin:0 auto; }
+  .dot{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    cursor:pointer; padding:4px 6px; border-radius:8px; opacity:0.55; transition:opacity .2s;
+  }
+  .dot:hover{opacity:0.85;}
+  .dot.active{opacity:1;}
+  .dot .circle{
+    width:22px;height:22px;border-radius:50%;background:#3E6B4F;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px; font-weight:700; border:2px solid transparent;
+  }
+  .dot.active .circle{ background:var(--sun); color:#3A2C0E; border-color:#fff;}
+  .dot.done .circle{ background:var(--sun); color:#3A2C0E;}
+  .dot .label{font-size:10px; color:#E2EFD9; white-space:nowrap;}
+
+  /* ---------- Layout ---------- */
+  main{max-width:760px; margin:26px auto; padding:0 16px;}
+  .panel{
+    display:none; background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px 24px 22px; animation:fadeIn .35s ease;
+  }
+  .panel.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+  .eyebrow{ font-size:13px; color:var(--grass-deep); font-weight:700; margin-bottom:4px; }
+  h2.panel-title{ font-size:22px; margin:0 0 14px; color:var(--ink); }
+  h3.sub-title{ font-size:16px; margin:18px 0 8px; color:var(--river-deep); }
+  p{margin:0 0 12px;}
+  ul.body-list{ margin:0 0 12px; padding-left:22px; }
+  .hint{
+    background:#F1F6EE; border:1px solid #DCE9D6; color:var(--grass-deep);
+    border-radius:10px; padding:10px 14px; font-size:14px; margin:14px 0;
+  }
+  .think{
+    background:#FBF1E1; border:1px solid #F0DDB6; color:var(--sun-deep);
+    border-radius:10px; padding:10px 14px; font-size:14px; margin:14px 0;
+  }
+  .story{
+    background:#F3F7FA; border-left:4px solid var(--river);
+    border-radius:0 10px 10px 0; padding:12px 16px; font-size:15px; margin:14px 0;
+  }
+  .story b{ color:var(--river-deep); }
+
+  /* ---------- Nav / buttons ---------- */
+  .nav-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:22px; padding-top:16px; border-top:1px dashed var(--line);
+  }
+  button{
+    font-family:inherit; cursor:pointer; border:none; border-radius:10px;
+    padding:10px 18px; font-size:14px; font-weight:700;
+  }
+  .btn-primary{ background:var(--grass); color:#fff; }
+  .btn-primary:hover{ background:var(--grass-deep); }
+  .btn-secondary{ background:#EDEAE0; color:var(--ink); }
+  .btn-secondary:hover{ background:#E2DED0; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-sun{ background:var(--sun); color:#3A2C0E; }
+  .btn-sun:hover{ background:var(--sun-deep); color:#fff; }
+
+  /* ---------- Generic stage / stat ---------- */
+  .stage{
+    background:#FBF9F3; border:2px dashed var(--line); border-radius:14px;
+    min-height:150px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:8px; margin:14px 0; text-align:center; padding:16px;
+  }
+  .stat-row{ display:flex; gap:16px; align-items:center; justify-content:center; margin:16px 0; flex-wrap:wrap; }
+  .stat{
+    text-align:center; background:#FBF9F3; border:1px solid var(--line);
+    border-radius:12px; padding:14px 22px; min-width:120px;
+  }
+  .stat .num{ font-size:34px; font-weight:800; color:var(--river-deep); }
+  .stat .lbl{ font-size:13px; color:var(--ink-soft); }
+  .msg-line{ min-height:22px; font-size:14px; font-weight:700; }
+  .msg-ok{ color:var(--grass-deep); }
+  .msg-bad{ color:var(--danger); }
+  .msg-info{ color:var(--river); }
+  .log-box{
+    font-size:13px; color:var(--ink-soft); background:#FAFAF6; border:1px dashed var(--line);
+    border-radius:8px; padding:8px 12px; max-height:120px; overflow-y:auto;
+  }
+  .btn-row{ display:flex; gap:10px; justify-content:center; margin:14px 0; flex-wrap:wrap; }
+
+  /* ---------- Quiz / options ---------- */
+  .option-list{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+  .option{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:10px; cursor:pointer; background:#FCFBF7;
+    transition:border-color .15s, background .15s;
+  }
+  .option:hover{ border-color:var(--grass); }
+  .option.picked{ border-color:var(--river); background:#EAF2F6; }
+  .option.correct{ border-color:var(--grass); background:#EAF4E6; }
+  .option.wrong{ border-color:var(--danger); background:#F8EAE9; }
+  .option input{ pointer-events:none; }
+  /* 答对后锁定：其余选项淡出，鼠标不再是可点手型 */
+  .option-list.locked .option{ cursor:default; }
+  .option-list.locked .option:not(.correct){ opacity:.5; }
+  .feedback{ font-size:14px; font-weight:700; margin-top:10px; min-height:20px; }
+  .feedback.ok{ color:var(--grass-deep); }
+  .feedback.bad{ color:var(--danger); }
+
+  /* ---------- Sortable list ---------- */
+  .sort-list{ display:flex; flex-direction:column; gap:8px; margin:14px 0; }
+  .sort-item{
+    background:#FCFBF7; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    cursor:grab; display:flex; gap:10px; align-items:flex-start; font-size:14px;
+  }
+  .sort-item.dragging{ opacity:0.4; }
+  .sort-item .handle{ color:var(--ink-soft); font-size:16px; }
+  .sort-item.correct{ border-color:var(--grass); background:#EAF4E6; }
+  .sort-item.wrong{ border-color:var(--danger); background:#F8EAE9; }
+
+  /* ---------- Flowchart ---------- */
+  .flow{ display:flex; flex-direction:column; align-items:center; gap:4px; margin:16px 0; }
+  .fdrop{
+    min-width:200px; text-align:center; padding:10px 18px; border-radius:8px; font-size:14px;
+    border:2px dashed var(--river); background:#F6FAFB; color:var(--ink-soft);
+    transition:background .15s, border-color .15s;
+  }
+  .fdrop.oval{ border-radius:30px; }
+  .fdrop.decision{ border-color:var(--sun-deep); background:#FCF6EA; }
+  .fdrop.dragover{ background:#EAF2F6; border-style:solid; }
+  .fdrop.filled{ border-style:solid; color:var(--ink); background:#EEF5F8; }
+  .fdrop.decision.filled{ background:#FBF1E1; }
+  .fdrop.correct{ border-color:var(--grass); background:#EAF4E6; color:var(--ink); }
+  .fdrop.wrong{ border-color:var(--danger); background:#F8EAE9; color:var(--ink); }
+  .chip-bank{
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:16px 0;
+    padding:12px; background:#FAFAF6; border:1px dashed var(--line); border-radius:10px;
+  }
+  .fchip{
+    padding:8px 14px; border-radius:8px; background:#FCFBF7; border:1px solid var(--river);
+    color:var(--ink); font-size:13px; cursor:grab; user-select:none;
+  }
+  .fchip:hover{ border-color:var(--river-deep); background:#EAF2F6; }
+  .fchip.used{ opacity:0.3; pointer-events:none; cursor:default; }
+  .fchip.dragging{ opacity:0.4; }
+  .fnode{
+    padding:9px 16px; font-size:13px; text-align:center; cursor:pointer; max-width:280px;
+    border:2px solid var(--river); background:#EEF5F8; transition:transform .15s, background .15s;
+  }
+  .fnode:hover{ transform:scale(1.03); }
+  .fnode.active{ background:var(--sun); border-color:var(--sun-deep); color:#3A2C0E; }
+  .fnode.oval{ border-radius:30px; }
+  .fnode.decision{ background:#FBF1E1; border-color:var(--sun-deep); }
+  .fnode.decision.active{ background:var(--sun-deep); color:#fff; }
+  .arrow{ font-size:16px; color:var(--ink-soft); }
+  .fexplain{
+    min-height:50px; background:#FAFAF6; border:1px solid var(--line); border-radius:10px;
+    padding:10px 14px; font-size:13px; margin-top:6px; color:var(--ink-soft); text-align:center;
+  }
+
+  /* ---------- Code stepper ---------- */
+  pre.codeblock{
+    background:#22333B; color:#DCEFE0; padding:14px 10px; border-radius:10px;
+    font-size:13px; overflow-x:auto; line-height:1.6; margin:12px 0;
+    font-family:"SFMono-Regular",Consolas,"Courier New",monospace;
+  }
+  pre.codeblock .cm{ color:#8AA6AE; }
+  pre.codeblock .kw{ color:#E3A038; }
+  pre.codeblock .st{ color:#9AD0C2; }
+  .codeline{ display:flex; gap:10px; padding:1px 8px; border-radius:6px; white-space:pre; }
+  .codeline .ln{ color:#7E99A1; width:16px; text-align:right; flex:none; user-select:none; }
+  .codeline.hl{ background:rgba(227,160,56,0.28); }
+  .run-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+  .run-note{
+    background:#FBF1E1; border:1px solid #F0DDB6; color:var(--sun-deep);
+    border-radius:10px; padding:10px 14px; font-size:14px; margin:10px 0; min-height:44px;
+  }
+  .vars-row{ display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
+  .var-card{
+    background:#FBF9F3; border:1px solid var(--line); border-radius:10px;
+    padding:8px 16px; text-align:center; min-width:88px;
+  }
+  .var-card .vn{ font-size:12px; color:var(--ink-soft); }
+  .var-card .vv{ font-size:20px; font-weight:800; color:var(--river-deep); font-family:Consolas,monospace; }
+
+  /* ---------- Forms ---------- */
+  textarea{
+    width:100%; min-height:90px; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-family:inherit; font-size:14px; resize:vertical;
+  }
+  input[type=text]{
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:14px;
+  }
+  .check-row{ display:flex; align-items:flex-start; gap:10px; padding:8px 0; }
+  .check-row input{ margin-top:4px; }
+  .score-box{
+    text-align:center; margin:16px 0; padding:16px; border-radius:12px;
+    background:#EEF5F8; border:1px solid var(--line);
+  }
+  .score-box .big{ font-size:30px; font-weight:800; color:var(--river-deep); }
+
+  /* ---------- Medals ---------- */
+  .medals{ display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; }
+  .medal{
+    display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:20px;
+    padding:8px 14px; font-size:13px; background:#FCFBF7; color:var(--ink-soft);
+  }
+  .medal.got{ border-color:var(--grass); background:#EAF4E6; color:var(--grass-deep); font-weight:700; }
+
+  @media (max-width:560px){
+    h2.panel-title{ font-size:19px; }
+    .panel{ padding:20px 16px 18px; }
+    .dot .label{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-title">
+    <h1>__单元名__ · 第N课</h1>
+    <span>__课题__</span>
+  </div>
+  <div class="stepper" id="stepper"></div>
+</header>
+
+<main>
+
+  <!-- ===== 步骤 0：热身 / 探索 ===== -->
+  <section class="panel" data-step="0">
+    <div class="eyebrow">第 1 步</div>
+    <h2 class="panel-title">__热身活动标题__</h2>
+    <p>__一句话说明这节课要解决的问题。__</p>
+    <div class="story">__情境故事，用粗体标出关键数字。__</div>
+
+    <div class="stage" id="stage">
+      <div id="stageMain">__互动内容__</div>
+      <div class="msg-line" id="stageMsg"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="stageBtn">试一试</button>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="btn-primary" data-next>下一步</button>
+    </div>
+  </section>
+
+  <!-- ===== 步骤 1：学习目标 ===== -->
+  <section class="panel" data-step="1">
+    <div class="eyebrow">第 2 步</div>
+    <h2 class="panel-title">🎯 学习目标</h2>
+    <p>这节课结束后，你应该能够：</p>
+    <div id="goalList">
+      <div class="check-row"><input type="checkbox" data-goal><span>__目标1__</span></div>
+      <div class="check-row"><input type="checkbox" data-goal><span>__目标2__</span></div>
+      <div class="check-row"><input type="checkbox" data-goal><span>__目标3__</span></div>
+    </div>
+    <div class="hint">先读一遍，课结束时再回来勾选。</div>
+
+    <div class="nav-row">
+      <button class="btn-secondary" data-prev>上一步</button>
+      <button class="btn-primary" data-next>下一步</button>
+    </div>
+  </section>
+
+  <!-- ===== 中间步骤：按需复制此段，记得同步 stepLabels ===== -->
+  <section class="panel" data-step="2">
+    <div class="eyebrow">第 3 步</div>
+    <h2 class="panel-title">__环节标题__</h2>
+    <p>__正文__</p>
+    <div class="think">__思考问题__</div>
+
+    <div class="nav-row">
+      <button class="btn-secondary" data-prev>上一步</button>
+      <button class="btn-primary" data-next>下一步</button>
+    </div>
+  </section>
+
+  <!-- ===== 最后一步：测验 + 徽章 + 保存 ===== -->
+  <section class="panel" data-step="3">
+    <div class="eyebrow">最后一步</div>
+    <h2 class="panel-title">🏁 小测验 &amp; 保存学习记录</h2>
+
+    <h3 class="sub-title">课堂小测验</h3>
+    <div id="quizArea"></div>
+    <div class="btn-row">
+      <button class="btn-sun" id="quizSubmit">提交测验</button>
+    </div>
+    <div class="score-box" id="scoreBox" style="display:none;">
+      <div class="big" id="scoreNum"></div>
+      <div id="scoreText"></div>
+    </div>
+
+    <h3 class="sub-title">我的徽章</h3>
+    <div class="medals" id="medalArea"></div>
+
+    <h3 class="sub-title">自我评价</h3>
+    <div id="selfList"></div>
+
+    <h3 class="sub-title">保存学习记录</h3>
+    <p>填写姓名班级后点下面的按钮，会把你的学习过程下载成一个 .txt 文件。</p>
+    <div class="btn-row" style="justify-content:flex-start;">
+      <input type="text" id="stuName" placeholder="姓名">
+      <input type="text" id="stuClass" placeholder="班级">
+    </div>
+    <div class="btn-row" style="justify-content:flex-start;">
+      <button class="btn-primary" id="saveBtn">💾 保存学习记录</button>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-secondary" data-prev>上一步</button>
+      <span></span>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ===================== 通用：步骤导航 ===================== */
+const stepLabels = ["探索","目标","__环节__","总结"];
+const totalSteps = stepLabels.length;
+let currentStep = 0;
+const stepperEl = document.getElementById('stepper');
+const doneSteps = new Set();
+
+stepLabels.forEach((lbl,i)=>{
+  const d = document.createElement('div');
+  d.className='dot'; d.dataset.i=i;
+  d.innerHTML = `<div class="circle">${i}</div><div class="label">${lbl}</div>`;
+  d.addEventListener('click',()=>goToStep(i));
+  stepperEl.appendChild(d);
+});
+
+function renderStepper(){
+  document.querySelectorAll('.dot').forEach(d=>{
+    const i = +d.dataset.i;
+    d.classList.toggle('active', i===currentStep);
+    d.classList.toggle('done', doneSteps.has(i) && i!==currentStep);
+  });
+}
+
+function goToStep(i){
+  document.querySelectorAll('.panel').forEach(p=>{
+    p.classList.toggle('active', +p.dataset.step===i);
+  });
+  doneSteps.add(currentStep);
+  currentStep = i;
+  renderStepper();
+  if(i===totalSteps-1) renderMedals();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>goToStep(Math.min(currentStep+1, totalSteps-1))));
+document.querySelectorAll('[data-prev]').forEach(b=>b.addEventListener('click',()=>goToStep(Math.max(currentStep-1,0))));
+goToStep(0);
+
+/* ===================== 通用单选组件 ===================== */
+/**
+ * 单选组件。规则：答对即锁定（防止把答案试出来），答错可以重选。
+ * 用法：const st = makeOptions(列表元素, 反馈元素, 选项数组, 正确下标, (ok, tries)=>{}, 答错提示);
+ * 返回 { v:当前选项, tries:尝试次数, right:是否答对, locked:是否已锁定 }
+ */
+function makeOptions(listEl, fbEl, opts, rightIdx, onPick, wrongHint){
+  const st = { v:null, tries:0, right:false, locked:false };
+  opts.forEach((txt, oi)=>{
+    const el = document.createElement('div');
+    el.className='option';
+    el.innerHTML = `<input type="radio"><span>${txt}</span>`;
+    el.addEventListener('click', ()=>{
+      if(st.locked) return;                    // 已经答对，不再响应
+      if(st.v === oi) return;                  // 重复点同一项，不重复计数
+      st.v = oi;
+      st.tries++;
+      listEl.querySelectorAll('.option').forEach(o=>{
+        o.classList.remove('picked','correct','wrong');
+        o.querySelector('input').checked=false;
+      });
+      el.classList.add('picked');
+      el.querySelector('input').checked=true;
+      const ok = (oi === rightIdx);
+      st.right = ok;
+      if(ok){
+        el.classList.add('correct');
+        st.locked = true;
+        listEl.classList.add('locked');
+        fbEl.className = 'feedback ok';
+        fbEl.textContent = st.tries===1 ? '对了！' : `对了！试了 ${st.tries} 次，学会回头检查也很棒。`;
+      }else{
+        el.classList.add('wrong');
+        fbEl.className = 'feedback bad';
+        fbEl.textContent = (wrongHint || '再想想，看看上面的提示。') + ` 还能再选，已试 ${st.tries} 次。`;
+      }
+      if(onPick) onPick(ok, st.tries);
+    });
+    listEl.appendChild(el);
+  });
+  return st;
+}
+
+/* ===================== 学习目标勾选 ===================== */
+let goalsChecked = 0;
+document.querySelectorAll('[data-goal]').forEach(cb=>{
+  cb.addEventListener('change', ()=>{
+    goalsChecked = [...document.querySelectorAll('[data-goal]')].filter(c=>c.checked).length;
+  });
+});
+
+/* ===================== 课堂小测验 ===================== */
+const quiz = [
+  { q:'1. __题干__', opts:['__选项A__','__选项B__','__选项C__'], correct:1 },
+];
+let quizScore = null;
+const quizPicked = new Array(quiz.length).fill(null);
+const quizArea = document.getElementById('quizArea');
+
+quiz.forEach((item, qi)=>{
+  const block = document.createElement('div');
+  block.style.marginBottom='14px';
+  block.innerHTML = `<p style="font-weight:700;">${item.q}</p>`;
+  const list = document.createElement('div');
+  list.className='option-list';
+  item.opts.forEach((optText, oi)=>{
+    const el = document.createElement('div');
+    el.className='option';
+    el.dataset.qi=qi; el.dataset.oi=oi;
+    el.innerHTML = `<input type="radio" name="quiz${qi}"><span>${optText}</span>`;
+    el.addEventListener('click', ()=>{
+      if(quizScore!==null) return;
+      quizPicked[qi]=oi;
+      list.querySelectorAll('.option').forEach(o=>{
+        o.classList.remove('picked','correct','wrong');
+        o.querySelector('input').checked=false;
+      });
+      el.classList.add('picked');
+      el.querySelector('input').checked=true;
+      // 提交前不标对错：先让学生自己想，提交后统一判分
+    });
+    list.appendChild(el);
+  });
+  block.appendChild(list);
+  quizArea.appendChild(block);
+});
+
+document.getElementById('quizSubmit').addEventListener('click', ()=>{
+  if(quizPicked.some(v=>v===null)){ alert('还有题目没做完哦～'); return; }
+  quizScore = quizPicked.filter((v,i)=>v===quiz[i].correct).length;
+  // 统一判分：标出正确答案与学生选错的项，之后锁定
+  quizArea.querySelectorAll('.option-list').forEach((list, qi)=>{
+    [...list.children].forEach((o, oi)=>{
+      o.classList.remove('picked');
+      if(oi === quiz[qi].correct) o.classList.add('correct');
+      else if(oi === quizPicked[qi]) o.classList.add('wrong');
+    });
+    list.classList.add('locked');
+  });
+  const box = document.getElementById('scoreBox');
+  box.style.display='block';
+  document.getElementById('scoreNum').textContent = `${quizScore} / ${quiz.length}`;
+  document.getElementById('scoreText').textContent = quizScore===quiz.length ? '全对，太棒了！' : '再看看错的那题，想一想为什么。';
+  document.getElementById('quizSubmit').disabled = true;
+});
+
+/* ===================== 徽章 ===================== */
+let stageTried = false;
+const medalDefs = [
+  ['完成热身', ()=> stageTried ],
+  ['参与测验', ()=> quizScore!==null ],
+];
+function renderMedals(){
+  const area = document.getElementById('medalArea');
+  area.innerHTML = '';
+  medalDefs.forEach(([n,fn])=>{
+    const el = document.createElement('div');
+    el.className = 'medal' + (fn() ? ' got' : '');
+    el.textContent = (fn() ? '★ ' : '☆ ') + n;
+    area.appendChild(el);
+  });
+}
+
+/* ===================== 自我评价 ===================== */
+const selfLabels = ['我能说出这节课的核心概念','我能独立完成课堂上的操作','我还能把方法用到别的问题上','我还没完全懂，想请老师再讲一遍'];
+const selfChecked = new Array(selfLabels.length).fill(false);
+const selfList = document.getElementById('selfList');
+selfLabels.forEach((lbl,idx)=>{
+  const row = document.createElement('div');
+  row.className='check-row';
+  row.innerHTML = `<input type="checkbox"><span>${lbl}</span>`;
+  row.querySelector('input').addEventListener('change', e=>{ selfChecked[idx]=e.target.checked; });
+  selfList.appendChild(row);
+});
+
+/* ===================== 各环节：把状态记进这几个变量 ===================== */
+let stageNote = '（未记录）';
+/* 注意：每个互动环节都要留下一个状态变量，供 medalDefs 与 extraReport() 使用 */
+document.getElementById('stageBtn').addEventListener('click', ()=>{
+  stageTried = true;
+  stageNote = '已完成 1 次尝试';
+  const msg = document.getElementById('stageMsg');
+  msg.className = 'msg-line msg-ok';
+  msg.textContent = '👍 已记录，继续探索吧';
+});
+
+/* ===================== 导出学习记录 ===================== */
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('stuName').value.trim() || '无名氏';
+  const cls  = document.getElementById('stuClass').value.trim() || '未填班级';
+  const now  = new Date();
+  const p2 = n => String(n).padStart(2,'0');
+  const timeStr = `${now.getFullYear()}-${p2(now.getMonth()+1)}-${p2(now.getDate())} ${p2(now.getHours())}:${p2(now.getMinutes())}`;
+  const scoreStr = quizScore===null ? '未测验' : quizScore + '分';
+  const lessonTitle = '第N课 __课题__';
+
+  /* 首行是可批量 grep 的汇总行：班级|姓名|课次|得分|提交时间 */
+  let report = `# ${cls}|${name}|${lessonTitle}|${scoreStr}|${timeStr}\n`;
+  report += '======================================\n';
+  report += '《__单元名__ · 第N课 · __课题__》学习记录\n';
+  report += '======================================\n';
+  report += `姓名：${name}　　班级：${cls}\n`;
+  report += `完成时间：${timeStr}\n\n`;
+
+  report += '【学习目标】自我勾选情况\n';
+  report += `  已勾选 ${goalsChecked} / ${document.querySelectorAll('[data-goal]').length} 项\n\n`;
+
+  report += '【热身探索】\n';
+  report += `  ${stageNote}\n\n`;
+
+  report += extraReport();
+
+  report += '【课堂小测验】\n';
+  report += quizScore===null ? '  尚未提交测验\n\n' : `  得分：${quizScore} / ${quiz.length}\n\n`;
+
+  report += '【我的徽章】\n';
+  report += '  ' + medalDefs.map(([n,fn])=>`${fn()?'★':'☆'}${n}`).join('　') + '\n\n';
+
+  report += '【自我评价】\n';
+  selfLabels.forEach((lbl,idx)=>{ report += `  [${selfChecked[idx]?'✔':' '}] ${lbl}\n`; });
+  report += '\n======================================\n';
+  report += '__下一课预告__\n';
+
+  const blob = new Blob([report], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a_tag = document.createElement('a');
+  a_tag.href = url;
+  a_tag.download = `${cls}_${name}_${lessonTitle}_${scoreStr}.txt`;
+  document.body.appendChild(a_tag);
+  a_tag.click();
+  document.body.removeChild(a_tag);
+  URL.revokeObjectURL(url);
+});
+
+/* 每一课在这里补上自己独有的环节记录；没有额外环节就返回空字符串 */
+function extraReport(){ return ''; }
+</script>
+</body>
+</html>

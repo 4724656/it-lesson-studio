@@ -1,0 +1,22 @@
+{
+  "name": "it-lesson-studio",
+  "version": "1.0.0",
+  "description": "中小学信息科技四位一体教学工坊：教案（Word）、课件（Marp PPT/PDF）、导学单（Word）与单文件离线互动作业（HTML）",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "export:lesson": "node scripts/export-lesson.mjs",
+    "check:lesson": "uv run python scripts/check_lesson.py"
+  },
+  "keywords": [
+    "information-technology",
+    "lesson-planning",
+    "marp",
+    "pandoc",
+    "interactive-classwork",
+    "k12-education"
+  ],
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.17.0"
+  }
+}
