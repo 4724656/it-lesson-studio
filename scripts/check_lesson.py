@@ -194,8 +194,8 @@ def check_worksheet(path):
             elif clean_len > 520:
                 warns.append(f"篇幅偏长：当前有效字数 {clean_len} 字，接近单面 A4 临界值（建议 350~500 字）")
         else:
-            # 中高年级/初中 一张 A4 双面铁律
-            print(f"  学段: 中高年级/初中 ({grade} 年级)　篇幅红线: 严格一张 A4 双面 (推荐 750~1100 字)")
+            # 中高年级/初中 单面优先，项目大课上限双面 A4 封顶
+            print(f"  学段: 中高年级/初中 ({grade} 年级)　篇幅规范: 单面优先 (300~500字)，综合项目大课上限双面 A4 (上限 1100 字)")
             if clean_len > 1200:
                 fails.append(f"篇幅超标：{grade} 年级导学单最多一张 A4 双面（2页），有效字数上限 1200 字，当前 {clean_len} 字")
     else:
