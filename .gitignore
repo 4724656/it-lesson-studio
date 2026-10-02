@@ -6,5 +6,9 @@ node_modules/
 ~$*.pptx
 .DS_Store
 Thumbs.db
+
+# 编译产物一律不跟踪（可通过 npm run export:lesson 从 .md 源码 100% 重建）
+*.docx
+*.pptx
 *.pdf
 *_00001.txt
