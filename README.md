@@ -40,16 +40,19 @@
 
 ### 2. 常用操作命令
 ```bash
-# 安装依赖
+# 1. 安装依赖
 npm install
 
-# 🚀 一键编译指定课例的所有 Word、PPTX、PDF 资产（自动触发 Python-docx 中文公文精排）
-npm run export:lesson examples/三年级上/第03课_了解信息处理工具/
+# 2. 🛡️ 阶段成果与学段合规全自动质检（支持直接传入课例目录，一次性全检教案、导学单、课件、作业）
+npm run check:lesson examples/三年级上/第03课_了解信息处理工具/
+npm run check:lesson examples/四年级上/第10课_从数据到编码/
 
-# 🛡️ 运行阶段成果合规与学段难度自动化质检（支持 HTML 作业与导学单 Markdown）
-npm run check:lesson examples/三年级上/第03课_了解信息处理工具/03_了解信息处理工具_课堂作业.html
-npm run check:lesson examples/三年级上/第03课_了解信息处理工具/03_了解信息处理工具_导学案.md
+# 3. 🚀 一键编译指定课例的所有 Word、PPTX、PDF 资产（自动触发 Python-docx 中文公文精排）
+npm run export:lesson examples/三年级上/第03课_了解信息处理工具/
+npm run export:lesson examples/四年级上/第10课_从数据到编码/
 ```
+
+> 💡 **轻量纯净原则**：仓库仅跟踪 `.md` 与 `.html` 源码，绝无二进制膨胀。通过上述 `export:lesson` 命令，任何人均可在本地一键 100% 重建所有排版精美的 `.docx`、`.pptx` 与 `.pdf`。
 
 ---
 
@@ -79,11 +82,13 @@ it-lesson-studio/
 │   ├── export-lesson.mjs       # 🚀 自动化统一导出流水线 (Markdown -> DOCX / PPTX / PDF)
 │   ├── beautify_docx.py        # ✨ Python-docx 中文公文级精排引擎 (首行缩进两格/闭合表格)
 │   └── check_lesson.py         # 🛡️ 成果合规与学段难度静态质检门禁
-├── examples/                   # 🏆 三年级上册第3课全套标杆示范用例
-│   └── 三年级上/第03课_了解信息处理工具/
+├── examples/                   # 🏆 黄金标杆示范用例（纯源码，随时一键导出产物）
+│   ├── 三年级上/第03课_了解信息处理工具/ # 3年级基础篇：生活工具认知、主机箱部件、键鼠模拟
+│   └── 四年级上/第10课_从数据到编码/     # 4年级进阶篇：学号编码、生活编码分类、地铁门仿真
 ├── AGENTS.md                   # 🤖 AI Agent 工作上下文与交接备忘录
 ├── DEVELOPMENT.md             # 📖 开发者架构指南与演进路线图
-└── package.json
+├── package.json & lock
+└── README.md
 ```
 
 ---
