@@ -23,6 +23,6 @@
     "k12-education"
   ],
   "devDependencies": {
-    "@mermaid-js/mermaid-cli": "^11.17.0"
+    "@marp-team/marp-cli": "^4.5.1"
   }
 }
