@@ -28,7 +28,7 @@ AI 在生成或审计任何教学内容时，必须以此四份文档为最高�
    - 核心素养表述（信息意识、计算思维、数字化学习与创新、信息社会责任）、学段目标、模块内容要求与学业质量标准。
 2. 📗 **[references/textbook-zj2026.md](references/textbook-zj2026.md)**：
    - 浙教版 2026 新课标最新教材目录图谱（从之江汇官方教学平台实时抓取校验）。
-   - 覆盖 3~8 年级共 6 个年级、12 个册次、36 个单元、180 个课时（已彻底剔除 9 年级老旧内容）。
+   - 覆盖 3~8 年级共 6 个年级、12 个册次、46 个单元、240 个课时（已彻底剔除 9 年级老旧内容）。
 3. 📙 **[references/worksheet-patterns.md](references/worksheet-patterns.md)**：
    - 课堂导学单题型模式库、篇幅约束与显式留白规范。
 4. 📙 **[references/patterns.md](references/patterns.md)**：

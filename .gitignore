@@ -11,4 +11,5 @@ Thumbs.db
 *.docx
 *.pptx
 *.pdf
-*_00001.txt
+# 学生导出的学习凭单（HTML 一键下载的 班级_姓名_课题_得分.txt）一律不跟踪
+*_*.txt
