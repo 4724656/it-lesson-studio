@@ -7,7 +7,7 @@
 检查项:
   [HTML作业]:
     FAIL: 编码不是 UTF-8 / 缺 charset / 引入外部资源 / data-step 不连续 / 步骤条数量对不上 / 屏数超上限 / 测验题超标
-    WARN: 缺少三件套之一 / 题量与答案数不匹配 / 未声明年级 / 某屏正文超字数 / 缺"还没懂"出口
+    WARN: 缺少三件套之一 / 题量与答案数不匹配 / 未声明年级 / 缺"还没懂"出口
   [导学单Markdown]:
     FAIL: 编码不是 UTF-8 / 低年级(3-4年级)超单面A4字数(>550字) / 高年级超双面A4字数(>1200字) / 缺学生抬头
     WARN: 出现教案学术套话(四维素养等) / 缺互动勾选槽[ ] / 缺通关目标 / 缺好习惯自评 / 超长横线破版
@@ -28,18 +28,16 @@ if hasattr(sys.stdout, "reconfigure"):
         pass
 
 # 年级 -> (屏数上限, 动手环节上限, 测验题数上限, 每屏正文字数上限, 题干字数上限)
+# 屏数档位严格对齐 SKILL.md / README.md / AGENTS.md 铁律：
+# 3~4 年级 ≤4 屏、5~6 年级 ≤5 屏、7~8 年级 ≤6 屏
 GRADE_LIMITS = {
-    3: (5, 1, 2, 60, 30),
-    4: (6, 1, 2, 80, 34),
-    5: (6, 2, 2, 100, 40),
-    6: (7, 2, 3, 120, 44),
-    7: (7, 2, 3, 140, 50),
-    8: (8, 2, 3, 160, 54),
+    3: (4, 1, 2, 60, 30),
+    4: (4, 1, 2, 80, 34),
+    5: (5, 2, 2, 100, 40),
+    6: (5, 2, 3, 120, 44),
+    7: (6, 2, 3, 140, 50),
+    8: (6, 2, 3, 160, 54),
 }
-
-# 动手环节的容器标记（启发式统计，用于提醒，不作为硬性判定）
-ACT_MARKS = ('class="stage"', 'class="sort-list"', 'class="flow"',
-             'class="run-controls"', 'class="chip-bank"')
 
 
 def read(path):
@@ -58,6 +56,14 @@ def count_step_labels(text):
     return len(re.findall(r'"[^"]*"|\'[^\']*\'', m.group(1)))
 
 
+def count_quiz_questions(text):
+    """统计随堂测验题数：解析 `const quiz = [ { q: ... }, ... ]` 数组中的题干数。"""
+    m = re.search(r"const quiz\s*=\s*\[(.*?)\];", text, re.S)
+    if not m:
+        return None
+    return len(re.findall(r"\bq\s*:", m.group(1)))
+
+
 def collect_panels(text):
     steps = []
     for tag in re.findall(r"<section\b[^>]*>", text):
@@ -66,16 +72,6 @@ def collect_panels(text):
             if m:
                 steps.append(int(m.group(1)))
     return steps
-
-
-def plain_len(html):
-    """去掉标签与空白后的正文字数。代码块不计入。"""
-    t = re.sub(r"<script\b.*?</script>", "", html, flags=re.S | re.I)
-    t = re.sub(r"<style\b.*?</style>", "", t, flags=re.S | re.I)
-    t = re.sub(r"<pre\b.*?</pre>", "", t, flags=re.S | re.I)
-    t = re.sub(r"<[^>]+>", "", t)
-    t = re.sub(r"\s+", "", t)
-    return len(t)
 
 
 def check_html(path):
@@ -140,6 +136,9 @@ def check_html(path):
               f"测验<={limits[2]} 每屏<={limits[3]}字")
         if steps and len(steps) > limits[0]:
             fails.append(f"难度超标：{grade} 年级最多 {limits[0]} 屏，当前 {len(steps)} 屏")
+        n_quiz = count_quiz_questions(text)
+        if n_quiz is not None and n_quiz > limits[2]:
+            fails.append(f"测验题超标：{grade} 年级最多 {limits[2]} 题，当前 {n_quiz} 题")
 
     # 农村适配：必须留"还没懂"的出口
     if "还没完全懂" not in text:

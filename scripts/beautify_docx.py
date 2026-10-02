@@ -242,43 +242,18 @@ def beautify_lesson_plan_docx(docx_path):
 
 def beautify_worksheet_docx(docx_path):
     doc = docx.Document(docx_path)
-    
-    # 1. 统计全部有效文字量，精确判断是单面 A4 还是双面 A4
-    full_text = ''.join(p.text for p in doc.paragraphs)
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                full_text += cell.text
-    
-    clean_text = re.sub(r'&[a-zA-Z0-9#]+;|<[^>]+>', ' ', full_text)
-    zh_count = len(re.findall(r'[\u4e00-\u9fa5]', clean_text))
-    en_count = len(re.findall(r'[a-zA-Z0-9]+', clean_text))
-    total_len = zh_count + en_count
-    
-    # 检查是否存在显式分页符
-    has_page_break = any(p._p.xpath('.//w:br[@w:type="page"]') for p in doc.paragraphs)
-    
-    # 低年级或字数 <= 650 且无显式分页符，判定为单页导学单 (严格单面 A4)
-    # 若字数较少，自适应增大段间距、行距与表格内边距，让单页版面充实饱满，避免底部大面积空旷
-    # 若字数 > 650 或双页导学单，则采用紧凑排版，严格防止溢出到第 3 页
-    is_single_page = (total_len <= 650 and not has_page_break)
-    
-    # 2. 导学单页面设置：留足安全裕度，严禁因多出1~2行溢出为双页
+
+    # 导学单页面设置：统一采用上下 14mm (0.55 in)、左右 17mm (0.67 in)，
+    # 留足纵向安全裕度，严禁因多出 1~2 行溢出（单页）或超页（双页）。
+    # 注：此前曾有"单页自适应放大间距"的计划，但两个分支参数完全相同且
+    # 后续排版未引用该判定，已于 2026-10-02 清理为统一边距，避免误导。
     for section in doc.sections:
         section.page_width = Inches(8.27)   # 210 mm
         section.page_height = Inches(11.69) # 297 mm
-        if is_single_page:
-            # 单页导学单：上下 14mm (0.55 in)，左右 17mm (0.67 in)，既美观又有充足纵向安全容错
-            section.top_margin = Inches(0.55)
-            section.bottom_margin = Inches(0.55)
-            section.left_margin = Inches(0.67)
-            section.right_margin = Inches(0.67)
-        else:
-            # 双面导学单：上下 14mm (0.55 in)，左右 17mm (0.67 in)，紧凑防溢出
-            section.top_margin = Inches(0.55)
-            section.bottom_margin = Inches(0.55)
-            section.left_margin = Inches(0.67)
-            section.right_margin = Inches(0.67)
+        section.top_margin = Inches(0.55)
+        section.bottom_margin = Inches(0.55)
+        section.left_margin = Inches(0.67)
+        section.right_margin = Inches(0.67)
 
     for p in doc.paragraphs:
         replace_checkboxes(p)

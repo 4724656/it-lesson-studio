@@ -65,6 +65,16 @@ const targetPath = path.isAbsolute(targetArg) ? targetArg : path.resolve(rootDir
 
 if (!fs.existsSync(targetPath)) {
   console.error(`❌ 目标路径不存在: ${targetPath}`);
+  // 友好提示：列出 examples 下可用的课例目录，避免用户对着不存在的默认路径发呆
+  const examplesDir = path.join(rootDir, 'examples');
+  if (fs.existsSync(examplesDir)) {
+    const lessons = fs.readdirSync(examplesDir, { withFileTypes: true })
+      .filter(e => e.isDirectory())
+      .map(e => `examples/${e.name}`);
+    if (lessons.length) {
+      console.error(`💡 可用的课例目录：\n   - ${lessons.slice(0, 10).join('\n   - ')}${lessons.length > 10 ? `\n   ……等共 ${lessons.length} 个` : ''}`);
+    }
+  }
   process.exit(1);
 }
 
@@ -151,6 +161,9 @@ for (const mdFile of mdFiles) {
     const docxRel = path.relative(rootDir, docxOut);
     console.log(`📝 [Pandoc] 正在导出 Word: ${relPath} ➔ ${docxRel}`);
 
+    // 临时文件状态需要在 try/finally 间共享，声明提到 try 外部
+    let processedMdFile = mdFile;
+    let tempFileCreated = false;
     try {
       // 预处理：扫描 Mermaid 并转为图片，统一存储在 examples/images
       const mermaidRegex = /```mermaid\n([\s\S]*?)```/g;
@@ -174,8 +187,6 @@ for (const mdFile of mdFiles) {
          }
       });
       
-      let processedMdFile = mdFile;
-      let tempFileCreated = false;
       if (newContent !== content) {
           processedMdFile = path.join(dir, `${baseName}.tmp.md`);
           fs.writeFileSync(processedMdFile, newContent, 'utf-8');
@@ -207,12 +218,13 @@ for (const mdFile of mdFiles) {
 
       console.log(`   ✔ 成功生成 Word: ${docxRel}\n`);
       successCount++;
-      
-      if (tempFileCreated) {
-          fs.unlinkSync(processedMdFile);
-      }
     } catch (err) {
       console.error(`   ✖ Pandoc 导出失败: ${err.message}\n`);
+    } finally {
+      // 临时文件无论成功失败都要清理，避免 .tmp.md 残留污染课例目录
+      if (tempFileCreated && fs.existsSync(processedMdFile)) {
+        fs.unlinkSync(processedMdFile);
+      }
     }
   }
 }
