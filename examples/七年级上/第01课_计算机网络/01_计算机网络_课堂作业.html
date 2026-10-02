@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="lesson-grade" content="7">
+<title>第1课 计算机网络 - 随堂互动作业</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #eff6ff;
+  --primary-hover: #1d4ed8;
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background-color: var(--bg);
+  color: var(--text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.header-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.title-area h1 {
+  font-size: 1.25rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-area p { font-size: 0.85rem; color: var(--text-muted); }
+.student-bar { display: flex; gap: 10px; align-items: center; }
+.student-bar input {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  width: 110px;
+}
+.student-bar input:focus { border-color: var(--primary); }
+
+.step-nav {
+  max-width: 900px;
+  margin: 16px auto 0;
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.step-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.step-item.active { background: var(--primary); color: #fff; }
+.step-item.completed { background: #dbeafe; color: var(--primary); }
+
+main {
+  flex: 1;
+  max-width: 900px;
+  width: 100%;
+  margin: 20px auto;
+  padding: 0 16px;
+}
+
+.panel {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  animation: fadeIn 0.3s ease;
+}
+.panel.active { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.panel-title { font-size: 1.25rem; margin-bottom: 12px; color: var(--text-main); }
+.story-box {
+  background: #f1f5f9;
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.95rem;
+  margin-bottom: 18px;
+}
+.hint-bar {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* 关卡一：双列磁吸配对 */
+.pair-wrap { display: flex; gap: 24px; flex-wrap: wrap; }
+.pair-col { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 10px; }
+.pair-col-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+}
+.pair-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.92rem;
+  transition: all 0.2s;
+  position: relative;
+}
+.pair-card:hover { border-color: var(--primary); background: var(--primary-light); }
+.pair-card.picked { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+.pair-card.done { background: var(--success-light); border-color: var(--success); color: #065f46; font-weight: 600; cursor: default; }
+.pair-card.ripple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 2px solid var(--success);
+  animation: ripple 0.6s ease-out;
+}
+@keyframes ripple {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.08); }
+}
+.pair-card.bad { animation: shake 0.35s; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+.pair-feedback {
+  margin-top: 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-height: 22px;
+  text-align: center;
+}
+
+/* 关卡二：设备解剖台 */
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.device-slot {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.device-slot:hover { border-color: var(--primary); }
+.device-slot .dev-icon { font-size: 1.6rem; display: block; }
+.device-slot .dev-name { font-weight: 700; font-size: 0.95rem; margin-top: 2px; }
+.device-slot .dev-tag { font-size: 0.75rem; color: var(--text-muted); }
+.device-slot.lit {
+  background: #fffbeb;
+  border-color: var(--warning);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.2), 0 0 18px rgba(245,158,11,0.35);
+}
+.metaphor-box {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  min-height: 88px;
+  margin-bottom: 16px;
+}
+.metaphor-box h4 { color: #b45309; font-size: 1rem; margin-bottom: 4px; }
+.metaphor-box p { font-size: 0.92rem; }
+.metaphor-box .placeholder { color: var(--text-muted); font-size: 0.9rem; }
+
+.opt-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.opt-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.opt-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.opt-btn.correct { background: var(--success-light); border-color: var(--success); color: #065f46; font-weight: bold; }
+.opt-btn.wrong { background: var(--danger-light); border-color: var(--danger); color: #991b1b; }
+.locked .opt-btn { pointer-events: none; }
+.quiz-note { font-size: 0.86rem; margin-top: 8px; min-height: 20px; font-weight: 600; }
+
+/* 关卡三：数据包旅行 */
+.path-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 14px 10px;
+  margin-bottom: 14px;
+}
+.hop-node {
+  flex: 1;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  transition: all 0.3s;
+}
+.hop-node .hop-icon { font-size: 1.7rem; display: block; }
+.hop-node.on { color: var(--primary); font-weight: 700; transform: translateY(-3px); }
+.hop-node .hop-dot {
+  display: inline-block;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); margin-top: 4px;
+}
+.hop-node.on .hop-dot { background: var(--success); }
+.hop-arrow { color: var(--border); font-size: 1.1rem; }
+.track-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.track-table th, .track-table td {
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+}
+.track-table th { background: #f8fafc; color: var(--text-muted); font-size: 0.84rem; }
+.track-table tr.arrived td { background: var(--success-light); color: #065f46; font-weight: 600; }
+.track-table td.pending { color: var(--text-muted); }
+
+/* 关卡四：拓扑 */
+.topo-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.topo-stage {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.topo-stage svg { max-width: 100%; height: auto; }
+.topo-desc { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; }
+
+/* 测验 */
+.quiz-item {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--border);
+}
+.quiz-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 6px; }
+.quiz-opt {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.quiz-opt:hover { background: #f8fafc; }
+.quiz-opt.selected { border-color: var(--primary); background: var(--primary-light); }
+.quiz-opt.is-correct { background: var(--success-light); border-color: var(--success); }
+.quiz-opt.is-wrong { background: var(--danger-light); border-color: var(--danger); }
+
+/* 按钮与底部栏 */
+.btn-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+button.action-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+button.action-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+button.secondary-btn {
+  background: #e2e8f0;
+  color: var(--text-main);
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 证书奖状 */
+.certificate {
+  display: none;
+  border: 4px double #d97706;
+  background: #fffbeb;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 20px;
+  box-shadow: 0 8px 16px rgba(217, 119, 6, 0.15);
+}
+.cert-title { color: #b45309; font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+.badge-wall {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.badge-chip {
+  padding: 8px 14px;
+  background: #ffffff;
+  border: 1px solid #fde68a;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #92400e;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  opacity: 0.35;
+  transition: all 0.4s;
+}
+.badge-chip.lit { opacity: 1; background: linear-gradient(135deg, #fef3c7, #fde68a); transform: scale(1.05); }
+
+@media (max-width: 640px) {
+  .device-grid { grid-template-columns: repeat(2, 1fr); }
+  .step-item { font-size: 0.72rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-wrap">
+    <div class="title-area">
+      <h1>🌐 第1课 计算机网络 · 课堂作业</h1>
+      <p>浙教版2026信息科技七年级上册 · 设备解剖与数据包旅行</p>
+    </div>
+    <div class="student-bar">
+      <input type="text" id="stuClass" placeholder="班级(如701)">
+      <input type="text" id="stuName" placeholder="学生姓名">
+    </div>
+  </div>
+  <div class="step-nav" id="stepNav">
+    <div class="step-item active" onclick="goStep(0)">1. 时光走廊</div>
+    <div class="step-item" onclick="goStep(1)">2. 设备解剖</div>
+    <div class="step-item" onclick="goStep(2)">3. 数据包旅行</div>
+    <div class="step-item" onclick="goStep(3)">4. 拓扑版图</div>
+    <div class="step-item" onclick="goStep(4)">5. 随堂微测</div>
+  </div>
+</header>
+
+<main>
+  <!-- 关卡一：时光走廊配对 -->
+  <section class="panel active" data-step="0">
+    <div class="panel-tag">⭐ 关卡一 · 时光走廊配对</div>
+    <h2 class="panel-title">把计算机的发展阶段与主要元器件连起来</h2>
+    <div class="story-box">
+      <b>任务情境：</b>从 1946 年的电子管庞然大物，到今天每秒亿亿次运算的超级计算机，计算机一共经历了四代变身。先点左边，再点右边，把它们一一对上号。
+    </div>
+    <div class="hint-bar">👆 操作：先点亮左侧的“发展阶段”，再点亮右侧对应的“主要元器件”。</div>
+
+    <div class="pair-wrap">
+      <div class="pair-col" id="leftCol">
+        <div class="pair-col-title">发展阶段</div>
+        <div class="pair-card" data-side="left" data-key="era4" onclick="pickCard(this)">D. 第四代（现在）</div>
+        <div class="pair-card" data-side="left" data-key="era2" onclick="pickCard(this)">B. 第二代</div>
+        <div class="pair-card" data-side="left" data-key="era1" onclick="pickCard(this)">A. 第一代（1946年起）</div>
+        <div class="pair-card" data-side="left" data-key="era3" onclick="pickCard(this)">C. 第三代</div>
+      </div>
+      <div class="pair-col" id="rightCol">
+        <div class="pair-col-title">主要元器件</div>
+        <div class="pair-card" data-side="right" data-key="trans" onclick="pickCard(this)">② 晶体管</div>
+        <div class="pair-card" data-side="right" data-key="lsi" onclick="pickCard(this)">④ 大规模集成电路</div>
+        <div class="pair-card" data-side="right" data-key="tube" onclick="pickCard(this)">① 电子管</div>
+        <div class="pair-card" data-side="right" data-key="ic" onclick="pickCard(this)">③ 集成电路</div>
+      </div>
+    </div>
+
+    <div class="pair-feedback" id="pairFeedback">已配对 0 / 4</div>
+
+    <div class="btn-row">
+      <button class="action-btn" onclick="nextStep(1)">进入下一关 ➔</button>
+    </div>
+  </section>
+
+  <!-- 关卡二：网络设备解剖台 -->
+  <section class="panel" data-step="1">
+    <div class="panel-tag">⭐ 关卡二 · 网络四件套解剖台</div>
+    <h2 class="panel-title">点亮设备，读懂它的生活比喻</h2>
+    <div class="story-box">
+      <b>解剖情境：</b>网络看不见摸不着，但其实就藏在主机背后和教室机柜里。点击下面的设备，看看它在“城市交通系统”里扮演什么角色。
+    </div>
+
+    <div class="device-grid">
+      <div class="device-slot" data-dev="nic" onclick="lightDevice(this)">
+        <span class="dev-icon">🔌</span>
+        <span class="dev-name">网卡</span>
+        <span class="dev-tag">联网门户</span>
+      </div>
+      <div class="device-slot" data-dev="cable" onclick="lightDevice(this)">
+        <span class="dev-icon">🧵</span>
+        <span class="dev-name">网线</span>
+        <span class="dev-tag">传输通道</span>
+      </div>
+      <div class="device-slot" data-dev="switch" onclick="lightDevice(this)">
+        <span class="dev-icon">🔀</span>
+        <span class="dev-name">交换机</span>
+        <span class="dev-tag">网内投递</span>
+      </div>
+      <div class="device-slot" data-dev="router" onclick="lightDevice(this)">
+        <span class="dev-icon">🧭</span>
+        <span class="dev-name">路由器</span>
+        <span class="dev-tag">跨网选路</span>
+      </div>
+    </div>
+
+    <div class="metaphor-box" id="metaphorBox">
+      <p class="placeholder">👆 点击上方任意一个设备，这里会亮起它的通俗比喻。</p>
+    </div>
+
+    <div class="quiz-item" style="border-bottom:none; padding-bottom:0;">
+      <div class="quiz-title">巩固题：负责“连接不同的网络，并挑选最优路线”的设备是哪一个？</div>
+      <div class="opt-row" id="devQuizOpts">
+        <button class="opt-btn" onclick="checkDevQuiz(this, false)">A. 网卡</button>
+        <button class="opt-btn" onclick="checkDevQuiz(this, false)">B. 交换机</button>
+        <button class="opt-btn" onclick="checkDevQuiz(this, true)">C. 路由器</button>
+        <button class="opt-btn" onclick="checkDevQuiz(this, false)">D. 网线</button>
+      </div>
+      <div class="quiz-note" id="devQuizNote"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary-btn" onclick="prevStep(0)">⬅️ 上一关</button>
+      <button class="action-btn" onclick="nextStep(2)">进入下一关 ➔</button>
+    </div>
+  </section>
+
+  <!-- 关卡三：数据包旅行模拟 -->
+  <section class="panel" data-step="2">
+    <div class="panel-tag">⭐ 关卡三 · 数据包旅行模拟</div>
+    <h2 class="panel-title">发送一个数据包，追踪它走过的每一跳</h2>
+    <div class="story-box">
+      <b>仿真情境：</b>你在浏览器里敲下网址按下回车，数据就被打包成“快递包裹”出发了。点击发送，看它一跳一跳地奔向互联网。
+    </div>
+
+    <div class="path-strip">
+      <div class="hop-node" id="hop0"><span class="hop-icon">💻</span>我的电脑<span class="hop-dot"></span></div>
+      <span class="hop-arrow">➔</span>
+      <div class="hop-node" id="hop1"><span class="hop-icon">🔀</span>交换机<span class="hop-dot"></span></div>
+      <span class="hop-arrow">➔</span>
+      <div class="hop-node" id="hop2"><span class="hop-icon">🧭</span>路由器<span class="hop-dot"></span></div>
+      <span class="hop-arrow">➔</span>
+      <div class="hop-node" id="hop3"><span class="hop-icon">🌍</span>互联网<span class="hop-dot"></span></div>
+    </div>
+
+    <table class="track-table">
+      <thead>
+        <tr><th style="width:70px;">跳数</th><th style="width:120px;">经过的设备</th><th>这一跳的作用</th></tr>
+      </thead>
+      <tbody>
+        <tr id="tr1"><td>第 1 跳</td><td>交换机</td><td class="pending">等待发送…</td></tr>
+        <tr id="tr2"><td>第 2 跳</td><td>路由器</td><td class="pending">等待发送…</td></tr>
+        <tr id="tr3"><td>第 3 跳</td><td>互联网</td><td class="pending">等待发送…</td></tr>
+      </tbody>
+    </table>
+
+    <div style="text-align:center; margin:18px 0 4px;">
+      <button class="action-btn" id="btnSend" onclick="sendPacket()">📦 发送数据包</button>
+    </div>
+    <div class="quiz-note" id="trackNote" style="text-align:center;"></div>
+
+    <div class="btn-row">
+      <button class="secondary-btn" onclick="prevStep(1)">⬅️ 上一关</button>
+      <button class="action-btn" onclick="nextStep(3)">进入下一关 ➔</button>
+    </div>
+  </section>
+
+  <!-- 关卡四：拓扑与版图辨析 -->
+  <section class="panel" data-step="3">
+    <div class="panel-tag">⭐ 关卡四 · 拓扑与版图辨析</div>
+    <h2 class="panel-title">机器是怎么连的？网络又有多大？</h2>
+    <div class="story-box">
+      <b>辨析情境：</b>把电脑连起来的形状叫<strong>拓扑结构</strong>，网络覆盖的范围大小决定了它是局域网还是广域网。
+    </div>
+
+    <div class="topo-btns">
+      <button class="opt-btn" onclick="showTopo(this, 'star')">⭐ 星型</button>
+      <button class="opt-btn" onclick="showTopo(this, 'bus')">🚌 总线型</button>
+      <button class="opt-btn" onclick="showTopo(this, 'ring')">⭕ 环型</button>
+    </div>
+
+    <div class="topo-stage">
+      <div id="topoCanvas">
+        <svg viewBox="0 0 420 150" width="420" height="150" aria-label="点击上方按钮查看拓扑结构">
+          <text x="210" y="82" text-anchor="middle" fill="#94a3b8" font-size="14">👆 点击上方按钮，查看对应的拓扑结构</text>
+        </svg>
+      </div>
+      <div class="topo-desc" id="topoDesc"></div>
+    </div>
+
+    <div class="quiz-item" style="border-bottom:none; padding-bottom:0;">
+      <div class="quiz-title">巩固题：信息科技教室里几十台电脑连成的网络，属于哪一类？</div>
+      <div class="opt-row" id="lanQuizOpts">
+        <button class="opt-btn" onclick="checkLanQuiz(this, false)">A. 广域网 WAN</button>
+        <button class="opt-btn" onclick="checkLanQuiz(this, true)">B. 局域网 LAN</button>
+        <button class="opt-btn" onclick="checkLanQuiz(this, false)">C. 城域网 MAN</button>
+      </div>
+      <div class="quiz-note" id="lanQuizNote"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary-btn" onclick="prevStep(2)">⬅️ 上一关</button>
+      <button class="action-btn" onclick="nextStep(4)">进入测验与评价 ➔</button>
+    </div>
+  </section>
+
+  <!-- 关卡五：随堂测验与自评 -->
+  <section class="panel" data-step="4">
+    <div class="panel-tag">⭐ 关卡五 · 测验与自评</div>
+    <h2 class="panel-title">随堂知识达标与学习凭单</h2>
+
+    <div id="quizContainer">
+      <div class="quiz-item">
+        <div class="quiz-title">1. 下列设备中，负责连接不同网络并挑选转发路线的是？</div>
+        <div class="quiz-opts">
+          <div class="quiz-opt" onclick="pickQuiz(0, 0, this)">A. 交换机</div>
+          <div class="quiz-opt" onclick="pickQuiz(0, 1, this)">B. 路由器</div>
+          <div class="quiz-opt" onclick="pickQuiz(0, 2, this)">C. 网卡</div>
+          <div class="quiz-opt" onclick="pickQuiz(0, 3, this)">D. 网线</div>
+        </div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-title">2. 计算机网络最核心的功能是以下哪一项？</div>
+        <div class="quiz-opts">
+          <div class="quiz-opt" onclick="pickQuiz(1, 0, this)">A. 数据通信</div>
+          <div class="quiz-opt" onclick="pickQuiz(1, 1, this)">B. 打印文件</div>
+          <div class="quiz-opt" onclick="pickQuiz(1, 2, this)">C. 存储电能</div>
+          <div class="quiz-opt" onclick="pickQuiz(1, 3, this)">D. 美化界面</div>
+        </div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-title">3. 关于局域网（LAN）与广域网（WAN），下列说法正确的是？</div>
+        <div class="quiz-opts">
+          <div class="quiz-opt" onclick="pickQuiz(2, 0, this)">A. 互联网是世界上最大的局域网</div>
+          <div class="quiz-opt" onclick="pickQuiz(2, 1, this)">B. 信息科技教室的网络属于广域网</div>
+          <div class="quiz-opt" onclick="pickQuiz(2, 2, this)">C. 局域网范围较小，通常由一个单位组建拥有</div>
+          <div class="quiz-opt" onclick="pickQuiz(2, 3, this)">D. 广域网只能覆盖一栋教学楼</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin: 20px 0; padding: 14px; background: #f8fafc; border-radius: 8px;">
+      <div style="font-weight:bold; margin-bottom:8px;">🎯 学习体验与自我评价：</div>
+      <label style="margin-right:16px; cursor:pointer;"><input type="radio" name="selfEval" value="完全掌握" checked> ⭐⭐⭐ 熟练通关（认设备、走数据、辨拓扑全会）</label><br>
+      <label style="margin-right:16px; cursor:pointer;"><input type="radio" name="selfEval" value="基本掌握"> ⭐⭐ 基本掌握（能认设备，拓扑还要再练）</label><br>
+      <label style="cursor:pointer;"><input type="radio" name="selfEval" value="还没完全懂"> 💡 还没完全懂（需要老师或同伴再帮帮我）</label>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <button class="action-btn" onclick="submitLesson()">🎯 提交测评并生成通关凭单</button>
+    </div>
+
+    <div class="certificate" id="certBox">
+      <div class="cert-title">🎖️ 计算机网络探秘员荣誉证书</div>
+      <p id="certDesc" style="font-size: 1.05rem; margin-bottom: 12px;"></p>
+      <div class="badge-wall medal-wall">
+        <span class="badge-chip medal-chip" id="medal1">🕰️ 时光走廊星 (Medal)</span>
+        <span class="badge-chip medal-chip" id="medal2">🔌 设备解剖星 (Medal)</span>
+        <span class="badge-chip medal-chip" id="medal3">📦 数据领航星 (Medal)</span>
+        <span class="badge-chip medal-chip" id="medal4">🗺️ 拓扑辨析星 (Medal)</span>
+      </div>
+      <div style="margin-top: 16px;">
+        <button class="action-btn" style="background:#b45309;" onclick="exportVoucher()">
+          📥 一键下载学习凭单 (.txt)
+        </button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary-btn" onclick="prevStep(3)">⬅️ 上一关</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const grade = 7;
+const stepLabels = ["1. 时光走廊", "2. 设备解剖", "3. 数据包旅行", "4. 拓扑版图", "5. 随堂微测"];
+let currentStep = 0;
+const totalSteps = stepLabels.length;
+
+function goStep(idx) {
+  if (idx < 0 || idx >= totalSteps) return;
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.step-item').forEach((s, i) => {
+    s.classList.toggle('active', i === idx);
+    if (i < idx) s.classList.add('completed');
+  });
+  currentStep = idx;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function nextStep(idx) { goStep(idx); }
+function prevStep(idx) { goStep(idx); }
+
+/* ---------- 关卡一：双列磁吸配对 ---------- */
+const pairMap = { era1: 'tube', era2: 'trans', era3: 'ic', era4: 'lsi' };
+let pickedLeft = null;
+let matchedCount = 0;
+const pairMsgs = [
+  "🎉 电子管：1946 年第一代计算机正式登场！",
+  "👏 晶体管：体型缩小，可靠性大增！",
+  "✨ 集成电路：元件集成到芯片，走向普及！",
+  "🚀 大规模集成电路：微型化、巨型化、智能化齐飞！"
+];
+
+function pickCard(el) {
+  if (el.classList.contains('done')) return;
+  const side = el.dataset.side;
+  const key = el.dataset.key;
+
+  if (side === 'left') {
+    document.querySelectorAll('#leftCol .pair-card.picked').forEach(c => c.classList.remove('picked'));
+    el.classList.add('picked');
+    pickedLeft = el;
+    return;
+  }
+  if (!pickedLeft) {
+    el.classList.add('bad');
+    setTimeout(() => el.classList.remove('bad'), 400);
+    document.getElementById('pairFeedback').textContent = '👉 请先点亮左边的发展阶段，再点右边的元器件。';
+    document.getElementById('pairFeedback').style.color = '#b45309';
+    return;
+  }
+  if (pairMap[pickedLeft.dataset.key] === key) {
+    pickedLeft.classList.remove('picked');
+    pickedLeft.classList.add('done', 'ripple');
+    el.classList.add('done', 'ripple');
+    matchedCount++;
+    const fb = document.getElementById('pairFeedback');
+    fb.textContent = '已配对 ' + matchedCount + ' / 4　' + pairMsgs[['tube','trans','ic','lsi'].indexOf(key)];
+    fb.style.color = '#065f46';
+    pickedLeft = null;
+    if (matchedCount === 4) {
+      fb.textContent = '🏆 四代变身全部配对成功，时光走廊通关！';
+    }
+  } else {
+    el.classList.add('bad');
+    setTimeout(() => el.classList.remove('bad'), 400);
+    const fb = document.getElementById('pairFeedback');
+    fb.textContent = '🤔 再想想：这一代的主要元器件是什么？';
+    fb.style.color = '#991b1b';
+  }
+}
+
+/* ---------- 关卡二：设备解剖台 ---------- */
+const devInfo = {
+  nic:    { name: '网卡 🔌', tag: '院门与门牌号', desc: '每台电脑联网的门户，自带唯一地址，负责把数据送出门、把数据迎进门。没有它，电脑就是一座孤岛。' },
+  cable:  { name: '网线 🧵', tag: '信息高速公路', desc: '数据奔跑的物理通道，就像城市里的道路，把各家各户真正连通起来。' },
+  switch: { name: '交换机 🔀', tag: '小区路口的交警岗亭', desc: '在同一个网络内部，看清门牌号，把包裹精准投递到目标电脑，不打扰其他机器。' },
+  router: { name: '路由器 🧭', tag: '跨区立交枢纽', desc: '连接不同的网络，负责挑选最优路线，把数据送出小区、奔向互联网。' }
+};
+let devQuizDone = false;
+function lightDevice(el) {
+  document.querySelectorAll('.device-slot').forEach(d => d.classList.remove('lit'));
+  el.classList.add('lit');
+  const info = devInfo[el.dataset.dev];
+  document.getElementById('metaphorBox').innerHTML =
+    '<h4>' + info.name + ' —— ' + info.tag + '</h4><p>' + info.desc + '</p>';
+}
+function checkDevQuiz(btn, isRight) {
+  const box = document.getElementById('devQuizOpts');
+  const note = document.getElementById('devQuizNote');
+  if (box.classList.contains('locked')) return;
+  if (isRight) {
+    btn.classList.add('correct');
+    box.classList.add('locked');
+    devQuizDone = true;
+    note.textContent = '✅ 答对了！交换机管“网内”，路由器管“跨网”，分工不同。';
+    note.style.color = '#065f46';
+  } else {
+    btn.classList.add('wrong');
+    note.textContent = '🤔 再想想：哪一件设备是连接不同网络的“立交枢纽”？';
+    note.style.color = '#991b1b';
+    setTimeout(() => btn.classList.remove('wrong'), 600);
+  }
+}
+
+/* ---------- 关卡三：数据包旅行 ---------- */
+const hopText = [
+  '网内精准投递：交换机看清门牌号，把包裹交给目标方向。',
+  '跨网选路转发：路由器挑好路线，把包裹送出校园。',
+  '抵达目标服务器：互联网把网页数据取回来，旅行完成！'
+];
+let trackDone = false;
+function sendPacket() {
+  document.getElementById('btnSend').disabled = true;
+  document.getElementById('trackNote').textContent = '';
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('tr' + i).classList.remove('arrived');
+    document.getElementById('tr' + i).querySelector('td:last-child').className = 'pending';
+    document.getElementById('tr' + i).querySelector('td:last-child').textContent = '等待发送…';
+    document.getElementById('hop' + i).classList.remove('on');
+  }
+  document.getElementById('hop0').classList.add('on');
+
+  let step = 1;
+  const timer = setInterval(() => {
+    const node = document.getElementById('hop' + step);
+    node.classList.add('on');
+    const row = document.getElementById('tr' + step);
+    row.classList.add('arrived');
+    const cell = row.querySelector('td:last-child');
+    cell.className = '';
+    cell.textContent = hopText[step - 1];
+    step++;
+    if (step > 3) {
+      clearInterval(timer);
+      trackDone = true;
+      document.getElementById('trackNote').textContent = '🎉 三跳全部抵达，请把路径记进导学单第三关！';
+      document.getElementById('trackNote').style.color = '#065f46';
+      document.getElementById('btnSend').disabled = false;
+    }
+  }, 700);
+}
+
+/* ---------- 关卡四：拓扑与版图 ---------- */
+const topoData = {
+  star: {
+    svg: '<svg viewBox="0 0 420 150" width="420" height="150">' +
+      '<line x1="210" y1="75" x2="60" y2="30" stroke="#2563eb" stroke-width="2"/>' +
+      '<line x1="210" y1="75" x2="360" y2="30" stroke="#2563eb" stroke-width="2"/>' +
+      '<line x1="210" y1="75" x2="60" y2="120" stroke="#2563eb" stroke-width="2"/>' +
+      '<line x1="210" y1="75" x2="360" y2="120" stroke="#2563eb" stroke-width="2"/>' +
+      '<circle cx="210" cy="75" r="20" fill="#f59e0b"/>' +
+      '<text x="210" y="80" text-anchor="middle" fill="#fff" font-size="11">交换机</text>' +
+      '<circle cx="60" cy="30" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="60" y="34" text-anchor="middle" font-size="10">PC</text>' +
+      '<circle cx="360" cy="30" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="360" y="34" text-anchor="middle" font-size="10">PC</text>' +
+      '<circle cx="60" cy="120" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="60" y="124" text-anchor="middle" font-size="10">PC</text>' +
+      '<circle cx="360" cy="120" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="360" y="124" text-anchor="middle" font-size="10">PC</text>' +
+      '</svg>',
+    desc: '⭐ <strong>星型</strong>：所有电脑单独连到中心交换机。机房最常见；中心设备一旦故障，全网瘫痪。'
+  },
+  bus: {
+    svg: '<svg viewBox="0 0 420 150" width="420" height="150">' +
+      '<line x1="40" y1="75" x2="380" y2="75" stroke="#f59e0b" stroke-width="5"/>' +
+      '<text x="210" y="65" text-anchor="middle" fill="#b45309" font-size="11">主干总线</text>' +
+      '<line x1="100" y1="75" x2="100" y2="40" stroke="#2563eb" stroke-width="2"/><circle cx="100" cy="32" r="13" fill="#dbeafe" stroke="#2563eb"/><text x="100" y="36" text-anchor="middle" font-size="10">PC</text>' +
+      '<line x1="180" y1="75" x2="180" y2="110" stroke="#2563eb" stroke-width="2"/><circle cx="180" cy="118" r="13" fill="#dbeafe" stroke="#2563eb"/><text x="180" y="122" text-anchor="middle" font-size="10">PC</text>' +
+      '<line x1="260" y1="75" x2="260" y2="40" stroke="#2563eb" stroke-width="2"/><circle cx="260" cy="32" r="13" fill="#dbeafe" stroke="#2563eb"/><text x="260" y="36" text-anchor="middle" font-size="10">PC</text>' +
+      '<line x1="340" y1="75" x2="340" y2="110" stroke="#2563eb" stroke-width="2"/><circle cx="340" cy="118" r="13" fill="#dbeafe" stroke="#2563eb"/><text x="340" y="122" text-anchor="middle" font-size="10">PC</text>' +
+      '</svg>',
+    desc: '🚌 <strong>总线型</strong>：所有电脑共用一条主干道，像一串糖葫芦；主干一旦断裂，全部中断。'
+  },
+  ring: {
+    svg: '<svg viewBox="0 0 420 150" width="420" height="150">' +
+      '<ellipse cx="210" cy="75" rx="150" ry="52" fill="none" stroke="#f59e0b" stroke-width="4"/>' +
+      '<circle cx="60" cy="75" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="60" y="79" text-anchor="middle" font-size="10">PC</text>' +
+      '<circle cx="210" cy="23" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="210" y="27" text-anchor="middle" font-size="10">PC</text>' +
+      '<circle cx="360" cy="75" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="360" y="79" text-anchor="middle" font-size="10">PC</text>' +
+      '<circle cx="210" cy="127" r="14" fill="#dbeafe" stroke="#2563eb"/><text x="210" y="131" text-anchor="middle" font-size="10">PC</text>' +
+      '</svg>',
+    desc: '⭕ <strong>环型</strong>：首尾相接围成一个圈，像接力赛跑道；任一处断开，整圈停摆。'
+  }
+};
+let topoDone = false;
+function showTopo(btn, kind) {
+  document.querySelectorAll('.topo-btns .opt-btn').forEach(b => b.classList.remove('correct'));
+  btn.classList.add('correct');
+  document.getElementById('topoCanvas').innerHTML = topoData[kind].svg;
+  document.getElementById('topoDesc').innerHTML = topoData[kind].desc;
+  topoDone = true;
+}
+let lanQuizDone = false;
+function checkLanQuiz(btn, isRight) {
+  const box = document.getElementById('lanQuizOpts');
+  const note = document.getElementById('lanQuizNote');
+  if (box.classList.contains('locked')) return;
+  if (isRight) {
+    btn.classList.add('correct');
+    box.classList.add('locked');
+    lanQuizDone = true;
+    note.textContent = '✅ 答对了！教室网络覆盖范围小、由一个单位组建，正是局域网 LAN。';
+    note.style.color = '#065f46';
+  } else {
+    btn.classList.add('wrong');
+    note.textContent = '🤔 再想想：教室里的网络覆盖范围有多大？谁在管理它？';
+    note.style.color = '#991b1b';
+    setTimeout(() => btn.classList.remove('wrong'), 600);
+  }
+}
+
+/* ---------- 关卡五：随堂测验 ---------- */
+const quiz = [
+  { q: "下列设备中，负责连接不同网络并挑选转发路线的是？", ans: 1 },
+  { q: "计算机网络最核心的功能是以下哪一项？", ans: 0 },
+  { q: "关于局域网（LAN）与广域网（WAN），下列说法正确的是？", ans: 2 }
+];
+const picks = [null, null, null];
+
+function pickQuiz(qIdx, optIdx, el) {
+  picks[qIdx] = optIdx;
+  const parent = el.parentElement;
+  parent.querySelectorAll('.quiz-opt').forEach(opt => opt.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+let lastScore = 0;
+function submitLesson() {
+  const name = document.getElementById('stuName').value.trim() || '信息科技探索者';
+  const cls = document.getElementById('stuClass').value.trim() || '七年级';
+
+  let correctCount = 0;
+  quiz.forEach((item, idx) => {
+    const parent = document.querySelectorAll('.quiz-opts')[idx];
+    const opts = parent.querySelectorAll('.quiz-opt');
+    opts.forEach((opt, oIdx) => {
+      opt.classList.remove('is-correct', 'is-wrong');
+      if (oIdx === item.ans) opt.classList.add('is-correct');
+      if (picks[idx] === oIdx && oIdx !== item.ans) opt.classList.add('is-wrong');
+    });
+    if (picks[idx] === item.ans) correctCount++;
+  });
+
+  lastScore = Math.round((correctCount / quiz.length) * 100);
+  const selfChoice = document.querySelector('input[name="selfEval"]:checked').value;
+
+  document.getElementById('medal1').classList.toggle('lit', matchedCount === 4);
+  document.getElementById('medal2').classList.toggle('lit', devQuizDone);
+  document.getElementById('medal3').classList.toggle('lit', trackDone);
+  document.getElementById('medal4').classList.toggle('lit', lanQuizDone);
+
+  const cert = document.getElementById('certBox');
+  cert.style.display = 'block';
+  document.getElementById('certDesc').innerHTML =
+    '祝贺 <strong>' + cls + ' 班 ' + name + '</strong> 同学完成本课学习！<br>' +
+    '随堂微测验得分：<strong>' + lastScore + ' 分</strong>（答对 ' + correctCount + '/' + quiz.length + ' 题）<br>' +
+    '自我评价：<strong>' + selfChoice + '</strong>';
+  cert.scrollIntoView({ behavior: 'smooth' });
+}
+
+function exportVoucher() {
+  const name = document.getElementById('stuName').value.trim() || '匿名学生';
+  const cls = document.getElementById('stuClass').value.trim() || '701';
+  const selfChoice = document.querySelector('input[name="selfEval"]:checked').value;
+  const timeStr = new Date().toLocaleString('zh-CN');
+
+  const medals = [];
+  if (matchedCount === 4) medals.push('时光走廊星');
+  if (devQuizDone) medals.push('设备解剖星');
+  if (trackDone) medals.push('数据领航星');
+  if (lanQuizDone) medals.push('拓扑辨析星');
+  if (medals.length === 0) medals.push('暂无点亮徽章');
+
+  const content = '#GRADE7_CLASSWORK_VOUCHER|' + cls + '|' + name + '|' + lastScore + '|' + selfChoice + '|' + timeStr + '\n' +
+    '============================================================\n' +
+    '      浙江省中小学信息科技课堂实训通关凭单 (浙教版2026)\n' +
+    '============================================================\n' +
+    '学生班级: ' + cls + '\n' +
+    '学生姓名: ' + name + '\n' +
+    '实训课程: 第1课 计算机网络 (初中七年级上册 · 第一单元 认识互联网)\n' +
+    '测验得分: ' + lastScore + ' 分\n' +
+    '自我评价: ' + selfChoice + '\n' +
+    '配对完成: ' + matchedCount + ' / 4\n' +
+    '通关项目: ' + medals.join('、') + '\n' +
+    '导出时间: ' + timeStr + '\n' +
+    '验证状态: 课堂互动实操通关验证通过\n' +
+    '============================================================';
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = cls + '_' + name + '_第01课计算机网络_' + lastScore + '分.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+</script>
+</body>
+</html>
