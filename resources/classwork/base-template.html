@@ -247,10 +247,72 @@
   }
   .medal.got{ border-color:var(--grass); background:#EAF4E6; color:var(--grass-deep); font-weight:700; }
 
+  /* ---------- Interactive Match (SVG Connecting Lines) ---------- */
+  .match-box{
+    position:relative; background:#FCFBF7; border:1px solid var(--line);
+    border-radius:var(--radius); padding:24px 20px; margin:16px 0; user-select:none;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .match-svg{
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    pointer-events:none; z-index:2; overflow:visible;
+  }
+  .match-svg path.match-line{
+    fill:none; stroke:var(--river); stroke-width:3; stroke-linecap:round;
+    transition:stroke .2s, stroke-width .2s; pointer-events:stroke; cursor:pointer;
+  }
+  .match-svg path.match-line:hover{ stroke:var(--danger); stroke-width:4.5; }
+  .match-svg path.match-line.drag{
+    fill:none; stroke:var(--sun); stroke-width:3; stroke-dasharray:6,4;
+    pointer-events:none;
+  }
+  .match-svg path.match-line.correct{ stroke:var(--grass-deep); stroke-width:3.5; }
+  .match-svg path.match-line.wrong{ stroke:var(--danger); stroke-width:3.5; stroke-dasharray:6,4; }
+
+  .match-cols{
+    display:grid; grid-template-columns:1fr 1fr; gap:48px; position:relative; z-index:3;
+  }
+  .match-col{ display:flex; flex-direction:column; gap:14px; }
+  .match-card{
+    background:#FFFFFF; border:1.5px solid var(--line); border-radius:10px;
+    padding:10px 14px; display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; transition:border-color .15s, background .15s, transform .15s;
+    min-height:50px; box-shadow:0 2px 4px rgba(34,51,59,0.04);
+  }
+  .match-card:hover{ border-color:var(--river); background:#F4F8FA; }
+  .match-card.active{
+    border-color:var(--sun-deep); background:#FCF6EA;
+    box-shadow:0 0 0 2px rgba(227,160,56,0.25);
+  }
+  .match-card.connected{ border-color:var(--river); background:#F0F6F9; }
+  .match-card.correct{ border-color:var(--grass-deep); background:#EAF4E6; }
+  .match-card.wrong{ border-color:var(--danger); background:#FBEFEF; animation:shake .3s ease; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+
+  .match-card .card-text{ font-size:14px; font-weight:600; color:var(--ink); flex:1; }
+  .match-dot{
+    width:14px; height:14px; border-radius:50%; background:#FFF; border:2.5px solid var(--ink-soft);
+    flex-shrink:0; transition:all .2s; box-sizing:border-box;
+  }
+  .match-card:hover .match-dot{ border-color:var(--river); transform:scale(1.15); }
+  .match-card.active .match-dot{ background:var(--sun); border-color:var(--sun-deep); transform:scale(1.25); }
+  .match-card.connected .match-dot{ background:var(--river); border-color:var(--river-deep); }
+  .match-card.correct .match-dot{ background:var(--grass); border-color:var(--grass-deep); }
+  .match-card.wrong .match-dot{ background:var(--danger); border-color:#992222; }
+
+  .match-col.left .match-card{ flex-direction:row; }
+  .match-col.left .match-dot{ margin-left:12px; }
+  .match-col.right .match-card{ flex-direction:row-reverse; }
+  .match-col.right .match-dot{ margin-right:12px; }
+
   @media (max-width:560px){
     h2.panel-title{ font-size:19px; }
     .panel{ padding:20px 16px 18px; }
     .dot .label{ display:none; }
+    .match-cols{ gap:20px; }
+    .match-card{ padding:8px 10px; min-height:42px; }
+    .match-card .card-text{ font-size:12px; }
+    .match-dot{ width:12px; height:12px; }
   }
 </style>
 </head>
@@ -305,12 +367,25 @@
     </div>
   </section>
 
-  <!-- ===== 中间步骤：按需复制此段，记得同步 stepLabels ===== -->
+  <!-- ===== 步骤 2：核心探究（交互式连线题组件范例） ===== -->
   <section class="panel" data-step="2">
-    <div class="eyebrow">第 3 步</div>
-    <h2 class="panel-title">__环节标题__</h2>
-    <p>__正文__</p>
-    <div class="think">__思考问题__</div>
+    <div class="eyebrow">第 3 步 · 核心探究</div>
+    <h2 class="panel-title">🧩 工具与功能连线配对</h2>
+    <p>点击或拖拽左侧的工具卡片，连线至右侧对应的功能说明上吧！（支持<b>点击连接</b>与<b>拖拽划线</b>两种方式，点击已连线条可取消）：</p>
+
+    <div class="match-box" id="matchGame">
+      <svg class="match-svg" id="matchSvg"></svg>
+      <div class="match-cols">
+        <div class="match-col left" id="matchLeft"></div>
+        <div class="match-col right" id="matchRight"></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="matchCheckBtn">验证连线</button>
+      <button class="btn-ghost" id="matchResetBtn">重置连线</button>
+    </div>
+    <div class="feedback" id="matchFeedback" style="text-align:center;"></div>
 
     <div class="nav-row">
       <button class="btn-secondary" data-prev>上一步</button>
@@ -359,7 +434,7 @@
 
 <script>
 /* ===================== 通用：步骤导航 ===================== */
-const stepLabels = ["探索","目标","__环节__","总结"];
+const stepLabels = ["探索","目标","连线探究","总结"];
 const totalSteps = stepLabels.length;
 let currentStep = 0;
 const stepperEl = document.getElementById('stepper');
@@ -388,6 +463,9 @@ function goToStep(i){
   doneSteps.add(currentStep);
   currentStep = i;
   renderStepper();
+  if(i===2 && typeof matchCtrl !== 'undefined'){
+    requestAnimationFrame(() => matchCtrl.redraw());
+  }
   if(i===totalSteps-1) renderMedals();
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -436,6 +514,296 @@ function makeOptions(listEl, fbEl, opts, rightIdx, onPick, wrongHint){
     listEl.appendChild(el);
   });
   return st;
+}
+
+/* ===================== 通用：SVG 交互式连线题组件 ===================== */
+/**
+ * SVG 交互连线题组件。支持点击配对、拖拽划线、触屏支持、窗口自适应重绘与即时判分。
+ * @param {Object} options 配置对象
+ * @param {HTMLElement} options.container 外部相对定位容器
+ * @param {SVGElement} options.svg SVG 元素
+ * @param {HTMLElement} options.leftCol 左列 DOM 容器
+ * @param {HTMLElement} options.rightCol 右列 DOM 容器
+ * @param {Array} options.leftData 左侧数据 [{id, text, matchId}]
+ * @param {Array} options.rightData 右侧数据 [{id, text}]
+ * @param {Function} [options.onChange] 连线变动时的回调
+ * @returns {Object} 控制器 API: { getConnections(), check(), reset(), redraw() }
+ */
+function initMatchGame({ container, svg, leftCol, rightCol, leftData, rightData, onChange }){
+  const connections = new Map(); // leftId -> rightId
+  let activeLeft = null;
+  let activeRight = null;
+  let dragging = false;
+  let dragStartSide = null;
+  let dragStartCardId = null;
+  let dragStartDot = null;
+  let dragPath = null;
+  let locked = false;
+
+  // 1. 渲染卡片
+  function renderCards(){
+    leftCol.innerHTML = '';
+    rightCol.innerHTML = '';
+
+    leftData.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'match-card';
+      card.dataset.id = item.id;
+      card.dataset.side = 'left';
+      card.innerHTML = `<span class="card-text">${item.text}</span><div class="match-dot"></div>`;
+      setupEvents(card, 'left');
+      leftCol.appendChild(card);
+    });
+
+    rightData.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'match-card';
+      card.dataset.id = item.id;
+      card.dataset.side = 'right';
+      card.innerHTML = `<span class="card-text">${item.text}</span><div class="match-dot"></div>`;
+      setupEvents(card, 'right');
+      rightCol.appendChild(card);
+    });
+  }
+
+  // 2. 坐标计算：获取圆点相对于容器的坐标中心
+  function getDotCenter(dot){
+    const b = container.getBoundingClientRect();
+    const r = dot.getBoundingClientRect();
+    return {
+      x: r.left + r.width / 2 - b.left,
+      y: r.top + r.height / 2 - b.top
+    };
+  }
+
+  // 3. 平滑贝塞尔曲线生成
+  function makeBezier(p1, p2){
+    const dx = Math.abs(p2.x - p1.x);
+    const cp = Math.max(30, dx * 0.45);
+    return `M ${p1.x} ${p1.y} C ${p1.x + cp} ${p1.y}, ${p2.x - cp} ${p2.y}, ${p2.x} ${p2.y}`;
+  }
+
+  // 4. 重绘所有线条
+  function redraw(){
+    svg.querySelectorAll('.match-line:not(.drag)').forEach(p => p.remove());
+    if(!container.offsetWidth || !container.offsetHeight) return;
+
+    connections.forEach((rId, lId) => {
+      const lCard = leftCol.querySelector(`[data-id="${lId}"]`);
+      const rCard = rightCol.querySelector(`[data-id="${rId}"]`);
+      if(!lCard || !rCard) return;
+
+      const p1 = getDotCenter(lCard.querySelector('.match-dot'));
+      const p2 = getDotCenter(rCard.querySelector('.match-dot'));
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('class', 'match-line');
+      path.setAttribute('d', makeBezier(p1, p2));
+      path.dataset.leftId = lId;
+      path.dataset.rightId = rId;
+
+      // 点击线条取消连接
+      path.addEventListener('click', (e) => {
+        if(locked) return;
+        e.stopPropagation();
+        removeConnection(lId);
+      });
+
+      svg.appendChild(path);
+
+      lCard.classList.add('connected');
+      rCard.classList.add('connected');
+    });
+
+    // 清理未连线卡片状态
+    leftCol.querySelectorAll('.match-card').forEach(c => {
+      if(!connections.has(c.dataset.id)){
+        c.classList.remove('connected', 'correct', 'wrong');
+      }
+    });
+    rightCol.querySelectorAll('.match-card').forEach(c => {
+      const isConn = [...connections.values()].includes(c.dataset.id);
+      if(!isConn){
+        c.classList.remove('connected', 'correct', 'wrong');
+      }
+    });
+  }
+
+  // 5. 连接与断开
+  function addConnection(lId, rId){
+    for(let [l, r] of connections.entries()){
+      if(r === rId) connections.delete(l);
+    }
+    connections.set(lId, rId);
+    activeLeft = null;
+    activeRight = null;
+    updateActiveUI();
+    redraw();
+    if(onChange) onChange(getConnections());
+  }
+
+  function removeConnection(lId){
+    connections.delete(lId);
+    redraw();
+    if(onChange) onChange(getConnections());
+  }
+
+  function updateActiveUI(){
+    leftCol.querySelectorAll('.match-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.id === activeLeft);
+    });
+    rightCol.querySelectorAll('.match-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.id === activeRight);
+    });
+  }
+
+  // 6. 事件绑定：点击模式 + 拖拽划线模式
+  function setupEvents(card, side){
+    const cardId = card.dataset.id;
+    const dot = card.querySelector('.match-dot');
+
+    // A. 点击连线
+    card.addEventListener('click', () => {
+      if(locked) return;
+      if(side === 'left'){
+        if(activeLeft === cardId){
+          activeLeft = null;
+        }else{
+          activeLeft = cardId;
+          if(activeRight){
+            addConnection(activeLeft, activeRight);
+            return;
+          }
+        }
+      }else{
+        if(activeRight === cardId){
+          activeRight = null;
+        }else{
+          activeRight = cardId;
+          if(activeLeft){
+            addConnection(activeLeft, activeRight);
+            return;
+          }
+        }
+      }
+      updateActiveUI();
+    });
+
+    // B. 拖拽划线（PointerEvents 兼容鼠标与触控）
+    dot.addEventListener('pointerdown', (e) => {
+      if(locked) return;
+      e.stopPropagation();
+      dragging = true;
+      dragStartSide = side;
+      dragStartCardId = cardId;
+      dragStartDot = dot;
+      try { dot.setPointerCapture(e.pointerId); } catch(_) {}
+
+      const p1 = getDotCenter(dot);
+      dragPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      dragPath.setAttribute('class', 'match-line drag');
+      dragPath.setAttribute('d', `M ${p1.x} ${p1.y} L ${p1.x} ${p1.y}`);
+      svg.appendChild(dragPath);
+    });
+
+    dot.addEventListener('pointermove', (e) => {
+      if(!dragging || !dragPath) return;
+      const b = container.getBoundingClientRect();
+      const p1 = getDotCenter(dragStartDot);
+      const currentPos = {
+        x: e.clientX - b.left,
+        y: e.clientY - b.top
+      };
+      const pStart = dragStartSide === 'left' ? p1 : currentPos;
+      const pEnd = dragStartSide === 'left' ? currentPos : p1;
+      dragPath.setAttribute('d', makeBezier(pStart, pEnd));
+    });
+
+    dot.addEventListener('pointerup', (e) => {
+      if(!dragging) return;
+      dragging = false;
+      if(dragPath){ dragPath.remove(); dragPath = null; }
+      try { dot.releasePointerCapture(e.pointerId); } catch(_) {}
+
+      const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+      if(!targetEl) return;
+      const targetCard = targetEl.closest('.match-card');
+      if(!targetCard) return;
+
+      const targetSide = targetCard.dataset.side;
+      const targetId = targetCard.dataset.id;
+
+      if(dragStartSide !== targetSide){
+        const lId = dragStartSide === 'left' ? dragStartCardId : targetId;
+        const rId = dragStartSide === 'left' ? targetId : dragStartCardId;
+        addConnection(lId, rId);
+      }
+    });
+  }
+
+  // 自适应重绘监听
+  window.addEventListener('resize', () => {
+    if(connections.size > 0) redraw();
+  });
+  if(window.ResizeObserver){
+    new ResizeObserver(() => {
+      if(connections.size > 0) redraw();
+    }).observe(container);
+  }
+
+  // 初始化卡片渲染
+  renderCards();
+
+  function getConnections(){
+    const list = [];
+    connections.forEach((rightId, leftId) => list.push({ leftId, rightId }));
+    return list;
+  }
+
+  return {
+    getConnections,
+    check(){
+      let score = 0;
+      const total = leftData.length;
+      connections.forEach((rId, lId) => {
+        const item = leftData.find(d => d.id === lId);
+        const isRight = item && item.matchId === rId;
+        if(isRight) score++;
+
+        const path = svg.querySelector(`path[data-left-id="${lId}"]`);
+        const lCard = leftCol.querySelector(`[data-id="${lId}"]`);
+        const rCard = rightCol.querySelector(`[data-id="${rId}"]`);
+
+        if(path){
+          path.classList.remove('correct', 'wrong');
+          path.classList.add(isRight ? 'correct' : 'wrong');
+        }
+        if(lCard){
+          lCard.classList.remove('correct', 'wrong');
+          lCard.classList.add(isRight ? 'correct' : 'wrong');
+        }
+        if(rCard){
+          rCard.classList.remove('correct', 'wrong');
+          rCard.classList.add(isRight ? 'correct' : 'wrong');
+        }
+      });
+      const allCorrect = (score === total && connections.size === total);
+      if(allCorrect) locked = true;
+      return { score, total, connectedCount: connections.size, allCorrect };
+    },
+    reset(){
+      locked = false;
+      connections.clear();
+      activeLeft = null;
+      activeRight = null;
+      updateActiveUI();
+      svg.querySelectorAll('.match-line').forEach(p => p.remove());
+      leftCol.querySelectorAll('.match-card').forEach(c => c.className = 'match-card');
+      rightCol.querySelectorAll('.match-card').forEach(c => c.className = 'match-card');
+      if(onChange) onChange(getConnections());
+    },
+    redraw
+  };
 }
 
 /* ===================== 学习目标勾选 ===================== */
@@ -503,8 +871,11 @@ document.getElementById('quizSubmit').addEventListener('click', ()=>{
 
 /* ===================== 徽章 ===================== */
 let stageTried = false;
+let matchCompleted = false;
+let matchScore = null;
 const medalDefs = [
   ['完成热身', ()=> stageTried ],
+  ['精准连线', ()=> matchCompleted ],
   ['参与测验', ()=> quizScore!==null ],
 ];
 function renderMedals(){
@@ -539,6 +910,66 @@ document.getElementById('stageBtn').addEventListener('click', ()=>{
   const msg = document.getElementById('stageMsg');
   msg.className = 'msg-line msg-ok';
   msg.textContent = '👍 已记录，继续探索吧';
+});
+
+/* ---------- 步骤 2 连线题实例 ---------- */
+const matchData = {
+  left: [
+    { id: 'cpu', text: '🧠 算力芯片 (CPU)', matchId: 'calc' },
+    { id: 'ram', text: '⚡ 运行内存 (RAM)', matchId: 'temp' },
+    { id: 'disk', text: '📦 存储硬盘 (SSD)', matchId: 'store' },
+    { id: 'bus', text: '🚌 系统总线 (BUS)', matchId: 'bridge' }
+  ],
+  right: [
+    { id: 'calc', text: '计算机大脑，高速算术与逻辑控制' },
+    { id: 'temp', text: '临时工作台，断电后数据自动清空' },
+    { id: 'store', text: '海量仓库，永久持久化保存文件与程序' },
+    { id: 'bridge', text: '数据传输主干道，连接各部件协同工作' }
+  ]
+};
+
+const matchCtrl = initMatchGame({
+  container: document.getElementById('matchGame'),
+  svg: document.getElementById('matchSvg'),
+  leftCol: document.getElementById('matchLeft'),
+  rightCol: document.getElementById('matchRight'),
+  leftData: matchData.left,
+  rightData: matchData.right,
+  onChange: (conns) => {
+    const fb = document.getElementById('matchFeedback');
+    fb.className = 'feedback';
+    fb.textContent = `已连接 ${conns.length} / ${matchData.left.length} 组卡片`;
+  }
+});
+
+document.getElementById('matchCheckBtn').addEventListener('click', () => {
+  const result = matchCtrl.check();
+  const fb = document.getElementById('matchFeedback');
+  matchScore = result.score;
+  if(result.connectedCount < result.total){
+    fb.className = 'feedback bad';
+    fb.textContent = `还有未连接的卡片哦，当前完成 ${result.connectedCount} / ${result.total}`;
+    return;
+  }
+  if(result.allCorrect){
+    matchCompleted = true;
+    fb.className = 'feedback ok';
+    fb.textContent = `🎉 恭喜全部连线正确！(${result.score} / ${result.total} 满分配对)`;
+    document.getElementById('matchCheckBtn').disabled = true;
+  } else {
+    fb.className = 'feedback bad';
+    fb.textContent = `配对得分：${result.score} / ${result.total}。标红虚线为错误项，点击线条或卡片可断开重连。`;
+  }
+});
+
+document.getElementById('matchResetBtn').addEventListener('click', () => {
+  matchCtrl.reset();
+  matchCompleted = false;
+  matchScore = null;
+  document.getElementById('matchCheckBtn').disabled = false;
+  const fb = document.getElementById('matchFeedback');
+  fb.className = 'feedback';
+  fb.textContent = '连线已重置，请重新选择配对。';
 });
 
 /* ===================== 导出学习记录 ===================== */
@@ -590,7 +1021,13 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
 });
 
 /* 每一课在这里补上自己独有的环节记录；没有额外环节就返回空字符串 */
-function extraReport(){ return ''; }
+function extraReport(){
+  let s = '';
+  if(matchScore !== null){
+    s += `【连线探究】配对得分：${matchScore} / 4 组\n\n`;
+  }
+  return s;
+}
 </script>
 </body>
 </html>

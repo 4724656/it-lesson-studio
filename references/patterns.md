@@ -70,6 +70,25 @@ function getDragAfterElement(container, y){
 - 多选：收集所有选中项，与答案集合比对；**全对才给分**，部分正确给提示但不给分。
 - 提交后禁用按钮，把 `quizScore` 写进导出报告。
 
+### 9. 贝塞尔曲线连线配对（概念/功能对应）
+- **适用场景**：硬件与功能、术语与比喻、编码与现实物体的两列一对一或多对多配对。
+- **架构设计**：
+  - 左列卡片 `.match-card[data-side="left"]`，右列卡片 `.match-card[data-side="right"]`，中间覆盖自适应绝对定位 SVG 画布 `.match-svg`。
+  - 每个卡片内嵌 `.match-dot` 锚点作为连线起点/终点坐标拾取源。
+- **双模交互（触控与键鼠全兼容）**：
+  1. **拖拽划线模式**：在 `.match-dot` 上触发 `pointerdown`，使用 `setPointerCapture` 锁定触控点，`pointermove` 实时动态绘制三次贝塞尔曲线：
+     ```js
+     const cp = Math.max(30, Math.abs(p2.x - p1.x) * 0.45);
+     const d = `M ${p1.x} ${p1.y} C ${p1.x + cp} ${p1.y}, ${p2.x - cp} ${p2.y}, ${p2.x} ${p2.y}`;
+     ```
+     在目标卡片/锚点松开 `pointerup` 自动吸附完成连线。
+  2. **点选接力模式（低学段触控极佳）**：点击左侧任一卡片高亮处于激活态（`.active`），再点击右侧任一卡片立即生成平滑连线；反向点选亦可。
+- **状态维护与交互容错**：
+  - **一对一互斥约束**：同一个左端点或右端点已有连线时，连新线自动替换旧线，杜绝混乱交织。
+  - **点击断开连线**：SVG `<path>` 开启 `pointer-events: stroke` 并赋予隐形击中热区，点击连线直接断开；点击已配对卡片亦可取消。
+  - **动态自适应重绘**：通过 `ResizeObserver` 监听容器尺寸变化；在多步骤 Tab 切换时（`display: none` 切换为激活），在进入该屏的 `goToStep(i)` 中显式调用 `requestAnimationFrame(() => matchCtrl.redraw())`，消除由于初始隐藏宽高为 0 导致的坐标偏移。
+  - **先连后判**：连线过程中只显示常规连接线（蓝/灰），点击“验证连线”后统一标定：正确项为绿色实线，错误项为红白脉冲虚线，避免学生无脑试探。
+
 ## 三、数据驱动约定
 
 - 一切可变内容放数组顶部：`stepLabels`、`quiz`、`medalDefs`、`selfLabels`、`correctSteps`、`answers`。
