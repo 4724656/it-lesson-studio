@@ -156,18 +156,35 @@ node scripts/export-lesson.mjs examples/三年级上/第02课_了解智能工具
 
 ---
 
-## 8. 当前标杆课例库状态 (已完成 5 套全链路黄金标杆)
+## 8. 当前标杆课例库状态 (3 套全链路黄金标杆，覆盖三学段)
 
-运行全库门禁检测可验证全部 5 套标杆课例健康度（**100% 通过 0 FAIL / 0 WARN**）：
+运行全库门禁检测可验证全部 3 套标杆课例健康度（**100% 通过 0 FAIL / 0 WARN**）：
 ```bash
 uv run python scripts/check_lesson.py examples/
 ```
 
 每课目录下均有 `lesson.yaml`（机器可读 Manifest：课次身份 / 四件套映射 / 统一任务名 / 版式声明），
-`check_lesson.py` 自动校验四件套标题一致、任务名同源、课次与 `references/textbook-zj2026.md` 图谱对齐。
+`check_lesson.py` 自动校验四件套标题一致、任务名同源、课次与 `references/textbook-zj2026.md` 图谱对齐（含 `textbook_id` 机器核对）。
 
-- 📗 **三年级标杆**：`examples/三年级上/第02课_了解智能工具/`（课次身份已按教材原件核验修正；A4单页导学单、4页教案、16:9课件、4屏微解剖HTML）
-- 📗 **四年级标杆**：`examples/四年级上/第10课_从数据到编码/`（A4单页导学单、4页教案、16:9课件、4屏车门破译HTML）
-- 📗 **五年级标杆**：`examples/五年级下/第04课_生活中的控制系统/`（A4单页导学单、4页教案、16:9课件、5屏控制系统HTML）
-- 📗 **六年级标杆**：`examples/六年级上/第05课_算法的执行/`（A4单页导学单、4页教案、16:9课件、4屏代码排雷与状态变量HTML）
-- 📗 **八年级标杆**：`examples/八年级上/第12课_数据解密/`（凯撒密码；A4单页导学单、4页教案、16:9课件、6屏变量追踪与逻辑调试HTML）
+- 📗 **小学低年级标杆（三年级）**：`examples/三年级上/第02课_了解智能工具/`（A4单页导学单、4页教案、16:9课件、4屏微解剖HTML）
+- 📗 **小学高年级标杆（六年级）**：`examples/六年级上/第05课_算法的执行/`（A4单页导学单、4页教案、16:9课件、4屏代码排雷与状态变量HTML）
+- 📗 **初中标杆（八年级）**：`examples/八年级上/第12课_数据解密/`（凯撒密码；A4单页导学单、4页教案、16:9课件含 `.task-route` 人化组件、6屏变量追踪与逻辑调试HTML）
+
+---
+
+## 9. 教师实际备课产物的输出约定
+
+`examples/` 是**只读参考库**，只存放三套黄金标杆的 Markdown 源文件。
+
+教师实际备课产物（DOCX 教案、DOCX 导学单、PPTX/PDF 课件、HTML 作业）有两种推荐放法：
+
+```bash
+# 方式 A：产物输出到 output/（repo 内，已 gitignore）
+node scripts/export-lesson.mjs <备课目录> --output-dir output/
+
+# 方式 B：直接在 repo 外的任意目录工作（推荐）
+node scripts/export-lesson.mjs ~/Desktop/七年级上/第03课_网页设计/
+```
+
+`output/` 和 `workspace/` 均已加入 `.gitignore`，产物不会被误提交。
+CI 的 `export-pipeline` Job 将产物上传至 GitHub Actions Artifacts（保留 7 天），可在 Actions 页面直接下载。
