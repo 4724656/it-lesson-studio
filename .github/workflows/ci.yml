@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm test
@@ -41,13 +41,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - uses: astral-sh/setup-uv@v5
       - run: npm ci
       - run: uv sync --frozen
-      - name: 安装 LibreOffice（DOCX 真实页数校验需要）
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq libreoffice-impress libreoffice-writer > /dev/null
+      - name: 安装 Pandoc 与 LibreOffice（DOCX 真实页数校验需要）
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq pandoc libreoffice-impress libreoffice-writer > /dev/null
       - name: 全课例隔离导出 + 真实版式校验
         run: |
           set -euo pipefail
