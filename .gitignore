@@ -1,12 +1,13 @@
 node_modules/
 .vscode/
-.workbuddy/
 *.tmp.md
 *.tmp.*
 ~$*.docx
 ~$*.pptx
 .DS_Store
 Thumbs.db
+__pycache__/
+.venv/
 
 # 编译产物一律不跟踪（可通过 npm run export:lesson 从 .md 源码 100% 重建）
 *.docx
