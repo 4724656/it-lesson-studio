@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  python-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - name: 全库门禁（0 FAIL / 0 WARN）
+        run: |
+          set -o pipefail
+          OUT=$(uv run python scripts/check_lesson.py examples/ 2>&1)
+          STATUS=$?
+          echo "$OUT"
+          test "$STATUS" -eq 0
+          ! printf '%s\n' "$OUT" | grep -Fq '[FAIL]'
+          printf '%s\n' "$OUT" | tail -n 1 | grep -Fqx '合计: 0 个错误, 0 个提醒'
+
+  export-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: astral-sh/setup-uv@v5
+      - run: npm ci
+      - run: uv sync --frozen
+      - name: 安装 LibreOffice（DOCX 真实页数校验需要）
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libreoffice-impress libreoffice-writer > /dev/null
+      - name: 全课例隔离导出 + 真实版式校验
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          while IFS= read -r -d '' manifest; do
+            d=$(dirname "$manifest")
+            echo "=== 导出 $d"
+            node scripts/export-lesson.mjs "$d" --output-dir="$GITHUB_WORKSPACE/dist" --verify-layout
+          done < <(find examples -name lesson.yaml -print0 | sort -z)
+      - name: 产物数量与格式断言
+        run: |
+          uv run python - <<'PY'
+          import os
+          from pathlib import Path
+          dist = Path(os.environ['GITHUB_WORKSPACE']) / 'dist'
+          manifests = list(Path('examples').rglob('lesson.yaml'))
+          docx = list(dist.rglob('*.docx'))
+          pptx = list(dist.rglob('*.pptx'))
+          pdf = list(dist.rglob('*.pdf'))
+          expected = len(manifests)
+          print(f'lessons={expected} docx={len(docx)} pptx={len(pptx)} pdf={len(pdf)}')
+          assert expected > 0, '未找到 lesson.yaml'
+          assert len(docx) == expected * 2, 'DOCX 数量不匹配'
+          assert len(pptx) == expected, 'PPTX 数量不匹配'
+          assert len(pdf) == expected, 'PDF 数量不匹配'
+          print('产物断言通过')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lesson-artifacts
+          path: dist/
+          if-no-files-found: warn
+          retention-days: 7
