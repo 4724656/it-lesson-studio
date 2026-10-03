@@ -206,6 +206,25 @@ def beautify_lesson_plan_docx(docx_path):
         '''
         tblPr.append(parse_xml(cell_mar_xml))
 
+        # 教学过程表 (Table 1) 4 列黄金宽度比保护：彻底防止首列“教学环节”折行双排
+        # 教学环节 1650 dxa (~29mm), 教师活动 4100 dxa (~72mm), 学生活动 2350 dxa (~41mm), 设计意图 1312 dxa (~23mm)
+        if t_idx == 1 and len(table.columns) == 4:
+            col_widths = [1650, 4100, 2350, 1312]
+            tblGrid = table._tbl.xpath('w:tblGrid')
+            if tblGrid:
+                table._tbl.remove(tblGrid[0])
+            grid_xml = f'<w:tblGrid {nsdecls("w")}>'
+            for w in col_widths:
+                grid_xml += f'<w:gridCol w:w="{w}"/>'
+            grid_xml += '</w:tblGrid>'
+            table._tbl.insert(0, parse_xml(grid_xml))
+            for row in table.rows:
+                for c_idx, w in enumerate(col_widths):
+                    tcPr = row.cells[c_idx]._tc.get_or_add_tcPr()
+                    for old_w in tcPr.xpath('w:tcW'):
+                        tcPr.remove(old_w)
+                    tcPr.append(parse_xml(f'<w:tcW {nsdecls("w")} w:w="{w}" w:type="dxa"/>'))
+
         # 给所有单元格设定字体与背景
         for r_idx, row in enumerate(table.rows):
             # 表头行设置跨页自动重复
@@ -238,7 +257,14 @@ def beautify_lesson_plan_docx(docx_path):
                     p.paragraph_format.space_after = Pt(1)
                     p.paragraph_format.line_spacing = 1.25
                     
-                    is_header = (t_idx == 0 and c_idx in [0, 2]) or (r_idx == 0)
+                    is_header = (t_idx == 0 and c_idx in [0, 2]) or (t_idx >= 1 and r_idx == 0)
+
+                    # 水平对齐：表头全体居中、教学过程表“教学环节”首列居中、基本信息表标签列居中；其余内容靠左
+                    if is_header or (t_idx == 1 and c_idx == 0):
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    else:
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
                     for run in p.runs:
                         font_name = '黑体' if is_header else '宋体'
                         size = 10 if t_idx == 1 else 10.5
@@ -272,23 +298,32 @@ def beautify_worksheet_docx(docx_path):
             
         style_name = p.style.name.lower()
         
-        # 导学单主标题
+        # 导学单主标题（段后留出整整一行的舒展留白，告别“脖子太短”）
         if 'heading 1' in style_name or 'title' in style_name:
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.paragraph_format.first_line_indent = Pt(0)
-            p.paragraph_format.space_before = Pt(0)
-            p.paragraph_format.space_after = Pt(6)
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(18)
             p.paragraph_format.line_spacing = 1.2
             for run in p.runs:
                 set_font(run, font_name='黑体', size_pt=16, bold=True, color_rgb=RGBColor(0x1F, 0x2A, 0x44))
         
-        # 班级姓名信息行
-        elif '班级' in text and '姓名' in text:
-            p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # 班级姓名信息行（右对齐，并在标题与正文间留足舒展空隙，自动剥离重复的今日评价）
+        elif '班级' in text and '姓名' in text and len(text) < 60:
+            p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             p.paragraph_format.first_line_indent = Pt(0)
-            p.paragraph_format.space_before = Pt(1)
-            p.paragraph_format.space_after = Pt(8)
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(14)
             p.paragraph_format.line_spacing = 1.15
+            
+            # 若仍残留今日评价/星级，自动清洗剔除（因底部已有自评，避免重复）
+            if '评价' in p.text:
+                for target in ['今日评价：☆☆☆☆☆', '今日评价：⭐⭐⭐⭐⭐', '今日评价：☆☆☆', '今日评价：⭐⭐⭐', '评价：☆☆☆☆☆', '评价：⭐⭐⭐⭐⭐', '评价：☆☆☆', '评价：⭐⭐⭐', '今日评价', '评价']:
+                    if target in p.text:
+                        replace_in_runs(p.runs, target, '')
+                for r in p.runs:
+                    r.text = re.sub(r'[\s:：&nbsp;☆★⭐·]+$', '', r.text)
+
             for run in p.runs:
                 set_font(run, font_name='楷体', size_pt=10, color_rgb=RGBColor(0x33, 0x33, 0x33))
                 
@@ -405,6 +440,8 @@ def beautify_worksheet_docx(docx_path):
                     p.paragraph_format.space_before = Pt(1)
                     p.paragraph_format.space_after = Pt(1)
                     p.paragraph_format.line_spacing = 1.15
+                    if r_idx == 0:
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     for run in p.runs:
                         is_h = (r_idx == 0)
                         size_pt = 9.5
