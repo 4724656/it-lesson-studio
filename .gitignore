@@ -23,3 +23,6 @@ scripts/download_*.py
 output/
 # 教师个人工作区（在 repo 内备课时使用，内容不纳入版本库）
 workspace/
+# 本地教材与课件原始资料下载目录（含版权保护教学材料，严禁提交与公开推送）
+downloads/
+
