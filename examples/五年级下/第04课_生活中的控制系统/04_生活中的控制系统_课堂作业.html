@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="lesson-grade" content="5">
+<title>第4课 生活中的控制系统 - 随堂互动作业</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #eff6ff;
+  --primary-hover: #1d4ed8;
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background-color: var(--bg); color: var(--text-main); line-height: 1.6;
+  min-height: 100vh; display: flex; flex-direction: column;
+}
+header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 16px 24px; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.header-wrap { max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.title-area h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+.title-area p { font-size: 0.85rem; color: var(--text-muted); }
+.student-bar { display: flex; gap: 10px; align-items: center; }
+.student-bar input { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; outline: none; width: 110px; }
+.student-bar input:focus { border-color: var(--primary); }
+.step-nav { max-width: 900px; margin: 16px auto 0; display: flex; gap: 8px; width: 100%; }
+.step-item { flex: 1; text-align: center; padding: 8px 4px; background: #e2e8f0; border-radius: 6px; font-size: 0.85rem; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+.step-item.active { background: var(--primary); color: #fff; }
+.step-item.completed { background: #dbeafe; color: var(--primary); }
+main { flex: 1; max-width: 900px; width: 100%; margin: 20px auto; padding: 0 16px; }
+.panel { display: none; background: var(--card-bg); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); border: 1px solid var(--border); animation: fadeIn 0.3s ease; }
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.panel-tag { display: inline-block; padding: 4px 10px; background: var(--primary-light); color: var(--primary); border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; }
+.panel-title { font-size: 1.25rem; margin-bottom: 12px; color: var(--text-main); }
+.story-box { background: #f1f5f9; border-left: 4px solid var(--primary); padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 0.95rem; margin-bottom: 18px; }
+/* 连线匹配 */
+.match-cols { display: flex; gap: 16px; margin-bottom: 16px; }
+.match-col { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.match-card { border: 2px solid var(--border); border-radius: 10px; padding: 14px; background: #fff; cursor: pointer; font-size: 0.95rem; font-weight: 600; text-align: center; transition: all 0.2s; }
+.match-card:hover { border-color: var(--primary); }
+.match-card.picked { border-color: var(--primary); background: var(--primary-light); }
+.match-card.matched { border-color: var(--success); background: var(--success-light); color: #065f46; cursor: default; animation: pop 0.3s ease; }
+@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+.match-hint { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px; }
+/* 解剖台 */
+.part-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.part-chip { flex: 1 1 40%; border: 2px solid var(--border); border-radius: 10px; padding: 16px 10px; text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s; }
+.part-chip:hover { border-color: var(--primary); }
+.part-chip.lit { border-color: var(--warning); background: var(--warning-light); box-shadow: 0 0 12px rgba(245,158,11,0.35); }
+.part-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
+.part-name { font-weight: bold; font-size: 0.95rem; }
+.inspect-detail { background: var(--warning-light); border: 1px solid #fde68a; border-radius: 8px; padding: 14px 16px; font-size: 0.92rem; margin-bottom: 16px; min-height: 64px; }
+.mini-quiz { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 8px; }
+.mini-quiz .q { font-weight: 600; margin-bottom: 8px; font-size: 0.93rem; }
+.opt-btn { padding: 6px 12px; border: 1px solid var(--border); background: #fff; border-radius: 6px; font-size: 0.85rem; cursor: pointer; margin: 0 6px 6px 0; transition: all 0.2s; }
+.opt-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.opt-btn.correct { background: var(--success-light); border-color: var(--success); color: #065f46; font-weight: bold; }
+.opt-btn.wrong { background: var(--danger-light); border-color: var(--danger); color: #991b1b; }
+.retry-tip { font-size: 0.85rem; color: var(--text-muted); }
+/* 排序 */
+.sort-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.sort-item { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; background: #fff; cursor: pointer; transition: all 0.2s; }
+.sort-item:hover { border-color: var(--primary); }
+.sort-item .rank { width: 34px; height: 34px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text-muted); flex-shrink: 0; }
+.sort-item.placed .rank { background: var(--primary); color: #fff; }
+.sort-item.done-ok { border-color: var(--success); background: var(--success-light); }
+.sort-item.done-bad { border-color: var(--danger); background: var(--danger-light); }
+.sort-item .txt { font-size: 0.93rem; }
+.sort-item .txt b { display: block; }
+/* 按钮 */
+.btn-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+button.action-btn { background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+button.action-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+button.secondary-btn { background: #e2e8f0; color: var(--text-main); border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+/* 测验 */
+.quiz-item { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px dashed var(--border); }
+.quiz-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 6px; }
+.quiz-opt { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.quiz-opt:hover { background: #f8fafc; }
+.quiz-opt.selected { border-color: var(--primary); background: var(--primary-light); }
+.quiz-opt.is-correct { background: var(--success-light); border-color: var(--success); }
+.quiz-opt.is-wrong { background: var(--danger-light); border-color: var(--danger); }
+/* 奖状 */
+.certificate { display: none; border: 4px double #d97706; background: #fffbeb; border-radius: 12px; padding: 24px; text-align: center; margin-top: 20px; box-shadow: 0 8px 16px rgba(217,119,6,0.15); }
+.cert-title { color: #b45309; font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+.badge-wall { display: flex; justify-content: center; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+.badge-chip { padding: 8px 14px; background: #fff; border: 1px solid #fde68a; border-radius: 20px; font-size: 0.85rem; font-weight: bold; color: #92400e; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.score-banner { display: none; text-align: center; font-size: 1.1rem; font-weight: 800; margin: 16px 0; padding: 12px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-wrap">
+    <div class="title-area">
+      <h1>🏠 第4课 生活中的控制系统 · 课堂作业</h1>
+      <p>浙教版2026信息科技五年级下册 · 找出"小管家"的接力赛</p>
+    </div>
+    <div class="student-bar">
+      <input type="text" id="stuClass" placeholder="班级(如502)">
+      <input type="text" id="stuName" placeholder="学生姓名">
+    </div>
+  </div>
+  <div class="step-nav" id="stepNav"></div>
+</header>
+<main>
+  <!-- 关卡一：连线匹配 -->
+  <section class="panel active" data-step="0" data-panel-type="hands-on">
+    <div class="panel-tag">⭐ 关卡一 · 火眼金睛</div>
+    <h2 class="panel-title">它们是怎样被控制的？连一连</h2>
+    <div class="story-box" data-prose><b>任务情境：</b>停车场道闸自己抬杆、感应水龙头自动出水、楼道灯人来即亮——旁边都没有人操作！先点左边场景，再点右边"幕后管家"，配对成功会亮起来。</div>
+    <div class="match-hint">👆 先点左侧场景卡，再点右侧管家卡</div>
+    <div class="match-cols">
+      <div class="match-col" id="leftCol">
+        <div class="match-card" data-id="faucet" onclick="pickLeft(this)">🚰<br>自动感应水龙头<br><small>手到水来、手走水停</small></div>
+        <div class="match-card" data-id="gate" onclick="pickLeft(this)">🚗<br>停车场道闸<br><small>识别车牌自动抬杆</small></div>
+        <div class="match-card" data-id="lamp" onclick="pickLeft(this)">💡<br>楼道电灯<br><small>跺脚拍手自动亮起</small></div>
+      </div>
+      <div class="match-col" id="rightCol">
+        <div class="match-card" data-id="sensor" onclick="pickRight(this)">🛰️<br>感应模块<br><small>小哨兵替人做判断</small></div>
+        <div class="match-card" data-id="plate" onclick="pickRight(this)">🔍<br>车牌识别系统<br><small>认出车牌才放行</small></div>
+        <div class="match-card" data-id="sound" onclick="pickRight(this)">👂<br>声光感应模块<br><small>听到看到才开灯</small></div>
+      </div>
+    </div>
+    <div id="matchMsg" style="text-align:center; font-weight:bold; min-height:28px; color: var(--success);"></div>
+    <div class="btn-row"><button class="action-btn" onclick="goStep(1)">进入下一关 ➔</button></div>
+  </section>
+
+  <!-- 关卡二：电灯控制系统解剖台 -->
+  <section class="panel" data-step="1" data-panel-type="hands-on">
+    <div class="panel-tag">⭐ 关卡二 · 系统解剖台</div>
+    <h2 class="panel-title">拆一拆：电灯控制系统</h2>
+    <div class="story-box" data-prose><b>建模挑战：</b>点击下面的环节芯片，看看每个"运动员"在接力赛里干什么。记住：<b>环节＋装置＝控制系统</b>！</div>
+    <div class="part-grid">
+      <div class="part-chip" onclick="inspectPart('person', this)"><span class="part-icon">🧑‍🏫</span><span class="part-name">人（裁判）</span></div>
+      <div class="part-chip" onclick="inspectPart('switch', this)"><span class="part-icon">🔘</span><span class="part-name">开关</span></div>
+      <div class="part-chip" onclick="inspectPart('sentry', this)"><span class="part-icon">🛰️</span><span class="part-name">感应模块（小哨兵）</span></div>
+      <div class="part-chip" onclick="inspectPart('lamp', this)"><span class="part-icon">💡</span><span class="part-name">电灯</span></div>
+    </div>
+    <div class="inspect-detail" id="inspectBox">👆 点击上方任意芯片，查看它的"拟人小档案"。</div>
+    <div class="mini-quiz">
+      <div class="q">🔒 巩固小测（答错可以无限重选，答对变绿锁定）：手动开关灯的接力赛，第一棒是谁？</div>
+      <div id="miniOpts">
+        <button class="opt-btn" onclick="miniQuiz(this, false)">A. 开关</button>
+        <button class="opt-btn" onclick="miniQuiz(this, false)">B. 电灯</button>
+        <button class="opt-btn" onclick="miniQuiz(this, true)">C. 人</button>
+      </div>
+      <div class="retry-tip" id="miniTip"></div>
+    </div>
+    <div class="btn-row">
+      <button class="secondary-btn" onclick="goStep(0)">⬅️ 上一关</button>
+      <button class="action-btn" onclick="goStep(2)">进入下一关 ➔</button>
+    </div>
+  </section>
+
+  <!-- 关卡三：三代水壶进化排序 -->
+  <section class="panel" data-step="2">
+    <div class="panel-tag">⭐ 关卡三 · 进化排序</div>
+    <h2 class="panel-title">三代水壶：谁最省心？</h2>
+    <div class="story-box" data-prose><b>流程预演：</b>同样的"烧水"任务，人的活儿一步步交给了机器。按<strong>越来越省心</strong>的顺序依次点击三张卡片（点错可重排）。</div>
+    <div class="sort-list" id="sortList">
+      <div class="sort-item" data-order="3" onclick="sortPick(this)"><span class="rank">?</span><span class="txt"><b>🫖 自动加水保温水壶</b>自动加水、自动加热、自动保温，全包了！</span></div>
+      <div class="sort-item" data-order="1" onclick="sortPick(this)"><span class="rank">?</span><span class="txt"><b>🫖 燃气灶水壶</b>人一直盯着，水开了自己关火。</span></div>
+      <div class="sort-item" data-order="2" onclick="sortPick(this)"><span class="rank">?</span><span class="txt"><b>🫖 自动断电水壶</b>水烧开后自己停止加热。</span></div>
+    </div>
+    <div id="sortMsg" style="text-align:center; font-weight:bold; min-height:28px;"></div>
+    <div class="btn-row">
+      <button class="secondary-btn" onclick="goStep(1)">⬅️ 上一关</button>
+      <button class="action-btn" onclick="goStep(3)">进入下一关 ➔</button>
+    </div>
+  </section>
+
+  <!-- 关卡四：迁移拓展 -->
+  <section class="panel" data-step="3">
+    <div class="panel-tag">⭐ 关卡四 · 迁移拓展</div>
+    <h2 class="panel-title">控制系统让生活更便利</h2>
+    <div class="story-box" data-prose><b>想一想：</b>洗衣机、电饭煲、空调、自动驾驶汽车都是控制系统。控制系统不断改进，被机器接管的环节越多，生活越便利。</div>
+    <div class="mini-quiz">
+      <div class="q">🏠 家里的空调，"小哨兵"在哪个环节替人做了判断？（可多选思路，选出最核心的一项）</div>
+      <div>
+        <button class="opt-btn" onclick="miniQuiz2(this, false)">A. 人用遥控器开机</button>
+        <button class="opt-btn" onclick="miniQuiz2(this, true)">B. 温度传感器检测室温，够冷了自动停机</button>
+        <button class="opt-btn" onclick="miniQuiz2(this, false)">C. 人手动擦拭外机灰尘</button>
+      </div>
+      <div class="retry-tip" id="miniTip2"></div>
+    </div>
+    <div class="mini-quiz">
+      <div class="q">🚀 畅想一下：如果让你升级家里的一个"小管家"，你最想让它学会什么新本领？（选出你的畅想）</div>
+      <div>
+        <button class="opt-btn" onclick="dreamPick(this)">A. 空调：感应到我睡着，自动调高温度盖"被子"</button>
+        <button class="opt-btn" onclick="dreamPick(this)">B. 洗衣机：认出衣服材质，自动选最合适的模式</button>
+        <button class="opt-btn" onclick="dreamPick(this)">C. 台灯：天黑自动亮，还能提醒我坐姿</button>
+      </div>
+      <div class="retry-tip" id="dreamMsg" style="color: var(--success); font-weight: bold;"></div>
+    </div>
+    <div class="btn-row">
+      <button class="secondary-btn" onclick="goStep(2)">⬅️ 上一关</button>
+      <button class="action-btn" onclick="goStep(4)">进入测验与评价 ➔</button>
+    </div>
+  </section>
+
+  <!-- 关卡五：测验与凭单 -->
+  <section class="panel" data-step="4">
+    <div class="panel-tag">⭐ 关卡五 · 测验与评价</div>
+    <h2 class="panel-title">随堂微测验（共3题）</h2>
+    <div id="quizContainer"></div>
+    <div style="text-align:center; margin: 16px 0;">
+      <button class="action-btn" id="btnSubmitQuiz" onclick="submitQuiz()">✍️ 提交测验并判分</button>
+    </div>
+    <div class="score-banner" id="scoreBanner"></div>
+    <div style="margin: 20px 0; padding: 14px; background: #f8fafc; border-radius: 8px;">
+      <div data-prose style="font-weight:bold; margin-bottom:8px;">🎯 自我评价打卡：对照三关星级，给自己打个星，诚实填写才能拿到凭单。</div>
+      <label style="margin-right:14px; cursor:pointer;"><input type="radio" name="selfEval" value="完全掌握" checked> ⭐⭐⭐ 我能拆出控制系统的环节和装置</label><br>
+      <label style="margin-right:14px; cursor:pointer;"><input type="radio" name="selfEval" value="基本掌握"> ⭐⭐ 我能认出生活中的控制系统</label><br>
+      <label style="cursor:pointer;"><input type="radio" name="selfEval" value="还没完全懂"> 💡 我还没完全懂，需要老师或同伴帮助</label>
+    </div>
+    <div class="certificate" id="certBox">
+      <div class="cert-title">🎖️ 控制系统小管家荣誉证书</div>
+      <p id="certDesc" style="font-size: 1.02rem; margin-bottom: 12px;"></p>
+      <div class="badge-wall medal-wall">
+        <span class="badge-chip medal-chip">🔍 火眼金睛星</span>
+        <span class="badge-chip medal-chip">🔧 系统解剖星</span>
+        <span class="badge-chip medal-chip">🫖 进化洞察星</span>
+        <span class="badge-chip medal-chip">🏅 测验优胜星</span>
+      </div>
+      <div style="margin-top: 16px;">
+        <button class="action-btn" style="background:#b45309;" onclick="exportVoucher()">📥 一键下载学习凭单 (.txt)</button>
+      </div>
+    </div>
+    <div class="btn-row"><button class="secondary-btn" onclick="goStep(3)">⬅️ 上一关</button></div>
+  </section>
+</main>
+<script>
+const stepLabels = ['火眼金睛', '系统解剖', '进化排序', '迁移拓展', '测验评价'];
+let currentStep = 0;
+const nav = document.getElementById('stepNav');
+stepLabels.forEach((label, i) => {
+  const d = document.createElement('div');
+  d.className = 'step-item' + (i === 0 ? ' active' : '');
+  d.textContent = (i + 1) + '. ' + label;
+  d.onclick = () => goStep(i);
+  nav.appendChild(d);
+});
+function goStep(idx) {
+  const panels = document.querySelectorAll('.panel');
+  if (idx < 0 || idx >= panels.length) return;
+  panels.forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.querySelectorAll('.step-item').forEach((s, i) => {
+    s.classList.toggle('active', i === idx);
+    s.classList.toggle('completed', i < idx);
+  });
+  currentStep = idx;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+/* 关卡一：连线 */
+const matchAnswer = { faucet: 'sensor', gate: 'plate', lamp: 'sound' };
+const matchPraise = { faucet: '🎉 配对成功！感应模块就是水龙头的"小哨兵"！', gate: '🎉 配对成功！车牌识别系统是道闸的"眼睛"！', lamp: '🎉 配对成功！声光感应模块让楼道灯"听得到、看得见"！' };
+let leftPick = null, matchedCount = 0;
+function pickLeft(el) {
+  if (el.classList.contains('matched')) return;
+  document.querySelectorAll('#leftCol .match-card').forEach(c => c.classList.remove('picked'));
+  el.classList.add('picked'); leftPick = el.dataset.id;
+}
+function pickRight(el) {
+  if (el.classList.contains('matched') || !leftPick) return;
+  const msg = document.getElementById('matchMsg');
+  if (matchAnswer[leftPick] === el.dataset.id) {
+    document.querySelector(`#leftCol [data-id="${leftPick}"]`).classList.add('matched');
+    el.classList.add('matched');
+    msg.textContent = matchPraise[leftPick];
+    matchedCount++;
+    if (matchedCount === 3) msg.textContent = '🏆 三组全对！你已经找到了三位"幕后管家"！';
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = '🤔 再想想：是谁在替人做判断？';
+    setTimeout(() => { msg.style.color = 'var(--success)'; msg.textContent = ''; }, 1200);
+  }
+  leftPick = null;
+  document.querySelectorAll('#leftCol .match-card').forEach(c => c.classList.remove('picked'));
+}
+/* 关卡二：解剖台 */
+const partInfo = {
+  person: '🧑‍🏫 <b>人（裁判）</b>：手动开关灯时，第一棒是人！人负责"做决定、动手按"。记住：人也可以是控制系统的一个环节！',
+  switch: '🔘 <b>开关</b>：接力赛的第二棒。负责接通 / 切断电路，是最听话的"运动员"。',
+  sentry: '🛰️ <b>感应模块（小哨兵）</b>：能感应人体、亮度、声音。它代替人"做判断"——这就是自动控制的秘密！',
+  lamp: '💡 <b>电灯</b>：接力赛的最后一棒。负责把电变成光，照亮房间。'
+};
+function inspectPart(key, el) {
+  document.querySelectorAll('.part-chip').forEach(c => c.classList.remove('lit'));
+  el.classList.add('lit');
+  document.getElementById('inspectBox').innerHTML = partInfo[key];
+}
+let miniLocked = false;
+function miniQuiz(btn, right) {
+  if (miniLocked) return;
+  const tip = document.getElementById('miniTip');
+  if (right) {
+    btn.classList.add('correct'); miniLocked = true;
+    tip.textContent = '🎉 答对了！手动开关灯，第一棒确实是"人"——人也是环节！';
+    document.querySelectorAll('#miniOpts .opt-btn').forEach(b => { if (b !== btn) b.disabled = true; });
+  } else {
+    btn.classList.add('wrong');
+    tip.textContent = '💡 再想想：是谁亲手按下了开关？';
+    setTimeout(() => btn.classList.remove('wrong'), 900);
+  }
+}
+/* 关卡三：排序 */
+let sortStep = 0;
+function sortPick(el) {
+  if (el.classList.contains('placed')) return;
+  const msg = document.getElementById('sortMsg');
+  sortStep++;
+  if (parseInt(el.dataset.order) === sortStep) {
+    el.classList.add('placed');
+    el.querySelector('.rank').textContent = sortStep;
+    if (sortStep === 3) {
+      msg.style.color = 'var(--success)';
+      msg.textContent = '🏆 排序正确！被机器接管的环节越多，生活越便利！';
+      document.querySelectorAll('.sort-item').forEach(i => i.classList.add('done-ok'));
+    }
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = '🤔 再想想：哪一种最需要人一直盯着？从它开始排。';
+    sortStep--;
+    setTimeout(() => { msg.textContent = ''; }, 1500);
+  }
+}
+/* 关卡四 */
+let mini2Locked = false;
+function miniQuiz2(btn, right) {
+  if (mini2Locked) return;
+  const tip = document.getElementById('miniTip2');
+  if (right) {
+    btn.classList.add('correct'); mini2Locked = true;
+    tip.textContent = '🎉 答对！"温度传感器＋自动停机"就是空调的小哨兵环节！';
+    btn.parentElement.querySelectorAll('.opt-btn').forEach(b => { if (b !== btn) b.disabled = true; });
+  } else {
+    btn.classList.add('wrong');
+    tip.textContent = '💡 再想想：哪一步是机器自己判断、自己动手的？';
+    setTimeout(() => btn.classList.remove('wrong'), 900);
+  }
+}
+function dreamPick(btn) {
+  btn.parentElement.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('correct'));
+  btn.classList.add('correct');
+  document.getElementById('dreamMsg').textContent = '🌟 很有想象力的"小管家升级计划"！下节课可以画出来分享哦。';
+}
+/* 关卡五：测验 */
+const quiz = [
+  { q: '1. 电灯、开关、感应模块构成的系统叫什么？', options: ['A. 电灯控制系统', 'B. 普通照明工具', 'C. 电路维修箱'], correct: 0 },
+  { q: '2. 自动感应水龙头"手到水来、手走水停"，代替人做判断的是？', options: ['A. 水管', 'B. 感应模块（小哨兵）', 'C. 洗手的人'], correct: 1 },
+  { q: '3. 从燃气灶烧水到自动保温水壶，这个变化说明了什么？', options: ['A. 水壶越来越贵', 'B. 控制系统的不断改进给生产生活带来了便利', 'C. 人越来越懒了'], correct: 1 }
+];
+const quizPicks = new Array(quiz.length).fill(null);
+let quizScore = null;
+const quizContainer = document.getElementById('quizContainer');
+quiz.forEach((item, qIndex) => {
+  const block = document.createElement('div');
+  block.className = 'quiz-item';
+  block.innerHTML = `<div class="quiz-title">${item.q}</div>`;
+  const opts = document.createElement('div');
+  opts.className = 'quiz-opts';
+  item.options.forEach((opt, oIndex) => {
+    const d = document.createElement('div');
+    d.className = 'quiz-opt';
+    d.textContent = opt;
+    d.onclick = () => {
+      if (quizScore !== null) return;
+      quizPicks[qIndex] = oIndex;
+      opts.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('selected'));
+      d.classList.add('selected');
+    };
+    opts.appendChild(d);
+  });
+  block.appendChild(opts);
+  quizContainer.appendChild(block);
+});
+function submitQuiz() {
+  if (quizPicks.some(p => p === null)) {
+    alert('还有题目没选哦，选完再提交吧！');
+    return;
+  }
+  quizScore = quizPicks.filter((p, i) => p === quiz[i].correct).length;
+  document.querySelectorAll('#quizContainer .quiz-opts').forEach((opts, qIndex) => {
+    opts.querySelectorAll('.quiz-opt').forEach((o, oIndex) => {
+      if (oIndex === quiz[qIndex].correct) o.classList.add('is-correct');
+      else if (quizPicks[qIndex] === oIndex) o.classList.add('is-wrong');
+    });
+  });
+  const score = Math.round(quizScore / quiz.length * 100);
+  const banner = document.getElementById('scoreBanner');
+  banner.style.display = 'block';
+  banner.style.background = score >= 60 ? 'var(--success-light)' : 'var(--warning-light)';
+  banner.style.color = score >= 60 ? '#065f46' : '#92400e';
+  banner.textContent = `📊 本次测验得分：${score} 分（答对 ${quizScore}/${quiz.length} 题）`;
+  document.getElementById('btnSubmitQuiz').disabled = true;
+  const name = document.getElementById('stuName').value.trim() || '信息科技小管家';
+  const cls = document.getElementById('stuClass').value.trim() || '五年级';
+  const selfChoice = document.querySelector('input[name="selfEval"]:checked').value;
+  document.getElementById('certBox').style.display = 'block';
+  document.getElementById('certDesc').innerHTML =
+    `祝贺 <b>${cls} ${name}</b> 同学完成第4课学习！<br>测验得分：<b>${score} 分</b>　自我评价：<b>${selfChoice}</b>`;
+  document.getElementById('certBox').scrollIntoView({ behavior: 'smooth' });
+  window._voucher = { cls, name, score, selfChoice };
+}
+function exportVoucher() {
+  const v = window._voucher;
+  if (!v) { alert('请先提交测验！'); return; }
+  const timeStr = new Date().toLocaleString('zh-CN', { hour12: false });
+  const scoreStr = v.score + '分';
+  const content =
+`# ${v.cls}|${v.name}|生活中的控制系统|${scoreStr}|${timeStr}
+五年级下册第4课《生活中的控制系统》· 随堂学习凭单
+班级：${v.cls}
+姓名：${v.name}
+课题：生活中的控制系统
+得分：${scoreStr}（测验 ${v.score} 分）
+自我评价：${v.selfChoice}
+完成关卡：火眼金睛 / 系统解剖 / 进化排序 / 迁移拓展 / 测验评价
+导出时间：${timeStr}`;
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${v.cls}_${v.name}_第4课生活中的控制系统_${scoreStr}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# 第2课《了解智能工具》课程 Manifest
+# 课次身份已按浙教版2026三年级上册真实目录核验（2026-10-03）：
+# 第一单元 感受智能社会 · 第2课 了解智能工具（教材第6~9页）
+
+title: 了解智能工具
+grade: 3
+term: 上
+lesson_no: 2
+unit: 第一单元 感受智能社会
+textbook: 浙教版2026
+textbook_id: "1000067"
+
+scenarios:
+  - 智能工具小剧场
+
+worksheet_layout: single
+
+tasks:
+  - id: T1
+    name: 火眼金睛辨工具
+  - id: T2
+    name: 机箱微型解剖台
+  - id: T3
+    name: 键鼠练兵
+
+artifacts:
+  plan: 02_了解智能工具_教案.md
+  worksheet: 02_了解智能工具_导学案.md
+  slides: 02_了解智能工具_课件.md
+  classwork: 02_了解智能工具_课堂作业.html
