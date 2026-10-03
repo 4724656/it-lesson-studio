@@ -262,9 +262,16 @@ async function main() {
         // 中文专业排版后处理（首行缩进两格、黑体标题、宋体正文、表格防断裂）
         if (fs.existsSync(beautifyScript)) {
           try {
-            // 项目 Python 依赖由 pyproject.toml 锁定，走项目虚拟环境
-            runCmd('uv', ['run', 'python', beautifyScript, task.out],
-              { stdio: ['ignore', 'ignore', 'inherit'], cwd: rootDir });
+            // 自适应 Python 运行环境：优先 uv，容器或原生 Linux 回退 python3
+            let pyCmd = 'python3';
+            let pyArgs = [beautifyScript, task.out];
+            try {
+              execFileSync(process.platform === 'win32' ? 'where' : 'which', ['uv'], { stdio: 'ignore' });
+              pyCmd = 'uv';
+              pyArgs = ['run', 'python', beautifyScript, task.out];
+            } catch { /* 无 uv 时使用系统 python3 */ }
+
+            runCmd(pyCmd, pyArgs, { stdio: ['ignore', 'ignore', 'inherit'], cwd: rootDir });
             console.log(`   ✨ 已自动应用中文公文级排版 (首行缩进2格·黑体大纲·宋体正文·表格美化)`);
           } catch (postErr) {
             console.warn(`   ⚠️ 后处理排版优化跳过: ${postErr.message}`);

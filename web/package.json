@@ -1,0 +1,19 @@
+{
+  "name": "it-lesson-studio-web",
+  "version": "1.0.0",
+  "description": "IT Lesson Studio - 轻量教研组备课 Web 服务",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

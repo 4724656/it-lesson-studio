@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT Lesson Studio · 浙教版信息科技四位一体备课工坊</title>
+  
+  <!-- 引入 Tailwind CSS (CDN 快速加载) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#1e1b4b',
+            },
+            dark: {
+              bg: '#0a0d14',
+              card: '#111622',
+              surface: '#182032',
+              border: '#1f293d',
+              borderLight: '#2b3852'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- 自定义高级动效与底纹 -->
+  <style>
+    /* 微妙的极客背景网格与光晕 */
+    body {
+      background-color: #0a0d14;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
+        radial-gradient(circle at 90% 40%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 10% 60%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      min-height: 100vh;
+      color: #f1f5f9;
+    }
+
+    /* 科技流光边框卡片 */
+    .glow-card {
+      position: relative;
+      background: rgba(17, 22, 34, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glow-card:hover {
+      border-color: rgba(99, 102, 241, 0.35);
+      box-shadow: 0 12px 30px -10px rgba(79, 70, 229, 0.2);
+    }
+
+    /* 按钮渐变流光 */
+    .btn-gradient {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+      background-size: 200% 200%;
+      transition: all 0.3s ease;
+    }
+    .btn-gradient:hover {
+      background-position: 100% 100%;
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
+      transform: translateY(-1px);
+    }
+
+    /* 课时芯片 */
+    .preset-pill {
+      background: rgba(24, 32, 50, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+    }
+    .preset-pill:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #e0e7ff;
+      transform: translateY(-1px);
+    }
+
+    /* 脉冲光斑 */
+    .pulse-dot {
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    /* 滚动条定制 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0d14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f293d;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #374151;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- 顶部科技导航栏 -->
+  <header class="border-b border-dark-border bg-dark-bg/80 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-purple-600 to-cyan-400 p-[1px] flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <div class="w-full h-full bg-dark-bg rounded-xl flex items-center justify-center">
+            <i data-lucide="cpu" class="w-5 h-5 text-brand-400"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">IT LESSON STUDIO</span>
+            <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400">ZJ-2026</span>
+          </div>
+          <p class="text-[11px] text-slate-400">中小学信息科技 · 四位一体极速备课工作台</p>
+        </div>
+      </div>
+
+      <!-- 右侧用户状态与快捷入口 -->
+      <div class="flex items-center gap-3" id="userArea">
+        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-dark-surface border border-dark-border text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot animate-pulse"></span>
+          <span>特级教师心智在线</span>
+        </div>
+
+        <button id="btnHistory" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dark-border bg-dark-surface/50 hover:bg-dark-surface text-xs font-medium text-slate-300 transition" onclick="toggleHistoryDrawer()">
+          <i data-lucide="clock-rewind" class="w-3.5 h-3.5"></i>
+          <span>备课历史</span>
+        </button>
+
+        <span id="userNameDisplay" class="hidden text-xs font-mono px-2.5 py-1 rounded-lg bg-brand-500/10 text-brand-300 border border-brand-500/20"></span>
+
+        <button id="btnLogout" class="hidden text-xs text-slate-400 hover:text-red-400 transition px-2 py-1" onclick="logout()">退出</button>
+        <button id="btnLoginModal" class="btn-gradient px-4 py-1.5 rounded-lg text-xs font-semibold text-white shadow-md" onclick="openAuthModal('login')">
+          登录 / 注册
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体内容区 -->
+  <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+
+    <!-- 顶栏 Slogan 标题 -->
+    <div class="text-center py-4 space-y-2">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 mb-1">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>拒绝玩具 Demo · 专注真实机房可用性与物理纸张硬约束</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+        输入教学内容，<span class="bg-gradient-to-r from-brand-400 via-purple-400 to-cyan-300 bg-clip-text text-transparent">一键合成 4 份成套教学资源</span>
+      </h2>
+      <p class="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto">
+        4页A4公文教案 · 严格单面/双面不跨页导学单 · Marp 16:9纯净课件 · 离线单文件互动作业
+      </p>
+    </div>
+
+    <!-- 核心备课表单卡片 -->
+    <section class="glow-card rounded-2xl p-6 sm:p-8">
+      <form id="lessonForm" onsubmit="handleCreateTask(event)" class="space-y-6">
+        
+        <!-- 表单行：年级 + 课题 -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-brand-400"></i>
+              授课年级学段 <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <select id="selectGrade" required onchange="updateLessonPresets()" 
+                class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition appearance-none">
+                <optgroup label="小学低段（单面 A4 封顶，作业 ≤4 屏）">
+                  <option value="三年级上册">三年级上册</option>
+                  <option value="三年级下册">三年级下册</option>
+                  <option value="四年级上册">四年级上册</option>
+                  <option value="四年级下册">四年级下册</option>
+                </optgroup>
+                <optgroup label="小学高段（双面 A4，作业 ≤5 屏）">
+                  <option value="五年级上册">五年级上册</option>
+                  <option value="五年级下册">五年级下册</option>
+                  <option value="六年级上册">六年级上册</option>
+                  <option value="六年级下册">六年级下册</option>
+                </optgroup>
+                <optgroup label="初中阶段（双面 A4，算法进阶，作业 ≤6 屏）">
+                  <option value="七年级上册">七年级上册</option>
+                  <option value="七年级下册">七年级下册</option>
+                  <option value="八年级上册">八年级上册</option>
+                  <option value="八年级下册">八年级下册</option>
+                </optgroup>
+              </select>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none"></i>
+            </div>
+          </div>
+
+          <div class="sm:col-span-2 space-y-1.5">
+            <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="book-open" class="w-3.5 h-3.5 text-cyan-400"></i>
+              课题名称 <span class="text-red-400">*</span>
+            </label>
+            <input type="text" id="inputTitle" placeholder="如：第02课 了解智能工具 / 算法的执行" required
+              class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition" />
+          </div>
+        </div>
+
+        <!-- 浙教版课时快捷芯片 -->
+        <div class="p-3.5 rounded-xl bg-dark-surface/50 border border-dark-border space-y-2">
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span class="flex items-center gap-1">
+              <i data-lucide="compass" class="w-3 h-3 text-brand-400"></i>
+              浙教版 2026 课时目录一键点选：
+            </span>
+            <span class="text-slate-500">点击自动填入课题</span>
+          </div>
+          <div class="flex flex-wrap gap-2" id="presetChips">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 自定义补充要求 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-amber-400"></i>
+              补充教学意图 / 独家设计设想
+            </span>
+            <span class="text-[11px] text-slate-500 font-normal">选填 · 告诉 AI 你的特色亮点</span>
+          </label>
+          <textarea id="inputRequirements" rows="2" 
+            placeholder="例如：第一关我想用测温枪做案例；或者本校机房键盘较旧，导学单打字步骤精炼一些..."
+            class="w-full bg-dark-surface border border-dark-borderLight rounded-xl p-3.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition resize-none"></textarea>
+        </div>
+
+        <!-- 提交大按钮 -->
+        <button type="submit" id="btnSubmit" 
+          class="btn-gradient w-full py-3.5 rounded-xl font-bold text-sm tracking-wide text-white flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 active:scale-[0.99] transition">
+          <i data-lucide="wand-2" class="w-4 h-4"></i>
+          <span>立即合成全套四位一体教学资料</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- 实时合成编译面板（流光打卡） -->
+    <section class="glow-card rounded-2xl p-6 hidden space-y-5 border-brand-500/40" id="progressCard">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center animate-spin">
+            <i data-lucide="loader-2" class="w-4 h-4 text-brand-400"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-200" id="progressTitle">正在流式构建教学全套资产...</h3>
+            <p class="text-xs text-slate-400" id="progressText">排队准备中...</p>
+          </div>
+        </div>
+        <span class="font-mono text-xl font-extrabold text-brand-400" id="progressPercent">0%</span>
+      </div>
+
+      <!-- 进度条 -->
+      <div class="w-full h-2 bg-dark-surface rounded-full overflow-hidden p-[1px] border border-dark-border">
+        <div class="h-full bg-gradient-to-r from-brand-500 via-purple-500 to-cyan-400 rounded-full transition-all duration-500" id="progressBarFill" style="width: 0%;"></div>
+      </div>
+
+      <!-- 三大流水线节点指示器 -->
+      <div class="grid grid-cols-3 gap-2 pt-2">
+        <div class="flex items-center gap-2 text-xs text-slate-400" id="step1">
+          <div class="w-6 h-6 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center font-mono text-[11px] font-bold step-dot">1</div>
+          <span>特级教师构思</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400" id="step2">
+          <div class="w-6 h-6 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center font-mono text-[11px] font-bold step-dot">2</div>
+          <span>公文精排编译</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400" id="step3">
+          <div class="w-6 h-6 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center font-mono text-[11px] font-bold step-dot">3</div>
+          <span>封装完整交付包</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 交付物展示区（发光四色卡片） -->
+    <section class="glow-card rounded-2xl p-6 sm:p-8 hidden space-y-6 border-emerald-500/30" id="deliveryCard">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <h3 class="text-lg font-bold text-slate-100" id="deliveryTitle">教学资料已就绪！</h3>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">四份资料 100% 同源咬合，已完成 OpenXML 公文精排与 Marp 大屏转译</p>
+        </div>
+        
+        <button id="btnDownloadZip" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition active:scale-95">
+          <i data-lucide="archive" class="w-4 h-4"></i>
+          <span>一键打包全部资料 (.ZIP)</span>
+        </button>
+      </div>
+
+      <!-- 四大核心模块卡片网格 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <!-- 1. 备课教案卡片 (Indigo) -->
+        <div class="p-4 rounded-xl bg-dark-surface/60 border border-indigo-500/20 hover:border-indigo-500/50 transition flex items-start justify-between gap-3">
+          <div class="flex gap-3">
+            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+              <i data-lucide="file-text" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-slate-200">备课教案</h4>
+              <p class="text-xs text-slate-400 mt-0.5">Word (.docx) · 严格 ≤4 页 A4 双面</p>
+              <div class="flex gap-1.5 mt-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">首行缩进两格</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">取消板书</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">降坡度三支架</span>
+              </div>
+            </div>
+          </div>
+          <button id="btnPlan" class="px-3 py-1.5 rounded-lg border border-dark-borderLight hover:border-indigo-400 text-xs font-medium text-slate-300 transition shrink-0 flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>下载</span>
+          </button>
+        </div>
+
+        <!-- 2. 探究导学单卡片 (Amber) -->
+        <div class="p-4 rounded-xl bg-dark-surface/60 border border-amber-500/20 hover:border-amber-500/50 transition flex items-start justify-between gap-3">
+          <div class="flex gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+              <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-slate-200">探究导学单</h4>
+              <p class="text-xs text-slate-400 mt-0.5">Word (.docx) · 学生第一视角</p>
+              <div class="flex gap-1.5 mt-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">单面 A4 封顶</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">取消座号</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">显式 [ ] 槽位</span>
+              </div>
+            </div>
+          </div>
+          <button id="btnWorksheet" class="px-3 py-1.5 rounded-lg border border-dark-borderLight hover:border-amber-400 text-xs font-medium text-slate-300 transition shrink-0 flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>下载</span>
+          </button>
+        </div>
+
+        <!-- 3. 教学课件卡片 (Purple) -->
+        <div class="p-4 rounded-xl bg-dark-surface/60 border border-purple-500/20 hover:border-purple-500/50 transition flex items-start justify-between gap-3">
+          <div class="flex gap-3">
+            <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+              <i data-lucide="presentation" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-slate-200">大屏教学课件</h4>
+              <p class="text-xs text-slate-400 mt-0.5">PPTX / PDF · Marp 16:9 现代大屏</p>
+              <div class="flex gap-1.5 mt-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">卡片式网格</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">清除后台台词</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1.5 shrink-0">
+            <button id="btnPptx" class="px-2.5 py-1 rounded border border-dark-borderLight hover:border-purple-400 text-[11px] text-slate-300 transition flex items-center gap-1">
+              <i data-lucide="download" class="w-3 h-3"></i> PPTX
+            </button>
+            <button id="btnPdf" class="px-2.5 py-1 rounded border border-dark-borderLight hover:border-purple-400 text-[11px] text-slate-300 transition flex items-center gap-1">
+              <i data-lucide="download" class="w-3 h-3"></i> PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. 随堂作业卡片 (Emerald - 明星模块) -->
+        <div class="p-4 rounded-xl bg-gradient-to-br from-emerald-950/30 via-dark-surface/80 to-dark-surface border border-emerald-500/40 hover:border-emerald-400 transition flex items-start justify-between gap-3">
+          <div class="flex gap-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+              <i data-lucide="gamepad-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-slate-100">随堂互动作业</h4>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium">离线开箱即用</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">单文件 HTML · 零依赖秒开 · 导出标准txt凭单</p>
+              <div class="flex gap-1.5 mt-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">微型仿真台</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">通关电子奖状</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1.5 shrink-0">
+            <a id="btnPlayHtml" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-dark-bg font-bold text-xs transition flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+              <span>试玩</span>
+            </a>
+            <button id="btnHtml" class="px-2.5 py-1 rounded border border-dark-borderLight hover:border-emerald-400 text-[11px] text-slate-300 transition flex items-center justify-center gap-1">
+              <i data-lucide="download" class="w-3 h-3"></i> HTML
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 历史备课抽屉 -->
+  <div id="drawerOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity" onclick="toggleHistoryDrawer()"></div>
+  <aside id="historyDrawer" class="fixed right-0 top-0 bottom-0 w-80 sm:w-96 bg-dark-card border-l border-dark-border z-50 transform translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+    <div class="p-4 border-b border-dark-border flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="history" class="w-4 h-4 text-brand-400"></i>
+        <h3 class="font-bold text-sm text-slate-200">我的备课历史</h3>
+      </div>
+      <button onclick="toggleHistoryDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-dark-surface transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="p-4 overflow-y-auto flex-1 space-y-3" id="historyList">
+      <!-- 动态插入 -->
+    </div>
+  </aside>
+
+  <!-- 登录 / 注册模态弹窗 -->
+  <div id="authModal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-base text-slate-200" id="authModalTitle">教师登录</h3>
+        </div>
+        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-slate-300">用户名</label>
+          <input type="text" id="authUsername" required placeholder="如：teacher_zhang" 
+            class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-slate-300">密码</label>
+          <input type="password" id="authPassword" required placeholder="••••••••" 
+            class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div class="space-y-1 hidden" id="inviteCodeGroup">
+          <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+            <span>教研组专属邀请码</span>
+            <span class="text-red-400 text-[10px]">* 必填</span>
+          </label>
+          <input type="text" id="authInviteCode" placeholder="输入教研组邀请码 (如：ZJ2026)" 
+            class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500" />
+          <p class="text-[10px] text-slate-500">仅限内部教研组成员注册，防止公共算力消耗</p>
+        </div>
+
+        <button type="submit" id="btnAuthSubmit" 
+          class="btn-gradient w-full py-2.5 rounded-xl font-bold text-xs text-white shadow-lg shadow-brand-500/20 transition active:scale-95">
+          登 录
+        </button>
+
+        <div class="text-center pt-2">
+          <a href="javascript:void(0)" id="authSwitchLink" onclick="toggleAuthMode()" class="text-xs text-brand-400 hover:text-brand-300 transition">
+            没有账号？凭邀请码注册
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

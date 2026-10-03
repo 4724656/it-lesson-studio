@@ -1,0 +1,27 @@
+services:
+  it-lesson-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: it-lesson-studio
+    restart: unless-stopped
+    ports:
+      - "3800:3800"
+    environment:
+      - PORT=3800
+      - INVITE_CODE=ZJ2026
+      - JWT_SECRET=it-lesson-studio-secret-key-2026
+      # 99 主机内网直连 cli-proxy-api 容器
+      - AI_API_BASE=http://cli-proxy-api:8317/v1
+      - AI_API_KEY=sk-none
+      - AI_MODEL=gemini-2.5-flash
+    volumes:
+      # 持久化存储用户数据库与生成的备课产物
+      - ./web/data:/app/web/data
+    networks:
+      - default
+      - dockge_default
+
+networks:
+  dockge_default:
+    external: true

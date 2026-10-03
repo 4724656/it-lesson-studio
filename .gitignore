@@ -26,3 +26,7 @@ workspace/
 # 本地教材与课件原始资料下载目录（含版权保护教学材料，严禁提交与公开推送）
 downloads/
 
+# Web 服务本地运行时数据与密钥
+web/.env
+web/data/
+web/node_modules/
