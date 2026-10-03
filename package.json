@@ -24,7 +24,8 @@
     "k12-education"
   ],
   "devDependencies": {
-    "@marp-team/marp-cli": "^4.5.1"
+    "@marp-team/marp-cli": "^4.5.1",
+    "pptxgenjs": "^4.0.1"
   },
   "engines": {
     "node": ">=20"
