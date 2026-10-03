@@ -29,6 +29,16 @@ def set_font(run, font_name='宋体', size_pt=11, bold=False, color_rgb=None):
         rFonts[0].set(qn('w:hAnsi'), font_name)
         rFonts[0].set(qn('w:eastAsia'), font_name)
 
+def set_cell_shading(tcPr, fill):
+    """P2-2 幂等：先清除单元格已有的 w:shd 阴影节点，再追加新的。
+
+    同一 docx 被美化脚本执行多次时，每格最多保留一个阴影节点，
+    连续执行两次的文档结构保持不变。"""
+    for old in tcPr.findall(qn("w:shd")):
+        tcPr.remove(old)
+    tcPr.append(parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill}"/>'))
+
+
 def replace_in_runs(runs, old_str, new_str):
     """跨 Run 边界精确替换文本，保留未被替换字符的样式与格式。"""
     if not runs:
@@ -211,17 +221,14 @@ def beautify_lesson_plan_docx(docx_path):
                 # 顶部基本信息表（Table 0）美化：标签列加浅灰底色
                 if t_idx == 0:
                     if c_idx in [0, 2]:
-                        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="F2F4F7"/>')
-                        tcPr.append(shd)
+                        set_cell_shading(tcPr, "F2F4F7")
                 
                 # 教学过程表（Table 1）：表头加淡蓝灰底色，各环节首列居中
                 elif t_idx == 1:
                     if r_idx == 0:
-                        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="E9EDF4"/>')
-                        tcPr.append(shd)
+                        set_cell_shading(tcPr, "E9EDF4")
                     elif c_idx == 0:
-                        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FAFAFC"/>')
-                        tcPr.append(shd)
+                        set_cell_shading(tcPr, "FAFAFC")
                 
                 # 处理单元格内的段落：表格内首行绝不缩进！
                 for p in cell.paragraphs:
@@ -390,8 +397,7 @@ def beautify_worksheet_docx(docx_path):
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 tcPr = cell._tc.get_or_add_tcPr()
                 if r_idx == 0:
-                    shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="EDF2F7"/>')
-                    tcPr.append(shd)
+                    set_cell_shading(tcPr, "EDF2F7")
                 
                 for p in cell.paragraphs:
                     replace_checkboxes(p)
@@ -415,5 +421,5 @@ def auto_beautify_docx(docx_path):
         beautify_lesson_plan_docx(docx_path)
 
 if __name__ == '__main__':
-    target = sys.argv[1] if len(sys.argv) > 1 else 'examples/三年级上/第03课_了解信息处理工具/03_了解信息处理工具_教案.docx'
+    target = sys.argv[1] if len(sys.argv) > 1 else 'examples/三年级上/第02课_了解智能工具/02_了解智能工具_教案.docx'
     auto_beautify_docx(target)

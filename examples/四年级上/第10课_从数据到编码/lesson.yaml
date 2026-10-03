@@ -1,0 +1,31 @@
+# 第10课《从数据到编码》课程 Manifest
+# 课次身份已按浙教版2026四年级上册真实目录核验（2026-10-03）：
+# 第三单元 身边的编码 · 第10课 从数据到编码（教材第40页起）
+
+title: 从数据到编码
+grade: 4
+term: 上
+lesson_no: 10
+unit: 第三单元 身边的编码
+textbook: 浙教版2026
+textbook_id: "1000065"
+
+scenarios:
+  - 学号密码
+  - 地铁车门
+
+worksheet_layout: single
+
+tasks:
+  - id: T1
+    name: 探索解密
+  - id: T2
+    name: 火眼金睛
+  - id: T3
+    name: 破译侦探
+
+artifacts:
+  plan: 10_从数据到编码_教案.md
+  worksheet: 10_从数据到编码_导学案.md
+  slides: 10_从数据到编码_课件.md
+  classwork: 10_从数据到编码_课堂作业.html

@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "export:lesson": "node scripts/export-lesson.mjs",
-    "check:lesson": "uv run python scripts/check_lesson.py"
+    "check:lesson": "uv run python scripts/check_lesson.py",
+    "test": "node --test scripts/export-lesson.test.mjs"
   },
   "keywords": [
     "information-technology",
@@ -24,5 +25,8 @@
   ],
   "devDependencies": {
     "@marp-team/marp-cli": "^4.5.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
