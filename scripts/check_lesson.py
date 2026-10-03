@@ -25,7 +25,7 @@
     FAIL: 缺 marp:true / 含教师后台台词
   [lesson.yaml 目录级]:
     FAIL: 缺必填字段 / 四件套文件缺失 / 标题不一致 / 任务名在某件套缺失 /
-          与教材图谱(课次/课题/单元)不一致(P0-3)
+          与教材图谱(课次/课题/单元/textbook_id)不一致(P0-3)
 
 退出码: 存在 FAIL 为 1，否则为 0。
 """
@@ -457,6 +457,7 @@ def check_slides(path):
 # ---------------- P0-3 / P1-1：lesson.yaml 目录级门禁 ----------------
 
 _GRAPH = None
+_TEXTBOOK_IDS = None
 
 
 def _norm(s):
@@ -464,22 +465,30 @@ def _norm(s):
 
 
 def load_textbook_graph():
-    """解析 references/textbook-zj2026.md，返回 {(grade, term, lesson_no): (title, unit)}。"""
-    global _GRAPH
+    """解析 references/textbook-zj2026.md，返回 {(grade, term, lesson_no): (title, unit)}。
+
+    同时填充 _TEXTBOOK_IDS {(grade, term): textbook_id}（册次 Textbook ID，供 P0-3 核对）。
+    """
+    global _GRAPH, _TEXTBOOK_IDS
     if _GRAPH is not None:
         return _GRAPH
     graph = {}
+    textbook_ids = {}
     grade = term = unit = None
     try:
         lines = open(GRAPH_PATH, encoding="utf-8").read().splitlines()
     except OSError:
         _GRAPH = graph
+        _TEXTBOOK_IDS = textbook_ids
         return graph
     for line in lines:
         m = re.search(r"###\s*[📘📗]*\s*(小学|初中)([三四五六七八])年级(上|下)册", line)
         if m:
             num = {"三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8}[m.group(2)]
             grade, term, unit = num, m.group(3), None
+            tid = re.search(r"Textbook ID:\s*`(\d+)`", line)
+            if tid:
+                textbook_ids[(num, m.group(3))] = tid.group(1)
             continue
         m = re.search(r"-\s*\*\*第(.+?)单元\s+(.+?)\*\*", line)
         if m and grade:
@@ -489,6 +498,7 @@ def load_textbook_graph():
         if m and grade and term:
             graph[(grade, term, int(m.group(1)))] = (m.group(2).strip(), unit)
     _GRAPH = graph
+    _TEXTBOOK_IDS = textbook_ids
     return graph
 
 
@@ -578,6 +588,17 @@ def check_manifest(lesson_dir):
             unit = str(manifest.get("unit") or "")
             if unit and g_unit and _norm(unit) not in _norm(g_unit) and _norm(g_unit) not in _norm(unit):
                 warns.append("单元归属与图谱不一致：图谱为【%s】，lesson.yaml 为【%s】" % (g_unit, unit))
+
+    # P0-3 补充：textbook_id 与图谱册次 ID 核对（lesson.yaml 声明了才校验，不一致即 FAIL）
+    mf_tid = str(manifest.get("textbook_id") or "").strip()
+    if mf_tid and grade and term:
+        load_textbook_graph()  # 确保 _TEXTBOOK_IDS 已填充
+        g_tid = (_TEXTBOOK_IDS or {}).get((int(grade), str(term)))
+        if g_tid and mf_tid != g_tid:
+            fails.append(
+                "textbook_id 与教材图谱不一致：图谱记载 %d年级%s册 Textbook ID=%s，"
+                "但 lesson.yaml 声明 textbook_id=%s（P0-3）"
+                % (int(grade), term, g_tid, mf_tid))
 
     for w in warns:
         print("  [WARN]", w)
