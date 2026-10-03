@@ -358,7 +358,7 @@ button.secondary-btn {
   <section class="panel active" data-step="0">
     <div class="panel-tag">⭐ 关卡一 · 算力引擎初探</div>
     <h2 class="panel-title">运行 Python 代码，秒级破解鸡兔同笼</h2>
-    <div class="story-box">
+    <div class="story-box" data-prose>
       <b>任务情境：</b>《孙子算经》鸡兔同笼名题（35头，94足）。在 IDLE 中按下 <code>F5</code> 启动算力引擎，体验计算机自动化执行算法的高速与精准。
     </div>
 
@@ -382,10 +382,10 @@ button.secondary-btn {
   </section>
 
   <!-- 关卡二：代码排雷大侦探 -->
-  <section class="panel" data-step="1">
+  <section class="panel" data-step="1" data-panel-type="hands-on">
     <div class="panel-tag">⭐ 关卡二 · 代码小侦探</div>
     <h2 class="panel-title">排查并修复三大常见卡点</h2>
-    <div class="story-box">
+    <div class="story-box" data-prose>
       <b>侦探情境：</b>程序报错别慌张，报错是计算机发来的求救信号！请根据故障现场，选择正确的修复秘籍。
     </div>
 
@@ -428,10 +428,10 @@ button.secondary-btn {
   </section>
 
   <!-- 关卡三：逻辑再造与无解分支 -->
-  <section class="panel" data-step="2">
+  <section class="panel" data-step="2" data-panel-type="hands-on">
     <div class="panel-tag">⭐ 关卡三 · 逻辑再造</div>
     <h2 class="panel-title">引入状态变量 jie，打造健壮算法</h2>
-    <div class="story-box">
+    <div class="story-box" data-prose>
       <b>深度挑战：</b>农夫把参数改为 35 头、93 脚。算法执行后没有任何输出！算法必须有明确输出。请选择状态变量 <code>jie</code> 的赋值，完善无解处理分支。
     </div>
 
@@ -522,6 +522,7 @@ while tu &lt; 36:
         <span class="badge-chip medal-chip">🔍 代码排雷神探勋章 (Medal)</span>
         <span class="badge-chip medal-chip">🛡️ 健壮逻辑大师勋章 (Medal)</span>
       </div>
+      <p data-prose style="font-size:14px; color:var(--text-sub); margin-bottom:12px;">填写班级姓名，点击下载保存你的学习凭单，交给老师即完成本课闯关。</p>
       <div style="margin-top: 16px;">
         <button class="action-btn" style="background:#b45309;" onclick="exportVoucher()">
           📥 一键下载学习凭单 (.txt)
@@ -662,7 +663,7 @@ function exportVoucher() {
 自我评价: ${selfChoice}
 通关项目: 算力实测先锋、代码排雷神探、健壮逻辑大师
 导出时间: ${timeStr}
-验证状态: 100% 离线机房环境验证通过
+验证状态: 单文件免部署 · 互联网机房开箱即用
 ============================================================`;
 
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });

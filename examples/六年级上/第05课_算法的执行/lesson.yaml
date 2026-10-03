@@ -1,0 +1,31 @@
+# 第5课《算法的执行》课程 Manifest
+# 课次身份已按浙教版2026六年级上册真实目录核验（2026-10-03）：
+# 第一单元 算法的实现 · 第5课 算法的执行（教材第18页起）
+
+title: 算法的执行
+grade: 6
+term: 上
+lesson_no: 5
+unit: 第一单元 算法的实现
+textbook: 浙教版2026
+textbook_id: "1000060"
+
+scenarios:
+  - 鸡兔同笼
+  - 算力引擎
+
+worksheet_layout: single
+
+tasks:
+  - id: T1
+    name: 算力引擎
+  - id: T2
+    name: 代码排雷
+  - id: T3
+    name: 逻辑再造
+
+artifacts:
+  plan: 05_算法的执行_教案.md
+  worksheet: 05_算法的执行_导学案.md
+  slides: 05_算法的执行_课件.md
+  classwork: 05_算法的执行_课堂作业.html

@@ -1,0 +1,32 @@
+# 第12课《数据解密》课程 Manifest
+# 课次身份已按浙教版2026八年级上册真实目录核验（2026-10-03）：
+# 第三单元 互联网与物联网的安全 · 第12课 数据解密
+# 内容要点取自 Drive 真实教案：数据解密的过程 / 数据解密的算法 / 我国商用密码的发展
+
+title: 数据解密
+grade: 8
+term: 上
+lesson_no: 12
+unit: 第三单元 互联网与物联网的安全
+textbook: 浙教版2026
+textbook_id: "1000070"
+
+scenarios:
+  - 神秘密信
+  - 凯撒密码
+
+worksheet_layout: single
+
+tasks:
+  - id: T1
+    name: 密钥探秘
+  - id: T2
+    name: 变量追踪
+  - id: T3
+    name: 逻辑排雷
+
+artifacts:
+  plan: 12_数据解密_教案.md
+  worksheet: 12_数据解密_导学案.md
+  slides: 12_数据解密_课件.md
+  classwork: 12_数据解密_课堂作业.html
