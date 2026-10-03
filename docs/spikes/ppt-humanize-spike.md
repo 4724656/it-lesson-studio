@@ -29,13 +29,7 @@ PptxGenJS 的实验脚本、依赖和生成产物均不进入共享分支。
 
 改良 Marp 三页已实际生成 PDF、PPTX 和 PNG 预览；原生 PPTX 仅作为比较证据，由最终 PPTX 经 LibreOffice 转 PDF 后渲染预览，不作为项目交付物。
 
-本地生成命令（仅用于复查 Spike，不作为正式流水线）：
-
-```bash
-node scripts/ppt-humanize-spike.mjs
-```
-
-最终正式路线不依赖该命令，继续使用：
+原始 spike 脚本（`scripts/ppt-humanize-spike.mjs`）已删除，不进入共享分支。正式路线继续使用：
 
 ```bash
 node scripts/export-lesson.mjs <课程目录>
