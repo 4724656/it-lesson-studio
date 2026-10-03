@@ -7,9 +7,13 @@
 - Marp PDF 页数 > 0，且与同名 PPTX 的幻灯片数一致。
 
 用法：
-    uv run python scripts/verify_layout.py <导出产物目录> [...]
+    uv run python scripts/verify_layout.py [--manifest <lesson.yaml>] <导出产物目录> [...]
 
-LibreOffice 不可用时降级为 WARN 跳过 DOCX 检查（不直接 FAIL）；
+--manifest 显式指定源课例的 lesson.yaml（隔离导出时产物与源分离，
+无法靠目录向上查找定位；不指定则回退向上查找，找不到按 single=1 页）。
+--strict 严格模式：LibreOffice 不可用时记 FAIL 而非 WARN 跳过（供 CI 使用，
+确保页数校验真正执行）。
+
 页数违规则退出码非零，供 export-lesson.mjs --verify-layout 调用。
 """
 
@@ -108,9 +112,31 @@ def main():
         print("[FAIL] 缺少 pypdf 依赖，请先 uv sync")
         return 1
 
+    # 必修1：支持显式传入源 lesson.yaml（隔离导出时产物目录与源目录分离，
+    # 无法靠向上查找定位 manifest；不传则回退到向上查找，再找不到则按 single=1 页）
+    # 必修4：--strict 严格模式（供 CI 使用）：LibreOffice 不可用时不再 WARN 跳过，
+    # 直接记为 FAIL，确保页数校验真正执行而非被静默跳过。
+    manifest_override = None
+    strict = False
+    targets = []
+    i = 1
+    while i < len(sys.argv):
+        if sys.argv[i] == "--manifest" and i + 1 < len(sys.argv):
+            manifest_override = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--strict":
+            strict = True
+            i += 1
+        else:
+            targets.append(sys.argv[i])
+            i += 1
+    if not targets:
+        print(__doc__)
+        return 2
+
     fails, warns, checked = [], [], 0
     docx_files, pptx_files, pdf_files = [], [], []
-    for target in sys.argv[1:]:
+    for target in targets:
         for root, _, files in os.walk(target):
             for f in files:
                 fp = os.path.join(root, f)
@@ -126,7 +152,12 @@ def main():
         base = os.path.basename(docx)
         pages = docx_to_pdf_pages(docx)
         if pages is None:
-            warns.append("LibreOffice 不可用，跳过 DOCX 真实页数检查: %s" % base)
+            # 必修4：严格模式下 LibreOffice 不可用记 FAIL，不允许仅 WARN 跳过
+            msg = "LibreOffice 不可用，无法校验 DOCX 真实页数: %s" % base
+            if strict:
+                fails.append("[STRICT] " + msg)
+            else:
+                warns.append(msg + "（已跳过）")
             continue
         checked += 1
         if "教案" in base or "plan" in base.lower():
@@ -135,7 +166,10 @@ def main():
             else:
                 print("  [OK] 教案 %s：%d 页（<=%d）" % (base, pages, PLAN_MAX_PAGES))
         elif "导学" in base or "worksheet" in base.lower():
-            expected = worksheet_expected_pages(find_manifest(os.path.dirname(docx)))
+            # 优先用显式传入的 manifest（隔离导出场景），否则向上查找
+            mf = manifest_override if manifest_override and os.path.isfile(manifest_override) \
+                else find_manifest(os.path.dirname(docx))
+            expected = worksheet_expected_pages(mf)
             if pages != expected:
                 fails.append("导学单页数不符: %s 共 %d 页（lesson.yaml 声明版式要求 %d 页）"
                              % (base, pages, expected))

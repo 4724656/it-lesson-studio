@@ -1,0 +1,10 @@
+# 回归 fixture：双面导学单课例（必修1）
+# 用于验证隔离导出时 verify_layout.py 能通过 --manifest 拿到正确的版式声明，
+# 而不是默认按 single=1 页检查。
+grade: 6
+term: 上
+lesson_no: 99
+title: 双面导学单回归测试课
+unit: 测试单元
+worksheet_layout: duplex
+layout_reason: 回归测试专用 fixture，模拟复杂大课双面导学单

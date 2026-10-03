@@ -101,7 +101,7 @@ def visible_len(html_or_text):
     """可见文本有效字数（与 Word 口径一致：中文字数 + 英文单词数）。"""
     t = re.sub(r"<script.*?</script>", " ", html_or_text, flags=re.S | re.I)
     t = re.sub(r"<style.*?</style>", " ", t, flags=re.S | re.I)
-    t = re.sub(r"&[a-zA-Z0-9#]+;", " ", html_or_text)
+    t = re.sub(r"&[a-zA-Z0-9#]+;", " ", t)
     t = re.sub(r"<[^>]+>", " ", t)
     t = re.sub(r"\s+", " ", t)
     zh = len(re.findall(r"[\u4e00-\u9fa5]", t))

@@ -19,7 +19,8 @@
  *   任一任务失败则最终以非零退出码退出，CI 不会把半成品当成功。
  *   --output-dir 可将产物隔离写入指定目录（默认写在源文件旁边）。
  *   --verify-layout 在导出后校验 DOCX 实际页数与课件页数（见
- *   scripts/verify_layout.py）。
+ *   scripts/verify_layout.py；严格模式：LibreOffice 不可用则直接 FAIL，
+ *   不允许 WARN 跳过）。
  */
 
 import fs from 'node:fs';
@@ -113,12 +114,16 @@ export function resolveChromePath() {
 }
 
 function chromeNoSandboxWrapper(realChrome) {
-  const wrapPath = path.join(os.tmpdir(), 'itls-chrome-no-sandbox.sh');
-  const content = `#!/bin/sh\nexec "${realChrome.replace(/"/g, '\\"')}" --no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage "$@"\n`;
+  // 必修3：不用 /tmp 下固定文件名（可被预置软链接劫持/覆盖），
+  // 每次生成随机私有临时目录，路径不可预测。
   try {
-    if (!fs.existsSync(wrapPath) || fs.readFileSync(wrapPath, 'utf8') !== content) {
-      fs.writeFileSync(wrapPath, content, { mode: 0o755 });
-    }
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'itls-chrome-'));
+    fs.chmodSync(tmpDir, 0o700);
+    const wrapPath = path.join(tmpDir, 'chrome-no-sandbox.sh');
+    const content = `#!/bin/sh\nexec "${realChrome.replace(/"/g, '\\"')}" --no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage "$@"\n`;
+    // O_EXCL 语义：mkdtemp 已保证目录新建，目录内不可能有同名文件；
+    // 若写入失败直接回退用原 Chrome 路径，不静默复用可疑旧文件。
+    fs.writeFileSync(wrapPath, content, { mode: 0o755, flag: 'wx' });
     return wrapPath;
   } catch {
     return realChrome;
@@ -163,6 +168,17 @@ async function main() {
 
   const targetPath = path.isAbsolute(targetArg) ? targetArg : path.resolve(rootDir, targetArg);
 
+  // 必修2：拒绝仓库外的课程路径。--output-dir 做路径映射时用
+  // path.relative(rootDir, absOut)，若课程在仓库外会产生 ../ 逃逸，
+  // 导致产物写到隔离目录之外。直接拒绝，不做静默截断。
+  {
+    const rel = path.relative(rootDir, targetPath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      console.error(`❌ 课程路径必须在仓库内，拒绝仓库外路径: ${targetPath}`);
+      process.exit(1);
+    }
+  }
+
   if (!fs.existsSync(targetPath)) {
     console.error(`❌ 目标路径不存在: ${targetPath}`);
     // 友好提示：列出 examples 下可用的课例目录，避免用户对着不存在的默认路径发呆
@@ -193,7 +209,13 @@ async function main() {
   // 将产物路径映射到隔离输出目录（保持相对结构），默认写在源文件旁边
   const mapOut = (absOut) => {
     if (!outputDir) return absOut;
-    const mapped = path.join(outputDir, path.relative(rootDir, absOut));
+    const rel = path.relative(rootDir, absOut);
+    // 纵深防御：即使上游校验被绕过，也不允许映射结果逃出隔离目录
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      console.error(`❌ 产物路径映射逃逸被拦截: ${absOut}`);
+      process.exit(1);
+    }
+    const mapped = path.join(outputDir, rel);
     fs.mkdirSync(path.dirname(mapped), { recursive: true });
     return mapped;
   };
@@ -269,8 +291,18 @@ async function main() {
   if (verifyLayout) {
     console.log(`\n🔍 正在校验实际版式（DOCX 真实页数 / 课件页数）...`);
     const verifyTarget = outputDir || targetPath;
+    // 必修1：隔离导出时产物与源分离，显式传入源 lesson.yaml，
+    // 避免 verify_layout.py 找不到 manifest 而把 duplex 导学单误按 1 页检查
+    const manifestCandidates = [
+      path.join(targetPath, 'lesson.yaml'),
+      path.join(path.dirname(targetPath), 'lesson.yaml'),
+    ];
+    const manifestPath = manifestCandidates.find((p) => fs.existsSync(p));
+    const verifyArgs = ['run', 'python', verifyScript, '--strict'];
+    if (manifestPath) verifyArgs.push('--manifest', manifestPath);
+    verifyArgs.push(verifyTarget);
     try {
-      runCmd('uv', ['run', 'python', verifyScript, verifyTarget], { cwd: rootDir });
+      runCmd('uv', verifyArgs, { cwd: rootDir });
     } catch (err) {
       console.error(`\n❌ 版式校验未通过，退出码 1。`);
       process.exit(1);
