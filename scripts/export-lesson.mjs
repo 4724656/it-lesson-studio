@@ -1,10 +1,32 @@
 #!/usr/bin/env node
+/**
+ * it-lesson-studio 一键导出流水线
+ *
+ *   node scripts/export-lesson.mjs <课程目录或Markdown文件路径>
+ *       [--no-pdf] [--no-pptx] [--output-dir=<目录>] [--verify-layout]
+ *
+ * - Marp 课件 (.md 含 marp:true) → .pptx / .pdf
+ * - 教案 / 导学单 (.md) → .docx（Pandoc + beautify_docx.py 中文公文精排）
+ *
+ * 安全说明（P0-1）：
+ *   所有外部命令一律使用 execFileSync(cmd, argsArray) 逐参数传递，
+ *   shell 恒为 false。课程目录/文件名只作为 argv 出现，绝不拼进 shell
+ *   字符串，从根上消除路径命令注入。回归测试：
+ *   `npm test`（scripts/export-lesson.test.mjs）。
+ *
+ * 可靠性说明（P0-2）：
+ *   导出前先规划全部任务，逐项执行并统计 成功/失败/总数；
+ *   任一任务失败则最终以非零退出码退出，CI 不会把半成品当成功。
+ *   --output-dir 可将产物隔离写入指定目录（默认写在源文件旁边）。
+ *   --verify-layout 在导出后校验 DOCX 实际页数与课件页数（见
+ *   scripts/verify_layout.py）。
+ */
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
-import zlib from 'node:zlib';
-import https from 'node:https';
+import { execFileSync } from 'node:child_process';
+import os from 'node:os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,68 +36,100 @@ const rootDir = path.resolve(__dirname, '..');
 const pandocTemplate = path.join(rootDir, 'resources', 'pandoc', '模板.docx');
 const luaFilter = path.join(rootDir, 'resources', 'pandoc', 'br.lua');
 const marpTheme = path.join(rootDir, 'resources', 'themes', 'edu-lesson.css');
+const beautifyScript = path.join(rootDir, 'scripts', 'beautify_docx.py');
+const verifyScript = path.join(rootDir, 'scripts', 'verify_layout.py');
 
-// 自动渲染 Mermaid 图像到本地 (带离线机房 3 秒快速超时降级保护)
-async function downloadMermaidPng(mermaidText, outputPath) {
-  const state = JSON.stringify({ code: mermaidText, mermaid: { theme: 'default' } });
-  const data = Buffer.from(state, 'utf8');
-  const compressed = zlib.deflateSync(data, { level: 9 });
-  const encoded = compressed.toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
-  const url = `https://mermaid.ink/img/pako:${encoded}`;
-  
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { timeout: 3000 }, (res) => {
-      if (res.statusCode !== 200) {
-         reject(new Error(`Mermaid 服务返回 HTTP ${res.statusCode}`));
-         return;
+/**
+ * 执行外部命令。cmd 与每个参数分离传递，shell 恒为 false：
+ * 路径中的空格、中文、$()、反引号、分号都只会被当作普通字符。
+ */
+export function runCmd(cmd, args, opts = {}) {
+  // P0-2 附带修复：强制 UTF-8 locale，否则 pandoc 在 POSIX locale 下无法处理中文路径/模板文件名
+  const env = { LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8', ...process.env, ...(opts.env || {}) };
+  return execFileSync(cmd, args, { stdio: ['ignore', 'inherit', 'inherit'], shell: false, ...opts, env });
+}
+
+/**
+ * 解析 Marp 执行方式：优先用项目本地安装的 marp-cli（npm ci 后），
+ * 以 `node marp-cli.js` 形式直跑，彻底避免 npx/平台差异；
+ * 本地未安装时回退到 npx（POSIX 环境）。
+ */
+export function resolveMarpCommand() {
+  const jsEntry = path.join(rootDir, 'node_modules', '@marp-team', 'marp-cli', 'marp-cli.js');
+  if (fs.existsSync(jsEntry)) return { cmd: process.execPath, args: [jsEntry] };
+  const localBin = path.join(rootDir, 'node_modules', '.bin', process.platform === 'win32' ? 'marp.cmd' : 'marp');
+  if (fs.existsSync(localBin)) return { cmd: localBin, args: [] };
+  return { cmd: 'npx', args: ['@marp-team', 'marp-cli'] };
+}
+
+export function buildMarpArgs(mdFile, outFile) {
+  const args = [mdFile, '--allow-local-files', '--theme-set', marpTheme, '-o', outFile];
+  const chrome = resolveChromePath();
+  if (chrome) args.push('--browser-path', chrome);
+  return args;
+}
+
+/**
+ * 解析可用的 Chrome/Chromium 二进制。
+ * 顺序：环境变量 → puppeteer 缓存（真 Chrome）→ /usr/local/bin/chrome-headless →
+ * 系统 google-chrome/chromium。注意 /usr/bin/chromium-browser 在本镜像中是
+ * snap 假包，绝不直接采用。
+ */
+export function resolveChromePath() {
+  const candidates = [];
+  if (process.env.CHROME_PATH) candidates.push(process.env.CHROME_PATH);
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) candidates.push(process.env.PUPPETEER_EXECUTABLE_PATH);
+  try {
+    const cacheDir = path.join(os.homedir(), '.cache', 'puppeteer', 'chrome');
+    if (fs.existsSync(cacheDir)) {
+      const versions = fs.readdirSync(cacheDir).sort().reverse();
+      for (const v of versions) {
+        candidates.push(path.join(cacheDir, v, 'chrome-linux64', 'chrome'));
+        candidates.push(path.join(cacheDir, v, 'chrome-mac', 'Google Chrome for Testing.app',
+          'Contents', 'MacOS', 'Google Chrome for Testing'));
       }
-      const fileStream = fs.createWriteStream(outputPath);
-      res.pipe(fileStream);
-      fileStream.on('finish', () => {
-         fileStream.close();
-         resolve();
-      });
-    });
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('网络请求超时(3s)，机房离线保护生效，已优雅跳过'));
-    });
-    req.on('error', reject);
-  });
-}
-
-// 异步替换函数
-async function replaceAsync(str, regex, asyncFn) {
-    const promises = [];
-    str.replace(regex, (match, ...args) => {
-        const promise = asyncFn(match, ...args);
-        promises.push(promise);
-    });
-    const data = await Promise.all(promises);
-    return str.replace(regex, () => data.shift());
-}
-
-// 解析输入参数
-const args = process.argv.slice(2);
-const targetArg = args.find(arg => !arg.startsWith('--')) || 'examples/demo-lesson';
-const skipPdf = args.includes('--no-pdf');
-const skipPptx = args.includes('--no-pptx');
-
-const targetPath = path.isAbsolute(targetArg) ? targetArg : path.resolve(rootDir, targetArg);
-
-if (!fs.existsSync(targetPath)) {
-  console.error(`❌ 目标路径不存在: ${targetPath}`);
-  // 友好提示：列出 examples 下可用的课例目录，避免用户对着不存在的默认路径发呆
-  const examplesDir = path.join(rootDir, 'examples');
-  if (fs.existsSync(examplesDir)) {
-    const lessons = fs.readdirSync(examplesDir, { withFileTypes: true })
-      .filter(e => e.isDirectory())
-      .map(e => `examples/${e.name}`);
-    if (lessons.length) {
-      console.error(`💡 可用的课例目录：\n   - ${lessons.slice(0, 10).join('\n   - ')}${lessons.length > 10 ? `\n   ……等共 ${lessons.length} 个` : ''}`);
     }
+  } catch { /* 忽略 */ }
+  candidates.push('/usr/local/bin/chrome-headless');
+  for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium']) {
+    try {
+      const found = execFileSync('which', [bin], { stdio: ['ignore', 'pipe', 'pipe'], shell: false })
+        .toString().trim();
+      if (found && !found.includes('chromium-browser')) candidates.push(found);
+    } catch { /* 忽略 */ }
   }
-  process.exit(1);
+  for (const c of candidates) {
+    try {
+      if (c && fs.existsSync(c) && fs.statSync(c).isFile()) {
+        // root 运行 Chrome 必须 --no-sandbox：生成一次性包装脚本
+        if (typeof process.getuid === 'function' && process.getuid() === 0) {
+          return chromeNoSandboxWrapper(c);
+        }
+        return c;
+      }
+    } catch { /* 忽略 */ }
+  }
+  return null;
+}
+
+function chromeNoSandboxWrapper(realChrome) {
+  const wrapPath = path.join(os.tmpdir(), 'itls-chrome-no-sandbox.sh');
+  const content = `#!/bin/sh\nexec "${realChrome.replace(/"/g, '\\"')}" --no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage "$@"\n`;
+  try {
+    if (!fs.existsSync(wrapPath) || fs.readFileSync(wrapPath, 'utf8') !== content) {
+      fs.writeFileSync(wrapPath, content, { mode: 0o755 });
+    }
+    return wrapPath;
+  } catch {
+    return realChrome;
+  }
+}
+
+export function buildPandocArgs(inputMd, docxOut, resourceDirs) {
+  const args = [inputMd, '-o', docxOut, `--resource-path=${resourceDirs.join(path.delimiter)}`];
+  if (fs.existsSync(pandocTemplate)) args.push(`--reference-doc=${pandocTemplate}`);
+  if (fs.existsSync(luaFilter)) args.push(`--lua-filter=${luaFilter}`);
+  return args;
 }
 
 // 递归查找指定目录下的所有 .md 文件
@@ -97,136 +151,139 @@ function findMarkdownFiles(dirOrFile) {
   return results;
 }
 
-const mdFiles = findMarkdownFiles(targetPath);
+async function main() {
+  // 解析输入参数
+  const args = process.argv.slice(2);
+  const targetArg = args.find((arg) => !arg.startsWith('--')) || 'examples/demo-lesson';
+  const skipPdf = args.includes('--no-pdf');
+  const skipPptx = args.includes('--no-pptx');
+  const verifyLayout = args.includes('--verify-layout');
+  const outDirOpt = args.find((a) => a.startsWith('--output-dir='));
+  const outputDir = outDirOpt ? path.resolve(rootDir, outDirOpt.slice('--output-dir='.length)) : null;
 
-if (mdFiles.length === 0) {
-  console.log(`ℹ️ 在 ${targetPath} 下未找到任何 .md 文件。`);
-  process.exit(0);
-}
+  const targetPath = path.isAbsolute(targetArg) ? targetArg : path.resolve(rootDir, targetArg);
 
-console.log(`\n📦 开始一键导出备课文件 (${mdFiles.length} 个 Markdown 文件)...`);
-console.log(`📂 目标目录: ${path.relative(rootDir, targetPath) || '.'}\n`);
-
-let successCount = 0;
-
-// 使用 async/await 顶层循环
-for (const mdFile of mdFiles) {
-  const relPath = path.relative(rootDir, mdFile);
-  const content = fs.readFileSync(mdFile, 'utf-8');
-  const dir = path.dirname(mdFile);
-  const baseName = path.basename(mdFile, '.md');
-
-  // 判断是否为 Marp 课件
-  const isMarp = /---[\s\S]*?marp:\s*true[\s\S]*?---/.test(content);
-
-  if (isMarp) {
-    // 1. 导出 PPTX (默认同时导出，除非传入 --no-pptx)
-    if (!skipPptx) {
-      const pptxOut = path.join(dir, `${baseName}.pptx`);
-      const pptxRel = path.relative(rootDir, pptxOut);
-      console.log(`🖥️  [Marp] 正在导出 PPTX: ${relPath} ➔ ${pptxRel}`);
-
-      try {
-        execSync(`npx @marp-team/marp-cli "${mdFile}" --allow-local-files --theme-set "${marpTheme}" -o "${pptxOut}"`, {
-          stdio: ['ignore', 'inherit', 'inherit'],
-          cwd: rootDir
-        });
-        console.log(`   ✔ 成功生成 PPTX: ${pptxRel}\n`);
-        successCount++;
-      } catch (err) {
-        console.error(`   ✖ Marp PPTX 导出失败: ${err.message}\n`);
+  if (!fs.existsSync(targetPath)) {
+    console.error(`❌ 目标路径不存在: ${targetPath}`);
+    // 友好提示：列出 examples 下可用的课例目录，避免用户对着不存在的默认路径发呆
+    const examplesDir = path.join(rootDir, 'examples');
+    if (fs.existsSync(examplesDir)) {
+      const lessons = fs.readdirSync(examplesDir, { withFileTypes: true })
+        .filter((e) => e.isDirectory())
+        .map((e) => `examples/${e.name}`);
+      if (lessons.length) {
+        console.error(`💡 可用的课例目录：\n   - ${lessons.slice(0, 10).join('\n   - ')}${lessons.length > 10 ? `\n   ……等共 ${lessons.length} 个` : ''}`);
       }
     }
+    process.exit(1);
+  }
 
-    // 2. 导出 PDF (默认同时导出，除非传入 --no-pdf)
-    if (!skipPdf) {
-      const pdfOut = path.join(dir, `${baseName}.pdf`);
-      const pdfRel = path.relative(rootDir, pdfOut);
-      console.log(`📄 [Marp] 正在导出 PDF: ${relPath} ➔ ${pdfRel}`);
+  const mdFiles = findMarkdownFiles(targetPath);
 
-      try {
-        execSync(`npx @marp-team/marp-cli "${mdFile}" --allow-local-files --theme-set "${marpTheme}" -o "${pdfOut}"`, {
-          stdio: ['ignore', 'inherit', 'inherit'],
-          cwd: rootDir
-        });
-        console.log(`   ✔ 成功生成 PDF: ${pdfRel}\n`);
-        successCount++;
-      } catch (err) {
-        console.error(`   ✖ Marp PDF 导出失败: ${err.message}\n`);
-      }
-    }
-  } else {
-    // 导出 Word (.docx)
-    const docxOut = path.join(dir, `${baseName}.docx`);
-    const docxRel = path.relative(rootDir, docxOut);
-    console.log(`📝 [Pandoc] 正在导出 Word: ${relPath} ➔ ${docxRel}`);
+  if (mdFiles.length === 0) {
+    console.log(`ℹ️ 在 ${targetPath} 下未找到任何 .md 文件。`);
+    process.exit(0);
+  }
 
-    // 临时文件状态需要在 try/finally 间共享，声明提到 try 外部
-    let processedMdFile = mdFile;
-    let tempFileCreated = false;
-    try {
-      // 预处理：扫描 Mermaid 并转为图片，统一存储在 examples/images
-      const mermaidRegex = /```mermaid\n([\s\S]*?)```/g;
-      let mermaidIndex = 1;
-      const unifiedImagesDir = path.join(rootDir, 'examples', 'images');
-      if (!fs.existsSync(unifiedImagesDir)) fs.mkdirSync(unifiedImagesDir, { recursive: true });
-      
-      let newContent = await replaceAsync(content, mermaidRegex, async (match, mermaidCode) => {
-         const imgName = `${baseName}_mermaid_${mermaidIndex++}.png`;
-         const imgPath = path.join(unifiedImagesDir, imgName);
-         
-         console.log(`   🎨 [Kroki] 正在云端渲染 Mermaid 板书为图片: ${imgName}...`);
-         try {
-             await downloadMermaidPng(mermaidCode.trim(), imgPath);
-             const relToImg = path.relative(dir, imgPath).replace(/\\/g, '/');
-             // 返回 Markdown 插入图片的语法（留空 alt 避免 Pandoc 在 Word 图片下方输出图注标题）
-             return `![](${relToImg})`;
-         } catch(e) {
-             console.warn(`   ⚠️ 跳过 Mermaid 渲染 (机房离线保护): ${e.message}`);
-             return match; // 失败则原样保留代码块，绝不挂起导出流水线
-         }
-      });
-      
-      if (newContent !== content) {
-          processedMdFile = path.join(dir, `${baseName}.tmp.md`);
-          fs.writeFileSync(processedMdFile, newContent, 'utf-8');
-          tempFileCreated = true;
-      }
+  console.log(`\n📦 开始一键导出备课文件 (${mdFiles.length} 个 Markdown 文件)...`);
+  console.log(`📂 目标目录: ${path.relative(rootDir, targetPath) || '.'}`);
+  if (outputDir) console.log(`📁 产物隔离输出到: ${path.relative(rootDir, outputDir) || '.'}`);
+  console.log();
 
-      const hasLua = fs.existsSync(luaFilter);
-      const hasTpl = fs.existsSync(pandocTemplate);
+  // 将产物路径映射到隔离输出目录（保持相对结构），默认写在源文件旁边
+  const mapOut = (absOut) => {
+    if (!outputDir) return absOut;
+    const mapped = path.join(outputDir, path.relative(rootDir, absOut));
+    fs.mkdirSync(path.dirname(mapped), { recursive: true });
+    return mapped;
+  };
 
-      let cmd = `pandoc "${processedMdFile}" -o "${docxOut}" --resource-path="${dir}${path.delimiter}${unifiedImagesDir}"`;
-      if (hasTpl) cmd += ` --reference-doc="${pandocTemplate}"`;
-      if (hasLua) cmd += ` --lua-filter="${luaFilter}"`;
+  // 日志展示路径：仓库内用相对路径，仓库外（如隔离目录）用绝对路径
+  const showPath = (absP) => {
+    const rel = path.relative(rootDir, absP);
+    return rel.startsWith('..') ? absP : rel;
+  };
 
-      execSync(cmd, { stdio: ['ignore', 'inherit', 'inherit'], cwd: rootDir });
+  // P0-2：先规划全部导出任务，再逐项执行并统计
+  const tasks = [];
+  for (const mdFile of mdFiles) {
+    const content = fs.readFileSync(mdFile, 'utf-8');
+    const dir = path.dirname(mdFile);
+    const baseName = path.basename(mdFile, '.md');
+    const isMarp = /---[\s\S]*?marp:\s*true[\s\S]*?---/.test(content);
 
-      // 中文专业排版后处理（首行缩进两格、黑体标题、宋体正文、表格防断裂）
-      const beautifyScript = path.join(rootDir, 'scripts', 'beautify_docx.py');
-      if (fs.existsSync(beautifyScript)) {
-        try {
-          execSync(`uv run --with python-docx python "${beautifyScript}" "${docxOut}"`, {
-            stdio: ['ignore', 'ignore', 'inherit'],
-            cwd: rootDir
-          });
-          console.log(`   ✨ 已自动应用中文公文级排版 (首行缩进2格·黑体大纲·宋体正文·表格美化)`);
-        } catch (postErr) {
-          console.warn(`   ⚠️ 后处理排版优化跳过: ${postErr.message}`);
-        }
-      }
-
-      console.log(`   ✔ 成功生成 Word: ${docxRel}\n`);
-      successCount++;
-    } catch (err) {
-      console.error(`   ✖ Pandoc 导出失败: ${err.message}\n`);
-    } finally {
-      // 临时文件无论成功失败都要清理，避免 .tmp.md 残留污染课例目录
-      if (tempFileCreated && fs.existsSync(processedMdFile)) {
-        fs.unlinkSync(processedMdFile);
-      }
+    if (isMarp) {
+      if (!skipPptx) tasks.push({ kind: 'pptx', mdFile, out: mapOut(path.join(dir, `${baseName}.pptx`)) });
+      if (!skipPdf) tasks.push({ kind: 'pdf', mdFile, out: mapOut(path.join(dir, `${baseName}.pdf`)) });
+    } else {
+      tasks.push({ kind: 'docx', mdFile, dir, out: mapOut(path.join(dir, `${baseName}.docx`)) });
     }
   }
+
+  const marp = resolveMarpCommand();
+  let succeeded = 0;
+  const failed = [];
+
+  for (const task of tasks) {
+    const relIn = showPath(task.mdFile);
+    const relOut = showPath(task.out);
+    try {
+      if (task.kind === 'pptx' || task.kind === 'pdf') {
+        console.log(`🖥️  [Marp] 正在导出 ${task.kind.toUpperCase()}: ${relIn} ➔ ${relOut}`);
+        runCmd(marp.cmd, [...marp.args, ...buildMarpArgs(task.mdFile, task.out)], { cwd: rootDir });
+        console.log(`   ✔ 成功生成 ${task.kind.toUpperCase()}: ${relOut}\n`);
+      } else {
+        console.log(`📝 [Pandoc] 正在导出 Word: ${relIn} ➔ ${relOut}`);
+        const imagesDir = path.join(rootDir, 'examples', 'images');
+        runCmd('pandoc', buildPandocArgs(task.mdFile, task.out, [task.dir, imagesDir]), { cwd: rootDir });
+
+        // 中文专业排版后处理（首行缩进两格、黑体标题、宋体正文、表格防断裂）
+        if (fs.existsSync(beautifyScript)) {
+          try {
+            // 项目 Python 依赖由 pyproject.toml 锁定，走项目虚拟环境
+            runCmd('uv', ['run', 'python', beautifyScript, task.out],
+              { stdio: ['ignore', 'ignore', 'inherit'], cwd: rootDir });
+            console.log(`   ✨ 已自动应用中文公文级排版 (首行缩进2格·黑体大纲·宋体正文·表格美化)`);
+          } catch (postErr) {
+            console.warn(`   ⚠️ 后处理排版优化跳过: ${postErr.message}`);
+          }
+        }
+        console.log(`   ✔ 成功生成 Word: ${relOut}\n`);
+      }
+      succeeded++;
+    } catch (err) {
+      console.error(`   ✖ 导出失败 [${task.kind}] ${relIn}: ${err.message}\n`);
+      failed.push(`${task.kind}: ${relIn}`);
+    }
+  }
+
+  const total = tasks.length;
+  console.log(`📊 导出结果：成功 ${succeeded} / 失败 ${failed.length} / 共 ${total} 个任务`);
+  if (failed.length) {
+    for (const f of failed) console.error(`   ✖ ${f}`);
+    console.error(`\n❌ 导出未完成（${failed.length} 个任务失败），退出码 1。`);
+    process.exit(1);
+  }
+
+  // P1-5：导出后校验实际版式（DOCX 真实页数 / 课件页数）
+  if (verifyLayout) {
+    console.log(`\n🔍 正在校验实际版式（DOCX 真实页数 / 课件页数）...`);
+    const verifyTarget = outputDir || targetPath;
+    try {
+      runCmd('uv', ['run', 'python', verifyScript, verifyTarget], { cwd: rootDir });
+    } catch (err) {
+      console.error(`\n❌ 版式校验未通过，退出码 1。`);
+      process.exit(1);
+    }
+  }
+
+  console.log(`\n🎉 导出完成！共成功处理 ${succeeded} 个导出任务。\n`);
 }
 
-console.log(`🎉 导出完成！共成功处理 ${successCount} 个导出任务。\n`);
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isMain) {
+  main().catch((err) => {
+    console.error(`❌ 导出流水线异常: ${err && err.message ? err.message : err}`);
+    process.exit(1);
+  });
+}
