@@ -22,10 +22,13 @@ function cleanSentinel() {
   try { fs.unlinkSync(SENTINEL); } catch { /* 不存在 */ }
 }
 
+const echoCmd = process.platform === 'win32' ? process.execPath : '/bin/echo';
+const wrapArg = (arg) => process.platform === 'win32' ? ['-e', 'console.log(process.argv[1])', arg] : [arg];
+
 test('P0-1: $() 注入路径只当 argv 传递，不触发命令执行', () => {
   cleanSentinel();
   const evil = `$(touch ${SENTINEL})`;
-  const out = runCmd('/bin/echo', [evil], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const out = runCmd(echoCmd, wrapArg(evil), { stdio: ['ignore', 'pipe', 'pipe'] });
   assert.equal(out.toString().trim(), evil, 'argv 必须原样透传');
   assert.equal(fs.existsSync(SENTINEL), false, 'shell 展开被触发了！存在命令注入');
   cleanSentinel();
@@ -34,7 +37,7 @@ test('P0-1: $() 注入路径只当 argv 传递，不触发命令执行', () => {
 test('P0-1: 反引号 / 分号 / 管道符路径不被执行', () => {
   cleanSentinel();
   const evil = '`touch ' + SENTINEL + '`; touch ' + SENTINEL + ' | cat';
-  const out = runCmd('/bin/echo', [evil], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const out = runCmd(echoCmd, wrapArg(evil), { stdio: ['ignore', 'pipe', 'pipe'] });
   assert.equal(out.toString().trim(), evil);
   assert.equal(fs.existsSync(SENTINEL), false, 'shell 展开被触发了！存在命令注入');
   cleanSentinel();
@@ -42,7 +45,7 @@ test('P0-1: 反引号 / 分号 / 管道符路径不被执行', () => {
 
 test('P0-1: 中文、空格路径原样透传', () => {
   const p = 'examples/三年级上/第02课_了解智能工具/02_了解智能工具_课件.md';
-  const out = runCmd('/bin/echo', [p], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const out = runCmd(echoCmd, wrapArg(p), { stdio: ['ignore', 'pipe', 'pipe'] });
   assert.equal(out.toString().trim(), p);
 });
 

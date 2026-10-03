@@ -392,9 +392,40 @@ def check_lesson_plan(path):
     if "板书设计" in text:
         warns.append("建议取消独立【板书设计】环节，聚焦机房实操指导")
 
+    # 结构检查 1：顶部课题元数据表
+    if not (re.search(r"\|\s*课题\s*\|", text) or re.search(r"\|\s*册次\s*\|", text)):
+        fails.append("缺少顶部课题元数据表（极简2行4列，需含课题/教材/单元/年级）")
+
+    # 结构检查 2：八大正规公文二级标题
+    required_sections = [
+        ("一、教材分析", r"##\s*一[、.]\s*教材分析"),
+        ("二、学情分析", r"##\s*二[、.]\s*学情分析"),
+        ("三、教学目标", r"##\s*三[、.]\s*教学目标"),
+        ("四、教学重点", r"##\s*四[、.]\s*教学重点"),
+        ("五、教学难点", r"##\s*五[、.]\s*教学难点"),
+        ("六、教学过程", r"##\s*六[、.]\s*教学过程"),
+        ("七、作业", r"##\s*七[、.]\s*作业"),
+        ("八、教学反思", r"##\s*八[、.]\s*教学反思"),
+    ]
+    for sec_name, sec_regex in required_sections:
+        if not re.search(sec_regex, text):
+            fails.append("缺少标准公文二级标题: 【%s】" % sec_name)
+
+    # 结构检查 3：教学过程四列表格
+    if re.search(r"##\s*六[、.]\s*教学过程", text):
+        m_proc = re.search(r"##\s*六[、.]\s*教学过程(.*?)(?=##\s*七|$)", text, re.S)
+        proc_text = m_proc.group(1) if m_proc else ""
+        has_table = ("教学环节" in proc_text and "教师活动" in proc_text and "学生活动" in proc_text and "设计意图" in proc_text)
+        if not has_table:
+            fails.append("【六、教学过程】必须使用四列精排表格（表头须含：教学环节 | 教师活动 | 学生活动 | 设计意图）")
+
+    # 结构检查 4：分层作业与反思维度
+    if not ("导学单" in text and "随堂作业" in text and "课后探究" in text):
+        warns.append("【七、作业】建议明确包含三级分层：1. 导学单 2. 随堂作业 3. 课后探究")
+
     # 实用三大支架检查
     scaffolds = {
-        "通俗生活比喻": ["比作", "比喻", "超级大脑", "仓库", "桥梁", "菜谱", "身份证"],
+        "通俗生活比喻": ["比作", "比喻", "超级大脑", "仓库", "桥梁", "菜谱", "身份证", "保险箱", "明信片"],
         "真实启发设问": ["设问", "提问", "追问", "？", "?"],
         "实操踩坑预警": ["卡点", "易错", "避坑", "锦囊", "预警", "巡视", "指导"]
     }
