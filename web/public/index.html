@@ -345,24 +345,45 @@
                   <i data-lucide="images" class="w-3.5 h-3.5 text-emerald-400"></i>
                   课本拍照 / 插图扫描件上传
                 </span>
-                <span class="text-[11px] text-slate-400 font-mono">
-                  已添加 <span id="imageCounter" class="text-brand-400 font-bold">0</span> / 5 张
-                </span>
+                <div class="flex items-center gap-3">
+                  <button type="button" id="btnClearImages" onclick="clearAllImages()"
+                    class="hidden text-[11px] text-slate-400 hover:text-red-400 transition">
+                    清空图片
+                  </button>
+                  <span class="text-[11px] text-slate-400 font-mono">
+                    已添加 <span id="imageCounter" class="text-brand-400 font-bold">0</span> / 5 张
+                  </span>
+                </div>
               </div>
 
-              <!-- 上传拖拽投放区 (支持点击、拖拽、以及 Ctrl+V 粘贴图片) -->
-              <div id="imageDropzone" onclick="triggerImageFileInput()"
-                class="upload-zone rounded-xl p-5 text-center cursor-pointer flex flex-col items-center justify-center min-h-[148px] bg-dark-surface/50 hover:bg-dark-surface/80 transition relative">
+              <!-- 上传拖拽投放区 (支持点击、拖拽、以及 Ctrl+V 粘贴图片，预览缩略图完整收纳在选区虚线框内) -->
+              <div id="imageDropzone" onclick="handleDropzoneClick(event)"
+                class="upload-zone rounded-xl p-3.5 text-center cursor-pointer flex flex-col items-center justify-center min-h-[148px] bg-dark-surface/50 hover:bg-dark-surface/80 transition relative flex-1">
                 <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/webp" multiple class="hidden"
                   onchange="handleImageFileSelect(event)" />
-                <div
-                  class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 mb-2">
-                  <i data-lucide="image-plus" class="w-5 h-5"></i>
+
+                <!-- 空状态占位提示（无图片时展示） -->
+                <div id="imageDropPrompt" class="flex flex-col items-center justify-center py-2 pointer-events-none">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 mb-2">
+                    <i data-lucide="image-plus" class="w-5 h-5"></i>
+                  </div>
+                  <p class="text-xs font-medium text-slate-200">点击选择图片 或 将课本拍照图拖拽至此</p>
+                  <p class="text-[11px] text-slate-400 mt-1">支持在此区域直接按 <kbd
+                      class="px-1.5 py-0.5 rounded bg-dark-bg border border-dark-border text-brand-300 font-mono text-[10px]">Ctrl+V</kbd>
+                    粘贴剪贴板截图</p>
                 </div>
-                <p class="text-xs font-medium text-slate-200">点击选择图片 或 将课本拍照图拖拽至此</p>
-                <p class="text-[11px] text-slate-400 mt-1">支持在此区域直接按 <kbd
-                    class="px-1.5 py-0.5 rounded bg-dark-bg border border-dark-border text-brand-300 font-mono text-[10px]">Ctrl+V</kbd>
-                  粘贴剪贴板截图</p>
+
+                <!-- 图片预览与继续添加网格（有图片时在虚线选区框内展示） -->
+                <div id="imagePreviewContainer" class="hidden w-full flex flex-col justify-between h-full">
+                  <div id="imagePreviewGrid" class="grid grid-cols-5 gap-2 w-full">
+                    <!-- 动态注入预览缩略卡片与添加插槽 -->
+                  </div>
+                  <div class="text-[11px] text-slate-400 pt-2 flex items-center justify-between border-t border-dark-borderLight/40 mt-2 pointer-events-none">
+                    <span id="imageDropHint">拖拽或 Ctrl+V 可继续追加图片</span>
+                    <span class="text-brand-400 font-mono">还可添加 <span id="imageRemainSlots">4</span> 张</span>
+                  </div>
+                </div>
               </div>
 
               <!-- 错误拦截提醒条（默认隐藏） -->
@@ -372,9 +393,10 @@
                 <span id="imageUploadErrorText">图片格式或大小不符合要求</span>
               </div>
 
-              <!-- 图片预览网格带 -->
-              <div id="imagePreviewGrid" class="grid grid-cols-5 gap-2.5 empty:hidden pt-1">
-                <!-- 动态注入预览缩略卡片 -->
+              <!-- 底部状态提示条（与左栏对称对齐） -->
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                <span>支持 JPG / PNG / WEBP，单张 ≤ 5MB</span>
+                <span class="text-slate-400">可多选或直接截图粘贴</span>
               </div>
             </div>
 

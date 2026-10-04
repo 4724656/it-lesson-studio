@@ -21,6 +21,8 @@ window.onMaterialsTextInput = onMaterialsTextInput;
 window.clearMaterialsText = clearMaterialsText;
 window.triggerImageFileInput = triggerImageFileInput;
 window.handleImageFileSelect = handleImageFileSelect;
+window.handleDropzoneClick = handleDropzoneClick;
+window.clearAllImages = clearAllImages;
 window.removeUploadedImage = removeUploadedImage;
 window.renderImagePreviews = renderImagePreviews;
 window.handleCreateTask = handleCreateTask;
@@ -565,6 +567,19 @@ function formatFileSize(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
+function clearAllImages() {
+  uploadedImages = [];
+  window.uploadedImages = uploadedImages;
+  renderImagePreviews();
+  hideImageError();
+}
+
+function handleDropzoneClick(e) {
+  if (uploadedImages.length < 5) {
+    triggerImageFileInput();
+  }
+}
+
 function removeUploadedImage(id) {
   uploadedImages = uploadedImages.filter(img => img.id !== id);
   window.uploadedImages = uploadedImages;
@@ -575,17 +590,51 @@ function removeUploadedImage(id) {
 function renderImagePreviews() {
   const grid = document.getElementById('imagePreviewGrid');
   const counter = document.getElementById('imageCounter');
-  counter.textContent = uploadedImages.length;
+  const dropPrompt = document.getElementById('imageDropPrompt');
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  const btnClear = document.getElementById('btnClearImages');
+  const remainSlots = document.getElementById('imageRemainSlots');
+  const dropHint = document.getElementById('imageDropHint');
 
+  const count = uploadedImages.length;
+  if (counter) counter.textContent = count;
+  if (btnClear) {
+    if (count > 0) btnClear.classList.remove('hidden');
+    else btnClear.classList.add('hidden');
+  }
+
+  if (count === 0) {
+    if (dropPrompt) dropPrompt.classList.remove('hidden');
+    if (previewContainer) previewContainer.classList.add('hidden');
+    if (grid) grid.innerHTML = '';
+    return;
+  }
+
+  if (dropPrompt) dropPrompt.classList.add('hidden');
+  if (previewContainer) previewContainer.classList.remove('hidden');
+
+  if (remainSlots) remainSlots.textContent = 5 - count;
+  if (dropHint) {
+    if (count >= 5) {
+      dropHint.textContent = '已达到 5 张上限 · 悬停卡片右上角 ✕ 可删除并替换';
+    } else {
+      dropHint.textContent = '支持拖拽新图或直接按 Ctrl+V 继续追加';
+    }
+  }
+
+  if (!grid) return;
   grid.innerHTML = '';
+
   uploadedImages.forEach((img, idx) => {
     const card = document.createElement('div');
-    card.className = 'relative group rounded-xl overflow-hidden border border-dark-borderLight bg-dark-surface/90 flex flex-col p-1';
+    card.className = 'relative group rounded-xl overflow-hidden border border-dark-borderLight bg-dark-bg/80 flex flex-col p-1 transition hover:border-brand-500/50 shadow-sm';
+    card.onclick = (e) => e.stopPropagation();
     card.innerHTML = `
-      <div class="w-full h-16 rounded-lg bg-dark-bg/60 overflow-hidden flex items-center justify-center relative">
+      <div class="w-full h-16 rounded-lg bg-dark-surface overflow-hidden flex items-center justify-center relative">
         <img src="${img.data}" alt="${img.name}" class="w-full h-full object-cover">
-        <button type="button" onclick="removeUploadedImage('${img.id}')"
-          class="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition shadow">
+        <button type="button" onclick="event.stopPropagation(); removeUploadedImage('${img.id}')"
+          title="删除此图片"
+          class="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition shadow">
           ✕
         </button>
       </div>
@@ -596,6 +645,23 @@ function renderImagePreviews() {
     `;
     grid.appendChild(card);
   });
+
+  // 若未达到上限，在虚线框网格内渲染一个“继续添加”插槽
+  if (count < 5) {
+    const addSlot = document.createElement('div');
+    addSlot.className = 'rounded-xl border-2 border-dashed border-dark-borderLight hover:border-brand-500/60 bg-dark-bg/30 hover:bg-brand-500/5 flex flex-col items-center justify-center h-[88px] text-slate-400 hover:text-brand-300 transition cursor-pointer group';
+    addSlot.onclick = (e) => {
+      e.stopPropagation();
+      triggerImageFileInput();
+    };
+    addSlot.innerHTML = `
+      <i data-lucide="plus" class="w-5 h-5 mb-1 group-hover:scale-110 transition text-brand-400"></i>
+      <span class="text-[10px] font-medium text-slate-300">添加</span>
+    `;
+    grid.appendChild(addSlot);
+  }
+
+  refreshIcons();
 }
 
 // ======================== 任务创建与状态机 ========================
