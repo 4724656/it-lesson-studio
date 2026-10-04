@@ -19,11 +19,18 @@ export function createZipArchive(sourceDir, zipFilePath) {
 
     archive.pipe(output);
 
-    // 将目标目录中除临时文件外的内容打包
-    archive.glob('**/*', {
-      cwd: sourceDir,
-      ignore: ['*.tmp.md', '*.log', '.DS_Store']
-    });
+    // 严格筛选四位一体 4 份最终交付文件，杜绝源码与临时文件混入
+    const files = fs.readdirSync(sourceDir);
+    const planFile = files.find(f => f.includes('教案') && f.endsWith('.docx'));
+    const worksheetFile = files.find(f => f.includes('导学') && f.endsWith('.docx'));
+    const pptxFile = files.find(f => f.endsWith('.pptx'));
+    const htmlFile = files.find(f => f.endsWith('.html'));
+
+    const fourDeliverables = [planFile, worksheetFile, pptxFile, htmlFile].filter(Boolean);
+
+    for (const file of fourDeliverables) {
+      archive.file(path.join(sourceDir, file), { name: file });
+    }
 
     archive.finalize();
   });

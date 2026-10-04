@@ -191,10 +191,20 @@ def check_html(path):
     elif "课堂作业" not in base:
         warns.append('文件名不含"课堂作业"，老师收作业时认不出这是要交的作业')
 
-    ext = re.findall(r'(?:src|href)\s*=\s*"(?:https?:)?//[^"]+"', text)
-    ext += re.findall(r"@import\s+url\(", text)
+    # 外部网络资源全方位检测（单双引号属性、内联 style url、CSS @import、JS fetch/axios/XHR）
+    ext = []
+    # 1. HTML 标签属性: src/href="https://..." 或 'https://...'
+    ext += re.findall(r'''(?:src|href)\s*=\s*['"](?:https?:)?//[^'"]+['"]''', text, re.I)
+    # 2. CSS 中的 url(...)，包括 @import 与内联 style
+    ext += re.findall(r'''url\(\s*['"]?(?:https?:)?//[^'")]+['"]?\s*\)''', text, re.I)
+    # 3. @import 规则引用
+    ext += re.findall(r'''@import\s+(?:url\()?['"]?(?:https?:)?//''', text, re.I)
+    # 4. JS 动态网络请求: fetch("http..."), axios, $.ajax, WebSocket, XMLHttpRequest
+    ext += re.findall(r'''(?:fetch|axios(?:\.[a-z]+)?|\$\.(?:ajax|get|post))\s*\(\s*['"`](?:https?:)?//[^'"`]+['"`]''', text, re.I)
+    ext += re.findall(r'''new\s+(?:WebSocket|EventSource|XMLHttpRequest)\s*\(\s*['"`](?:wss?|https?):?//''', text, re.I)
+    ext += re.findall(r'''\.open\s*\(\s*['"`][A-Z]+['"`]\s*,\s*['"`](?:https?:)?//''', text, re.I)
     if ext:
-        warns.append("检测到 %d 处外部网络资源: %s" % (len(ext), ext[:3]))
+        warns.append("检测到 %d 处外部网络资源（断网机房环境无法访问）: %s" % (len(ext), ext[:3]))
 
     panels = collect_panels(text)
     steps = [s for s, _, _ in panels]

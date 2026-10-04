@@ -132,6 +132,19 @@ def beautify_lesson_plan_docx(docx_path):
             for run in p.runs:
                 set_font(run, font_name='黑体', size_pt=18, bold=True, color_rgb=RGBColor(0x2E, 0x1F, 0x5E))
         
+        # 教学反思手写留白横线（单条精准不折行 + 放大垂直间距供手写）
+        if '____' in text:
+            for r in p.runs:
+                if '____' in r.text:
+                    r.text = re.sub(r'_{15,}', '_' * 52, r.text)
+                    set_font(r, font_name='宋体', size_pt=10.5, color_rgb=RGBColor(0x80, 0x80, 0x80))
+            p.paragraph_format.first_line_indent = Pt(0)
+            p.paragraph_format.left_indent = Pt(14)
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(12)
+            p.paragraph_format.line_spacing = 2.4 # 约 25pt 行距，给教师留足手写书写高度
+            continue
+
         # 二级标题 (Heading 2，例如 一、教材分析、二、学情分析 等)
         elif 'heading 2' in style_name:
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -452,9 +465,13 @@ def beautify_worksheet_docx(docx_path):
 
 def auto_beautify_docx(docx_path):
     base = os.path.basename(docx_path)
-    if '导学' in base or '学习' in base or '任务单' in base or '作业' in base:
+    # 导学单/探究单/任务单分支（学生第一视角、剥离机房座号、单面优先留白表格精排）
+    if any(k in base for k in ['导学', '学习单', '任务单', '探究单', '活动单']) or 'worksheet' in base.lower():
         beautify_worksheet_docx(docx_path)
+    elif any(k in base for k in ['教案', '教学设计', '备课']) or 'plan' in base.lower():
+        beautify_lesson_plan_docx(docx_path)
     else:
+        # 默认回退：按教案公文精排处理
         beautify_lesson_plan_docx(docx_path)
 
 if __name__ == '__main__':

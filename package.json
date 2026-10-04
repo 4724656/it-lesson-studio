@@ -25,7 +25,7 @@
     "interactive-classwork",
     "k12-education"
   ],
-  "devDependencies": {
+  "dependencies": {
     "@marp-team/marp-cli": "^4.5.1"
   },
   "engines": {

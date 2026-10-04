@@ -23,11 +23,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# 安装官方 Astral uv 保持与本地及项目全局 uv 规范一致
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
 # 先复制 package.json 安装依赖利用 Docker 缓存
 COPY package*.json ./
-RUN npm install --omit=dev && npm install @marp-team/marp-cli
+RUN npm install --omit=dev
 
 COPY web/package*.json ./web/
 RUN cd web && npm install --omit=dev

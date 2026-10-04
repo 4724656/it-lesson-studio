@@ -56,6 +56,6 @@ node server.js
 | `PORT` | Web 服务监听端口 | `3800` |
 | `INVITE_CODE` | 教研组注册专属邀请码 | `ZJ2026` |
 | `JWT_SECRET` | 登录令牌密钥 | 自定义随机字符串 |
-| `AI_API_BASE` | 大模型 API 端点 (OpenAI 兼容) | `http://127.0.0.1:8317/v1` |
-| `AI_API_KEY` | 大模型 API Key | `sk-...` |
-| `AI_MODEL` | 调用的大模型代号 | `gemini-2.5-flash` / `deepseek-chat` / `claude-3-5-sonnet` |
+| `AI_API_BASE` | 大模型 API 端点 (OpenAI 兼容) | `https://api.openai.com/v1` |
+| `AI_API_KEY` | 大模型 API Key | `sk-your-key-here` |
+| `AI_MODEL` | 调用的大模型代号 | `gpt-4o-mini` / `deepseek-chat` / `gemini-2.5-flash` |

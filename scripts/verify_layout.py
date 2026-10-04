@@ -81,6 +81,59 @@ def docx_to_pdf_pages(docx_path, retries=1):
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
+def batch_docx_to_pdf_pages(docx_list, max_batch_size=8):
+    """批量/并发将多个 docx 转为 pdf 并返回 {docx_path: pages} 字典。
+    单次 soffice 调用接收多个文件，避免多次启动 LibreOffice 造成的线性耗时倍增。
+    若批量中有个别失败，自动独立单文件重试。
+    """
+    soffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if not soffice or not docx_list:
+        return {d: None for d in docx_list} if not soffice else {}
+
+    results = {}
+    remaining = list(docx_list)
+
+    # 批次执行
+    for i in range(0, len(remaining), max_batch_size):
+        chunk = remaining[i:i + max_batch_size]
+        tmpdir = tempfile.mkdtemp(prefix="verify_layout_batch_")
+        profile = os.path.join(tmpdir, "lo-profile")
+        try:
+            cmd = [
+                soffice, "--headless", "--norestore",
+                "-env:UserInstallation=file://%s" % profile,
+                "--convert-to", "pdf", "--outdir", tmpdir
+            ] + chunk
+            subprocess.run(
+                cmd,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                check=False, timeout=240,
+            )
+            for docx_path in chunk:
+                base_name = os.path.splitext(os.path.basename(docx_path))[0]
+                pdf_file = os.path.join(tmpdir, base_name + ".pdf")
+                if os.path.isfile(pdf_file):
+                    try:
+                        results[docx_path] = pdf_pages(pdf_file)
+                    except Exception:
+                        results[docx_path] = None
+                else:
+                    results[docx_path] = None
+        except Exception:
+            for docx_path in chunk:
+                results[docx_path] = None
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    # 针对未成功转出的文件，单独重试一次
+    failed = [d for d, p in results.items() if p is None]
+    if failed:
+        for docx_path in failed:
+            results[docx_path] = docx_to_pdf_pages(docx_path, retries=1)
+
+    return results
+
+
 def find_manifest(start_dir):
     """向上查找最近的 lesson.yaml。"""
     d = os.path.abspath(start_dir)
@@ -147,10 +200,11 @@ def main():
                 elif f.endswith(".pdf") and not f.endswith(".tmp.pdf"):
                     pdf_files.append(fp)
 
-    # --- DOCX 真实页数 ---
+    # --- DOCX 真实页数（支持批量转 PDF，彻底消除串行等待） ---
+    docx_pages_map = batch_docx_to_pdf_pages(sorted(docx_files))
     for docx in sorted(docx_files):
         base = os.path.basename(docx)
-        pages = docx_to_pdf_pages(docx)
+        pages = docx_pages_map.get(docx)
         if pages is None:
             # 必修4：严格模式下 LibreOffice 不可用记 FAIL，不允许仅 WARN 跳过
             msg = "LibreOffice 不可用，无法校验 DOCX 真实页数: %s" % base
