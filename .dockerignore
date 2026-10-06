@@ -1,0 +1,36 @@
+# 版本控制与开发工具配置
+.git/
+.gitignore
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 敏感密钥与环境配置文件（严禁打入镜像层）
+.env
+.env.*
+!.env.example
+web/.env
+web/.env.*
+!web/.env.example
+
+# 依赖缓存（容器内会独立 npm install，避免宿主机架构依赖污染）
+node_modules/
+web/node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+
+# 本地运行时数据、用户任务生成区与日志
+web/data/
+output/
+workspace/
+downloads/
+scratch/
+*.log
+
+# 临时文件与 Office 临时锁定文件
+*.tmp.*
+*.tmp.md
+~$*.docx
+~$*.pptx
+*_*.txt

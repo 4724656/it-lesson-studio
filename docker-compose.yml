@@ -1,0 +1,11 @@
+services:
+  it-lesson-studio:
+    build: .
+    container_name: it-lesson-studio
+    restart: unless-stopped
+    ports:
+      - "3800:3800"
+    env_file:
+      - ./web/.env
+    volumes:
+      - ./web/data:/app/web/data

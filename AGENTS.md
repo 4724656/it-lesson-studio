@@ -91,6 +91,15 @@ AI 在生成或审计任何教学内容时，必须以此四份文档为最高�
 - [x] **全流程自动化自检**：`uv run python scripts/check_lesson.py` 自动化检测 0 FAIL / 0 WARN。
 - [x] **沉淀 Master Skill**：将整套 HTML 交互规范反哺写入 `skills/it-lesson-studio/SKILL.md` 模块四。
 
+### 🎯 环节五：Web 备课工作台与容器化编排 (✅ feature/web-studio 已落地)
+- [x] **轻量全功能 Web 界面**：大气宽屏暗黑风 UI（Tailwind/原生 CSS），浙教版 2026 目录联动，支持文本与课本照片参考资料输入。
+- [x] **两阶段深度生成流水线**：
+  - 阶段 1：并行生成教案、导学案、课件 Markdown 并落盘编译；
+  - 阶段 2：基于教案任务关卡强咬合生成单文件离线交互 HTML 作业。
+- [x] **极简无感导出规范**：彻底剔除服务器绝对路径；作业凭单与奖状一键秒下，严禁弹窗阻断拦截学生，不给打字慢的孩子添门槛。
+- [x] **教研组权限体系与做减法**：SQLite 零外部依赖持久化；注册邀请码；管理员后台做减法（聚焦成员管理与 AI 接口热切换，所有人只看自己备课历史）。
+- [x] **通用容器化编排**：通用纯净 `docker-compose.yml` 与 `Dockerfile`，标准端口 3800，挂载 `./web/data` 目录持久化。
+
 ---
 
 ## 5. 快速确认工作状态命令
@@ -187,4 +196,55 @@ node scripts/export-lesson.mjs ~/Desktop/七年级上/第03课_网页设计/
 ```
 
 `output/` 和 `workspace/` 均已加入 `.gitignore`，产物不会被误提交。
-CI 的 `export-pipeline` Job 将产物上传至 GitHub Actions Artifacts（保留 7 天），可在 Actions 页面直接下载。
+CI 的 `export-pipeline` Job 将产物上传至 GitHub Actions Artifacts（保留 7 天），可在 Actions 页面直接下载。
+
+---
+
+## 10. Web 备课工作台深度代码审计与 13 项问题全闭环记录 (2026-10-04)
+
+针对 `feature/web-studio` 分支代码审查报告中的全部 13 个问题实施靶向修复与闭环验证：
+
+### 🔴 P0 级：Bug / 安全漏洞（4/4 全部闭环）
+1. **`removeUploadedImage` 全局引用断裂**：在 [`web/public/app.js`](file:///e:/it-lesson-studio/web/public/app.js) 删除图片后显式同步 `window.uploadedImages = uploadedImages`，确保前端引用一致。
+2. **`/api/tasks/:id/retry` 重试丢失参考资料**：在 [`web/db.js`](file:///e:/it-lesson-studio/web/db.js) 为 `tasks` 表增加 `materials_text` 字段与自动迁移逻辑；在 [`web/server.js`](file:///e:/it-lesson-studio/web/server.js) 将教材插图持久化至 `materials_images.json`，重试时完整恢复文本与图片透传给流水线。
+3. **HTML 预览接口 `/api/preview/:id/html` 无鉴权**：在 [`web/server.js`](file:///e:/it-lesson-studio/web/server.js) 的 `authenticate` 中间件增加对 `?token=` 查询参数的支持，为预览端点加上身份验证与任务归属校验（非本人且非管理员返回 403）；在 [`web/public/app.js`](file:///e:/it-lesson-studio/web/public/app.js) 链接处带上鉴权 token。
+4. **API Key 凭据防护核查**：确认 `web/.env` 从未入库 Git 历史，进一步在 [`.gitignore`](file:///e:/it-lesson-studio/.gitignore) 中强化 `.env*` 屏蔽规则（仅保留 `.env.example`）。
+
+### 🟡 P1 级：功能缺陷 / 逻辑错误（4/4 全部闭环）
+5. **进度条平滑递增速率不一致**：在 [`web/public/app.js`](file:///e:/it-lesson-studio/web/public/app.js) 提取统一的 `startSmoothProgressTimer()` 函数，步长与 100ms 刷新周期全面标准化。
+6. **`applyProgressVisuals` DOM 重复设置与完成闪跳**：统一由 `applyProgressVisuals(currentDisplayPercent)` 处理进度文本与填充宽度，清除冲突代码；任务完成时平滑冲顶 100% 并点亮全部节点。
+7. **残留僵尸 DB `app.db` 清理**：彻底物理删除早期原型遗留的 0 字节僵尸数据库 `web/data/app.db`。
+8. **`logout` 无效清理键**：清理 [`web/public/app.js`](file:///e:/it-lesson-studio/web/public/app.js) 中未曾写入的 `localStorage.removeItem('itls_user')` 死代码。
+
+### 🟠 P2 级：僵尸资源 / 死代码 / 容器兼容（5/5 全部闭环）
+9. **废弃样式表清理**：使用 `git rm` 彻底移除未被加载的 551 行早期原型样式表 [`web/public/style.css`](file:///e:/it-lesson-studio/web/public/style.css)。
+10. **废弃实验图片清理**：物理删除未引用的早期 PPT 导出截图目录 `web/public/ppt/`。
+11. **调试截图清库**：清出 `web/public/` 下 14 张未引用的调试验收截屏（避免 Express 静态静态目录暴露 20MB+ 冗余资产）。
+12. **启动日志邀请码脱敏**：在 [`web/server.js`](file:///e:/it-lesson-studio/web/server.js) 启动日志中对 `INVITE_CODE` 实行前两位保留加掩码脱敏（`AB****`），杜绝终端与容器日志泄露凭据。
+13. **Python/uv 容器化兼容加固**：在 [`scripts/export-lesson.mjs`](file:///e:/it-lesson-studio/scripts/export-lesson.mjs) 中为 `verify_layout.py` 补充动态嗅探降级（优先 `uv run python`，无 uv 时使用 `python3`）；在 [`Dockerfile`](file:///e:/it-lesson-studio/Dockerfile) 中加入官方 `COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/` 镜像层，容器环境无缝对齐 uv 规范。
+
+---
+
+## 11. 第二轮深度审计与 9 项问题全闭环记录 (2026-10-04)
+
+针对第二轮审查报告中的 9 个问题（2 个 P0、4 个 P1、3 个 P2）全部闭环修复与验证：
+
+### 🔴 P0 级：最高优先级（2/2 全部闭环）
+1. **创建 `.dockerignore` 杜绝密钥打入镜像层**：新增 [`.dockerignore`](file:///e:/it-lesson-studio/.dockerignore)，完整排除 `.git`、`.env*`、`web/.env*`、宿主机 `node_modules`、`web/data`、`output`、`downloads` 等，彻底解决 `COPY . .` 时意外将真实密钥或宿主机二进制打入镜像层的问题。
+2. **教材下载脚本支持动态源配置与失效探测**：
+   - 提取 [`scripts/textbook_sources.json`](file:///e:/it-lesson-studio/scripts/textbook_sources.json) 外部配置文件；
+   - 在 [`scripts/download_textbooks.py`](file:///e:/it-lesson-studio/scripts/download_textbooks.py) 中支持 `--source-config`、环境变量 `ZJEAV_SOURCES` 与 JSON 文件动态加载；
+   - 增加前置 `probe_source` 连通性与 HTTP 404/403 快速探测报警，杜绝平台更新 ID 后脚本挂起或盲目试错。
+
+### 🟡 P1 级：工程规范与性能加速（4/4 全部闭环）
+3. **Marp CLI 依赖正规化**：在 [`package.json`](file:///e:/it-lesson-studio/package.json) 将 `@marp-team/marp-cli` 移入 `dependencies`，更新 `package-lock.json`；[`Dockerfile`](file:///e:/it-lesson-studio/Dockerfile) 清除裸跑 `npm install`，使用标准 `npm install --omit=dev` 严格受控于 lockfile。
+4. **Docker Compose 遵循 12-Factor 标准注入环境**：在 [`docker-compose.yml`](file:///e:/it-lesson-studio/docker-compose.yml) 显式声明 `env_file: - ./web/.env`，实现运行时环境变量与构建期镜像解耦。
+5. **CLI 无参友好交互**：在 [`scripts/export-lesson.mjs`](file:///e:/it-lesson-studio/scripts/export-lesson.mjs) 剔除不存在的 `examples/demo-lesson` 占位符，无参数或 `--help` 时友好输出用法选项并动态展示仓库内可用的黄金标杆课例列表。
+6. **LibreOffice 真实页数多文件批处理加速**：在 [`scripts/verify_layout.py`](file:///e:/it-lesson-studio/scripts/verify_layout.py) 中实现 `batch_docx_to_pdf_pages`，单次 `soffice` 进程处理全部文档，彻底消除多次冷启动的线性耗时倍增，失败时自动单文件重试。
+
+### 🟠 P2 级：边界健壮性（3/3 全部闭环）
+7. **DOCX 排版分类去歧义**：在 [`scripts/beautify_docx.py`](file:///e:/it-lesson-studio/scripts/beautify_docx.py) 中精准匹配 `导学`、`学习单`、`任务单`、`探究单`、`活动单`，移除宽泛的 `作业` 关键字，杜绝未来 DOCX 作业被误判为导学单。
+8. **机房断网全景网络外链检测**：在 [`scripts/check_lesson.py`](file:///e:/it-lesson-studio/scripts/check_lesson.py) 中全面升级正则，覆盖单引号/双引号属性、内联 `style url(...)`、`@import` 以及 JS `fetch` / `axios` / `$.ajax` / `WebSocket` / `XMLHttpRequest` 调用，确保机房断网作业 100% 离线自给自足。
+9. **教材下载退出码修复**：在 [`scripts/download_textbooks.py`](file:///e:/it-lesson-studio/scripts/download_textbooks.py) 中捕获所有册次下载状态，汇总成功/失败明细，发生任何错误时均返回退出码 `1`，确保 CI 与流水线可敏锐感知失败。
+
+

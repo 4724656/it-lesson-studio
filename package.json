@@ -13,7 +13,9 @@
   "scripts": {
     "export:lesson": "node scripts/export-lesson.mjs",
     "check:lesson": "uv run python scripts/check_lesson.py",
-    "test": "node --test scripts/export-lesson.test.mjs"
+    "test": "node --test scripts/export-lesson.test.mjs",
+    "web:start": "node web/server.js",
+    "web:dev": "node --watch web/server.js"
   },
   "keywords": [
     "information-technology",
@@ -23,7 +25,7 @@
     "interactive-classwork",
     "k12-education"
   ],
-  "devDependencies": {
+  "dependencies": {
     "@marp-team/marp-cli": "^4.5.1"
   },
   "engines": {

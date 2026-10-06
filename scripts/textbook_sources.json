@@ -1,0 +1,58 @@
+{
+  "3上": {
+    "title": "信息科技 三年级上册 (浙教版2026)",
+    "filename": "信息科技_三年级上册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f6a75d6f88517cee6b809/information3/assets/pages/",
+    "page_start": -1,
+    "page_end": 87
+  },
+  "4上": {
+    "title": "信息科技 四年级上册 (浙教版2026)",
+    "filename": "信息科技_四年级上册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f6b269969a36f52fd829f/information4/assets/pages/",
+    "page_start": -1,
+    "page_end": 87
+  },
+  "5上": {
+    "title": "信息科技 五年级上册 (浙教版2026)",
+    "filename": "信息科技_五年级上册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f6f9f248fc401d006512a/information5/assets/pages/",
+    "page_start": -1,
+    "page_end": 85
+  },
+  "6上": {
+    "title": "信息科技 六年级上册 (浙教版2026)",
+    "filename": "信息科技_六年级上册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f714387ce977efdc2e65f/information6/assets/pages/",
+    "page_start": -1,
+    "page_end": 89
+  },
+  "3下": {
+    "title": "信息科技 三年级下册 (浙教版2026)",
+    "filename": "信息科技_三年级下册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f726f248fc401d006512d/%E4%BF%A1%E6%81%AF%E7%A7%91%E6%8A%80%EF%BC%88%E9%85%8D%E6%B5%99%E6%95%99%E7%89%88%EF%BC%89%E4%B8%89%E5%B9%B4%E7%BA%A7%E4%B8%8B/assets/pages/",
+    "page_start": -1,
+    "page_end": 71
+  },
+  "4下": {
+    "title": "信息科技 四年级下册 (浙教版2026)",
+    "filename": "信息科技_四年级下册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f735a9969a36f52fd82a6/%E4%BF%A1%E6%81%AF%E7%A7%91%E6%8A%80%EF%BC%88%E9%85%8D%E6%B5%99%E6%95%99%E7%89%88%EF%BC%89%E5%9B%9B%E5%B9%B4%E7%BA%A7%E4%B8%8B/assets/pages/",
+    "page_start": -1,
+    "page_end": 71
+  },
+  "5下": {
+    "title": "信息科技 五年级下册 (浙教版2026)",
+    "filename": "信息科技_五年级下册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f73c287ce977efdc2e662/%E4%BF%A1%E6%81%AF%E7%A7%91%E6%8A%80%EF%BC%88%E9%85%8D%E6%B5%99%E6%95%99%E7%89%88%EF%BC%89%E4%BA%94%E5%B9%B4%E7%BA%A7%E4%B8%8B/assets/pages/",
+    "page_start": -1,
+    "page_end": 71
+  },
+  "6下": {
+    "title": "信息科技 六年级下册 (浙教版2026)",
+    "filename": "信息科技_六年级下册_浙教版2026.pdf",
+    "base_url": "https://eav-web.zjeav.com/processed/684f7431248fc401d006512f/%E4%BF%A1%E6%81%AF%E7%A7%91%E6%8A%80%EF%BC%88%E9%85%8D%E6%B5%99%E6%95%99%E7%89%88%EF%BC%89%E5%85%AD%E5%B9%B4%E7%BA%A7%E4%B8%8B/assets/pages/",
+    "page_start": -1,
+    "page_end": 69
+  }
+}

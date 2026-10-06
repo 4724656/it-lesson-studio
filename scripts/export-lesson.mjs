@@ -156,10 +156,54 @@ function findMarkdownFiles(dirOrFile) {
   return results;
 }
 
+function getAvailableLessons() {
+  const examplesDir = path.join(rootDir, 'examples');
+  const lessons = [];
+  if (fs.existsSync(examplesDir)) {
+    for (const grade of fs.readdirSync(examplesDir)) {
+      const gradePath = path.join(examplesDir, grade);
+      try {
+        if (fs.statSync(gradePath).isDirectory()) {
+          for (const l of fs.readdirSync(gradePath)) {
+            const lPath = path.join(gradePath, l);
+            if (fs.statSync(lPath).isDirectory()) {
+              lessons.push(`examples/${grade}/${l}`);
+            }
+          }
+        }
+      } catch {}
+    }
+  }
+  return lessons;
+}
+
 async function main() {
   // 解析输入参数
   const args = process.argv.slice(2);
-  const targetArg = args.find((arg) => !arg.startsWith('--')) || 'examples/demo-lesson';
+  const targetArg = args.find((arg) => !arg.startsWith('--'));
+
+  if (!targetArg || args.includes('--help') || args.includes('-h')) {
+    console.log(`\n📖 IT Lesson Studio 教学资料编译导出工具`);
+    console.log(`使用方法: node scripts/export-lesson.mjs <课程目录或Markdown文件路径> [选项]\n`);
+    console.log(`选项:`);
+    console.log(`  --no-pdf          跳过 PDF 课件导出`);
+    console.log(`  --no-pptx         跳过 PPTX 课件导出`);
+    console.log(`  --verify-layout   导出后自动校验实际物理版式`);
+    console.log(`  --output-dir=DIR  指定产物输出隔离目录\n`);
+
+    const lessons = getAvailableLessons();
+    if (lessons.length) {
+      console.log(`💡 示例用法:`);
+      console.log(`  node scripts/export-lesson.mjs ${lessons[0]}\n`);
+      console.log(`📚 当前可用标杆课例:`);
+      for (const item of lessons) {
+        console.log(`  - ${item}`);
+      }
+      console.log(``);
+    }
+    process.exit(args.includes('--help') || args.includes('-h') ? 0 : 1);
+  }
+
   const skipPdf = args.includes('--no-pdf');
   const skipPptx = args.includes('--no-pptx');
   const verifyLayout = args.includes('--verify-layout');
@@ -181,15 +225,10 @@ async function main() {
 
   if (!fs.existsSync(targetPath)) {
     console.error(`❌ 目标路径不存在: ${targetPath}`);
-    // 友好提示：列出 examples 下可用的课例目录，避免用户对着不存在的默认路径发呆
-    const examplesDir = path.join(rootDir, 'examples');
-    if (fs.existsSync(examplesDir)) {
-      const lessons = fs.readdirSync(examplesDir, { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .map((e) => `examples/${e.name}`);
-      if (lessons.length) {
-        console.error(`💡 可用的课例目录：\n   - ${lessons.slice(0, 10).join('\n   - ')}${lessons.length > 10 ? `\n   ……等共 ${lessons.length} 个` : ''}`);
-      }
+    // 友好提示：列出 examples 下可用的课例目录
+    const lessons = getAvailableLessons();
+    if (lessons.length) {
+      console.error(`💡 可用的课例目录：\n   - ${lessons.join('\n   - ')}`);
     }
     process.exit(1);
   }
@@ -262,9 +301,16 @@ async function main() {
         // 中文专业排版后处理（首行缩进两格、黑体标题、宋体正文、表格防断裂）
         if (fs.existsSync(beautifyScript)) {
           try {
-            // 项目 Python 依赖由 pyproject.toml 锁定，走项目虚拟环境
-            runCmd('uv', ['run', 'python', beautifyScript, task.out],
-              { stdio: ['ignore', 'ignore', 'inherit'], cwd: rootDir });
+            // 自适应 Python 运行环境：优先 uv，容器或原生 Linux 回退 python3
+            let pyCmd = 'python3';
+            let pyArgs = [beautifyScript, task.out];
+            try {
+              execFileSync(process.platform === 'win32' ? 'where' : 'which', ['uv'], { stdio: 'ignore' });
+              pyCmd = 'uv';
+              pyArgs = ['run', 'python', beautifyScript, task.out];
+            } catch { /* 无 uv 时使用系统 python3 */ }
+
+            runCmd(pyCmd, pyArgs, { stdio: ['ignore', 'ignore', 'inherit'], cwd: rootDir });
             console.log(`   ✨ 已自动应用中文公文级排版 (首行缩进2格·黑体大纲·宋体正文·表格美化)`);
           } catch (postErr) {
             console.warn(`   ⚠️ 后处理排版优化跳过: ${postErr.message}`);
@@ -298,11 +344,17 @@ async function main() {
       path.join(path.dirname(targetPath), 'lesson.yaml'),
     ];
     const manifestPath = manifestCandidates.find((p) => fs.existsSync(p));
-    const verifyArgs = ['run', 'python', verifyScript, '--strict'];
+    let verifyCmd = 'python3';
+    let verifyArgs = [verifyScript, '--strict'];
+    try {
+      execFileSync(process.platform === 'win32' ? 'where' : 'which', ['uv'], { stdio: 'ignore' });
+      verifyCmd = 'uv';
+      verifyArgs = ['run', 'python', verifyScript, '--strict'];
+    } catch { /* 无 uv 时使用系统 python3 */ }
     if (manifestPath) verifyArgs.push('--manifest', manifestPath);
     verifyArgs.push(verifyTarget);
     try {
-      runCmd('uv', verifyArgs, { cwd: rootDir });
+      runCmd(verifyCmd, verifyArgs, { cwd: rootDir });
     } catch (err) {
       console.error(`\n❌ 版式校验未通过，退出码 1。`);
       process.exit(1);
