@@ -20,7 +20,14 @@ const rootDir = path.resolve(__dirname, '..');
 
 const app = express();
 const PORT = process.env.PORT || 3800;
-const JWT_SECRET = process.env.JWT_SECRET || 'it-lesson-studio-secret-key-2026';
+// JWT 鉴权密钥：必须通过环境变量配置，禁止硬编码默认值（防止伪造 token）。
+// 启动时缺失则直接拒绝启动，避免静默回退到不安全的默认值。
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ 启动失败：未设置 JWT_SECRET 环境变量。');
+  console.error('   请在 web/.env 中配置至少 32 位的随机长字符串，例如：openssl rand -hex 32');
+  process.exit(1);
+}
 const INVITE_CODE = process.env.INVITE_CODE || 'ZJ2026';
 
 app.use(cors());
@@ -79,6 +86,12 @@ app.post('/api/register', (req, res) => {
     return res.status(400).json({ error: '用户名与密码为必填项' });
   }
 
+  // 安全：用户名白名单（仅中文/字母/数字/下划线/连字符，2~20 字符），阻断 XSS 注入
+  const cleanUsername = username.trim();
+  if (!/^[\u4e00-\u9fa5a-zA-Z0-9_-]{2,20}$/.test(cleanUsername)) {
+    return res.status(400).json({ error: '用户名仅支持中文、字母、数字、下划线与连字符，长度 2~20 位' });
+  }
+
   const userCount = dbService.getUserCount();
   const currentInviteCode = dbService.getSetting('invite_code') || INVITE_CODE;
 
@@ -92,7 +105,7 @@ app.post('/api/register', (req, res) => {
     }
   }
 
-  const existing = dbService.findUserByUsername(username.trim());
+  const existing = dbService.findUserByUsername(cleanUsername);
   if (existing) {
     return res.status(409).json({ error: '该用户名已被使用' });
   }
@@ -100,7 +113,7 @@ app.post('/api/register', (req, res) => {
   // 首个注册用户自动晋升为管理员
   const role = (userCount === 0) ? 'admin' : 'teacher';
   const hash = bcrypt.hashSync(password, 10);
-  const user = dbService.createUser(username.trim(), hash, role);
+  const user = dbService.createUser(cleanUsername, hash, role);
 
   const actualRealName = realName || req.body.real_name;
   if (school || actualRealName || phone) {
@@ -338,10 +351,16 @@ app.get('/api/preview/:id/html', authenticate, (req, res) => {
   res.type('text/html; charset=utf-8').sendFile(path.join(task.output_dir, htmlFile));
 });
 
-// 单项或打包下载
+// 单项或打包下载（鉴权保护：仅限任务所有者或管理员访问，与预览路由一致）
 app.get('/api/download/:id/:type', authenticate, async (req, res) => {
   const task = dbService.getTaskById(req.params.id);
-  if (!task || !task.output_dir || !fs.existsSync(task.output_dir)) {
+  if (!task) {
+    return res.status(404).send('任务不存在');
+  }
+  if (task.user_id !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).send('无权下载此任务的备课资料');
+  }
+  if (!task.output_dir || !fs.existsSync(task.output_dir)) {
     return res.status(404).send('任务目录不存在');
   }
 

@@ -43,7 +43,7 @@ npm run web:dev
 | :--- | :--- | :--- | :--- |
 | `PORT` | `3800` | Web 界面与 API 监听端口 | 宿主机按需映射即可 |
 | `INVITE_CODE` | `ZJ2026` | 教师注册专属邀请码 | 防外人滥用；**首位注册用户自动成为超管免邀请码**；管理员可在网页随时修改 |
-| `JWT_SECRET` | 内置长密钥 | 登录 Token 鉴权签名密钥 | 开箱自带安全兜底；公网部署推荐配置任意随机字符串 |
+| `JWT_SECRET` | （无默认值，必须配置） | 登录 Token 鉴权签名密钥 | 启动时缺失将拒绝启动；请用 `openssl rand -hex 32` 生成至少 32 位随机字符串填入 `web/.env`，严禁使用公开默认值 |
 | `AI_API_BASE` | `https://api.openai.com/v1` | 大模型 API 端点 (OpenAI 兼容) | 可在网页后台随时修改，优先级高于环境变量 |
 | `AI_API_KEY` | `sk-...` | 大模型 API 密钥 | 可在网页后台输入，持久化保存在本地 SQLite |
 | `AI_MODEL` | `gpt-4o-mini` | 生成四件套使用的大模型名称 | 支持任意 OpenAI 兼容模型（如 `gpt-4o-mini`、`deepseek-chat`、`gemini-2.5-flash` 等） |

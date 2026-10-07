@@ -459,8 +459,10 @@ def check_lesson_plan(path):
     for f in fails:
         print("  [FAIL]", f)
     if not fails and not warns:
-        print("  [OK] 教案检查全部通过（有效字数: %d 字，符合 %d 页公文约束）"
-              % (clean_len, cfg["max_pages"]))
+        print("  [OK] 教案检查全部通过（有效字数: %d 字）"
+              % (clean_len,))
+        print("  [注] 字数仅为纸张篇幅的近似代理，物理页数（≤%d 页 A4）以 scripts/verify_layout.py 实测为准"
+              % (cfg["max_pages"]))
     return len(fails), len(warns)
 
 

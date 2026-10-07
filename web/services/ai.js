@@ -370,8 +370,7 @@ ${materialsPrompt}
   }
 
   for (const [filename, fileContent] of Object.entries(filesPhase1)) {
-    const filePath = path.join(targetDir, filename);
-    fs.writeFileSync(filePath, fileContent.trim(), 'utf-8');
+    writeFileWithinDir(targetDir, filename, fileContent);
   }
 
   // 读取已生成的教案或导学单概要，作为阶段 2 HTML 生成的强咬合上下文
@@ -476,8 +475,7 @@ ${worksheetContent.slice(0, 1000)}
 
   const filesPhase2 = parseDelimitedFiles(rawPhase2, grade, lessonTitle);
   for (const [filename, fileContent] of Object.entries(filesPhase2)) {
-    const filePath = path.join(targetDir, filename);
-    fs.writeFileSync(filePath, fileContent.trim(), 'utf-8');
+    writeFileWithinDir(targetDir, filename, fileContent);
   }
 
   const allFiles = { ...filesPhase1, ...filesPhase2 };
@@ -487,6 +485,34 @@ ${worksheetContent.slice(0, 1000)}
 /**
  * 解析大模型返回的带有 ===FILE: xxx=== 标记的文本
  */
+
+// 安全：输出文件名白名单。LLM 输出内容（含 prompt 注入可能）绝不能直接作为文件名。
+// 规则：只允许 basename（拒绝任何 /、\、..），且必须匹配"前缀_教案.md / 前缀_导学案.md / 前缀_课件.md / 前缀_课堂作业.html"。
+// 不匹配的名字直接丢弃并记日志，不落盘。
+const SAFE_OUTPUT_NAME = /^[^/\\]*_(教案\.md|导学案\.md|课件\.md|课堂作业\.html)$/;
+function sanitizeOutputFilename(name) {
+  if (typeof name !== 'string') return null;
+  const base = path.basename(name);
+  // basename 与原名不一致 → 含目录成分（/ 或 \）→ 拒绝
+  if (!base || base !== name || base === '.' || base === '..') return null;
+  if (!SAFE_OUTPUT_NAME.test(base)) return null;
+  return base;
+}
+
+/**
+ * 安全写文件：写入目录不得上跳至 targetDir 之外，双重保险。
+ */
+function writeFileWithinDir(targetDir, filename, content) {
+  const filePath = path.join(targetDir, filename);
+  const resolved = path.resolve(filePath);
+  const baseDir = path.resolve(targetDir);
+  if (resolved !== baseDir && !resolved.startsWith(baseDir + path.sep)) {
+    throw new Error(`拒绝写入目标目录之外的路径: ${filename}`);
+  }
+  fs.writeFileSync(filePath, content.trim(), 'utf-8');
+  return filePath;
+}
+
 function parseDelimitedFiles(rawText, grade, lessonTitle) {
   const cleanGrade = (grade || '').replace(/[\\/:*?"<>|]/g, '_').trim();
   const cleanTitle = (lessonTitle || '').replace(/[\\/:*?"<>|]/g, '_').trim();
@@ -512,13 +538,22 @@ function parseDelimitedFiles(rawText, grade, lessonTitle) {
       standardName = `${prefix}_课堂作业.html`;
     }
 
-    result[standardName] = content;
+    // 安全清洗：映射后的名字仍须过白名单，不匹配则丢弃并记日志（绝不让 LLM 自由控制的文件名落地）
+    const safeName = sanitizeOutputFilename(standardName);
+    if (!safeName) {
+      console.warn(`[parseDelimitedFiles] 丢弃非法文件名: ${rawName}`);
+      continue;
+    }
+    result[safeName] = content;
   }
 
   // 兜底检查：如果大模型没有正确遵循 ===FILE: 标记，则尝试提取 html 或抛出错误
   if (Object.keys(result).length === 0) {
     if (rawText.includes('<!DOCTYPE html>') || rawText.includes('<html')) {
-      const standardName = `${prefix}_课堂作业.html`;
+      const standardName = sanitizeOutputFilename(`${prefix}_课堂作业.html`);
+      if (!standardName) {
+        throw new Error('年级/课题输入导致非法文件名，请修正后重试');
+      }
       result[standardName] = rawText.trim();
     } else {
       throw new Error('大模型未按规范输出资料文件标记，请重试');
