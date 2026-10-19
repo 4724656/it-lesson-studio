@@ -45,6 +45,18 @@ window.toggleUserRole = toggleUserRole;
 window.resetUserPassword = resetUserPassword;
 window.deleteUser = deleteUser;
 
+// 单机版 AI 引擎与密钥设置窗口
+window.openAiSettingsModal = openAiSettingsModal;
+window.closeAiSettingsModal = closeAiSettingsModal;
+window.selectAiProvider = selectAiProvider;
+window.testAiConnection = testAiConnection;
+window.saveAiSettings = saveAiSettings;
+window.toggleApiKeyVisibility = toggleApiKeyVisibility;
+window.fetchAvailableModels = fetchAvailableModels;
+window.handleKeyInputBlur = handleKeyInputBlur;
+window.handleModelSelectChange = handleModelSelectChange;
+window.toggleCustomModelInput = toggleCustomModelInput;
+
 function refreshIcons() {
   if (window.lucide) {
     window.lucide.createIcons();
@@ -61,14 +73,36 @@ async function initUser() {
   const btnHistory = document.getElementById('btnHistory');
   const btnLogout = document.getElementById('btnLogout');
   const btnLoginModal = document.getElementById('btnLoginModal');
+  const btnAiSettings = document.getElementById('btnAiSettings');
 
+  // 1. 优先检查是否运行在单机模式 (Standalone Mode)
+  try {
+    const modeRes = await fetch('/api/system/mode');
+    if (modeRes.ok) {
+      const modeData = await modeRes.json();
+      if (modeData.standalone) {
+        window.isStandalone = true;
+        if (!token) {
+          token = 'standalone_local_token';
+          localStorage.setItem('itls_token', token);
+        }
+        setupStandaloneUI(modeData);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('System mode check note:', e.message);
+  }
+
+  // 2. 团队多用户服务器模式
   if (!token) {
     currentUser = null;
-    userProfileBtn.classList.add('hidden');
-    btnAdminModal.classList.add('hidden');
-    btnHistory.classList.add('hidden');
-    btnLogout.classList.add('hidden');
-    btnLoginModal.classList.remove('hidden');
+    userProfileBtn?.classList.add('hidden');
+    btnAdminModal?.classList.add('hidden');
+    btnHistory?.classList.add('hidden');
+    btnLogout?.classList.add('hidden');
+    btnLoginModal?.classList.remove('hidden');
+    btnAiSettings?.classList.add('hidden');
     return;
   }
 
@@ -108,6 +142,458 @@ async function initUser() {
     refreshIcons();
   } catch (err) {
     console.error('获取用户信息失败:', err);
+  }
+}
+
+// ======================== 单机便携版与 AI 引擎配置 ========================
+
+function setupStandaloneUI(modeData) {
+  const userProfileBtn = document.getElementById('userProfileBtn');
+  const btnAdminModal = document.getElementById('btnAdminModal');
+  const btnHistory = document.getElementById('btnHistory');
+  const btnLogout = document.getElementById('btnLogout');
+  const btnLoginModal = document.getElementById('btnLoginModal');
+  const btnAiSettings = document.getElementById('btnAiSettings');
+
+  // 单机版彻底隐藏团队多余按钮
+  userProfileBtn?.classList.add('hidden');
+  btnAdminModal?.classList.add('hidden');
+  btnLogout?.classList.add('hidden');
+  btnLoginModal?.classList.add('hidden');
+
+  // 显示历史与 AI 设置
+  btnHistory?.classList.remove('hidden');
+  btnAiSettings?.classList.remove('hidden');
+
+  // 刷新顶栏 AI 状态胶囊
+  updateAiStatusBadge(modeData.hasApiKey, modeData.provider, modeData.model);
+
+  refreshIcons();
+
+  // 若从未配置过 API Key，首次打开温和弹出配置向导
+  if (!modeData.hasApiKey && !sessionStorage.getItem('itls_ai_modal_shown')) {
+    sessionStorage.setItem('itls_ai_modal_shown', 'true');
+    setTimeout(() => {
+      openAiSettingsModal(true);
+    }, 600);
+  }
+}
+
+let currentAiProvider = 'deepseek';
+let isCustomModelMode = false;
+
+const PROVIDER_PRESETS = {
+  deepseek: {
+    name: 'DeepSeek 官方',
+    defaultModels: [
+      { id: 'deepseek-chat', label: 'deepseek-chat (通用对话 · 推荐)' },
+      { id: 'deepseek-reasoner', label: 'deepseek-reasoner (深度思考 R1)' }
+    ],
+    defaultModel: 'deepseek-chat',
+    base: 'https://api.deepseek.com/v1',
+    helpText: '获取 DeepSeek 密钥',
+    helpUrl: 'https://platform.deepseek.com/api_keys',
+    tip: '推荐！1 元钱即可备课几十节课，高智力且格式排版遵循极佳'
+  },
+  aliyun: {
+    name: '阿里云百炼',
+    defaultModels: [
+      { id: 'qwen-plus', label: 'qwen-plus (通义千问 Plus · 推荐)' },
+      { id: 'qwen-max', label: 'qwen-max (通义千问 Max · 旗舰高智)' },
+      { id: 'qwen-turbo', label: 'qwen-turbo (通义千问 Turbo · 极速)' },
+      { id: 'qwen-long', label: 'qwen-long (通义千问 Long · 超长文档)' }
+    ],
+    defaultModel: 'qwen-plus',
+    base: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    helpText: '获取百炼 API-Key',
+    helpUrl: 'https://bailian.console.aliyun.com/',
+    tip: '通义千问官方接口，国企合规，新注册通常赠送大额免费 Token'
+  },
+  custom: {
+    name: '自定义接口',
+    defaultModels: [
+      { id: 'gpt-4o-mini', label: 'gpt-4o-mini' },
+      { id: 'gpt-4o', label: 'gpt-4o' }
+    ],
+    defaultModel: 'gpt-4o-mini',
+    base: 'https://api.openai.com/v1',
+    helpText: '',
+    helpUrl: '',
+    tip: '支持任何兼容 OpenAI /chat/completions 规范的 Base URL 或本地 Ollama'
+  }
+};
+
+function populateModelOptions(modelList, selectedValue = '') {
+  const select = document.getElementById('selectAiModel');
+  if (!select) return;
+
+  select.innerHTML = '';
+  let matchFound = false;
+
+  modelList.forEach(m => {
+    const id = typeof m === 'string' ? m : m.id;
+    const label = typeof m === 'string' ? m : (m.label || m.id);
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = label;
+    if (selectedValue && id === selectedValue) {
+      opt.selected = true;
+      matchFound = true;
+    }
+    select.appendChild(opt);
+  });
+
+  // 若传入的已有配置不在列表中，动态置顶添加
+  if (selectedValue && !matchFound) {
+    const customOpt = document.createElement('option');
+    customOpt.value = selectedValue;
+    customOpt.textContent = `${selectedValue} (当前配置)`;
+    customOpt.selected = true;
+    select.prepend(customOpt);
+  }
+
+  const inputAiModel = document.getElementById('inputAiModel');
+  if (inputAiModel) {
+    inputAiModel.value = select.value;
+  }
+}
+
+function handleModelSelectChange(val) {
+  const inputAiModel = document.getElementById('inputAiModel');
+  if (inputAiModel) {
+    inputAiModel.value = val;
+  }
+}
+
+function toggleCustomModelInput() {
+  const selectBox = document.getElementById('modelSelectContainer');
+  const inputBox = document.getElementById('modelInputContainer');
+  const btnToggleText = document.getElementById('textToggleModel');
+  const inputAiModel = document.getElementById('inputAiModel');
+  const selectAiModel = document.getElementById('selectAiModel');
+
+  isCustomModelMode = !isCustomModelMode;
+
+  if (isCustomModelMode) {
+    selectBox?.classList.add('hidden');
+    inputBox?.classList.remove('hidden');
+    if (btnToggleText) btnToggleText.textContent = '📋 下拉选';
+    if (inputAiModel && selectAiModel) inputAiModel.value = selectAiModel.value;
+    inputAiModel?.focus();
+  } else {
+    selectBox?.classList.remove('hidden');
+    inputBox?.classList.add('hidden');
+    if (btnToggleText) btnToggleText.textContent = '✍️ 手动填';
+    if (inputAiModel && selectAiModel) {
+      let exists = false;
+      for (let i = 0; i < selectAiModel.options.length; i++) {
+        if (selectAiModel.options[i].value === inputAiModel.value) {
+          selectAiModel.selectedIndex = i;
+          exists = true;
+          break;
+        }
+      }
+      if (!exists && inputAiModel.value.trim()) {
+        const opt = document.createElement('option');
+        opt.value = inputAiModel.value.trim();
+        opt.textContent = `${inputAiModel.value.trim()} (自定义)`;
+        opt.selected = true;
+        selectAiModel.prepend(opt);
+      }
+    }
+  }
+  refreshIcons();
+}
+
+function handleKeyInputBlur() {
+  const apiKey = document.getElementById('inputAiKey')?.value.trim();
+  if (apiKey && apiKey.length >= 10 && apiKey !== 'sk-none') {
+    fetchAvailableModels(true);
+  }
+}
+
+async function fetchAvailableModels(silent = false) {
+  const btnFetch = document.getElementById('btnFetchModels');
+  const textFetch = document.getElementById('textFetchModels');
+  const iconFetch = document.getElementById('iconFetchModels');
+  const apiKey = document.getElementById('inputAiKey')?.value.trim();
+  const apiBase = document.getElementById('inputAiBase')?.value.trim();
+  const tip = document.getElementById('modelFetchTip');
+
+  if (!apiKey || apiKey === 'sk-none') {
+    if (!silent) alert('请先填入有效的 API Key 密钥');
+    return;
+  }
+
+  if (iconFetch) iconFetch.classList.add('animate-spin');
+  if (textFetch) textFetch.textContent = '拉取中...';
+  if (btnFetch) btnFetch.disabled = true;
+
+  try {
+    const res = await fetch('/api/settings/fetch-models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiBase, apiKey })
+    });
+
+    const result = await res.json();
+    if (res.ok && result.success && Array.isArray(result.models) && result.models.length > 0) {
+      const currentSelected = isCustomModelMode 
+        ? document.getElementById('inputAiModel')?.value 
+        : document.getElementById('selectAiModel')?.value;
+
+      populateModelOptions(result.models, currentSelected);
+
+      if (textFetch) textFetch.textContent = `已获取 ${result.models.length} 个模型`;
+      if (tip) {
+        tip.textContent = `✅ 已成功从账号在线拉取到 ${result.models.length} 个可用模型，可直接下拉选择`;
+        tip.className = 'text-[10px] text-emerald-400 font-medium';
+      }
+    } else {
+      if (!silent) {
+        alert('拉取模型失败：' + (result.error || '未获取到模型列表'));
+      }
+      if (textFetch) textFetch.textContent = '拉取失败(重试)';
+      if (tip) {
+        tip.textContent = `⚠️ 未能拉取到模型列表 (${result.error || '接口未返回模型'})，可手动输入`;
+        tip.className = 'text-[10px] text-amber-400';
+      }
+    }
+  } catch (err) {
+    if (!silent) {
+      alert('拉取模型异常：' + err.message);
+    }
+    if (textFetch) textFetch.textContent = '拉取异常(重试)';
+  } finally {
+    if (iconFetch) iconFetch.classList.remove('animate-spin');
+    if (btnFetch) btnFetch.disabled = false;
+    refreshIcons();
+  }
+}
+
+function selectAiProvider(providerKey, explicitModel = '', explicitBase = '') {
+  currentAiProvider = providerKey;
+  const preset = PROVIDER_PRESETS[providerKey] || PROVIDER_PRESETS.deepseek;
+
+  ['deepseek', 'aliyun', 'custom'].forEach(p => {
+    const btn = document.getElementById(`providerBtn${p.charAt(0).toUpperCase() + p.slice(1)}`);
+    if (!btn) return;
+    if (p === providerKey) {
+      btn.className = 'p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 cursor-pointer bg-brand-500/15 border-brand-500 text-brand-300 shadow-sm';
+    } else {
+      btn.className = 'p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center gap-1.5 cursor-pointer';
+    }
+  });
+
+  const inputBase = document.getElementById('inputAiBase');
+  const providerKeyHelp = document.getElementById('providerKeyHelp');
+  const providerKeyTip = document.getElementById('providerKeyTip');
+  const tip = document.getElementById('modelFetchTip');
+  const textFetch = document.getElementById('textFetchModels');
+
+  if (inputBase) {
+    if (explicitBase) {
+      inputBase.value = explicitBase;
+    } else if (providerKey !== 'custom' || !inputBase.value || inputBase.value === 'https://api.openai.com/v1') {
+      inputBase.value = preset.base;
+    }
+  }
+  if (providerKeyTip) providerKeyTip.textContent = preset.tip;
+  if (textFetch) textFetch.textContent = '拉取模型列表';
+  if (tip) {
+    tip.textContent = '输入 Key 后可点击上方“拉取模型列表”自动填充';
+    tip.className = 'text-[10px] text-slate-500';
+  }
+
+  // 填充下拉选项
+  const targetModel = explicitModel || preset.defaultModel;
+  populateModelOptions(preset.defaultModels, targetModel);
+
+  // 统一默认使用下拉选择模式
+  if (isCustomModelMode) {
+    toggleCustomModelInput();
+  }
+
+  if (providerKeyHelp) {
+    if (preset.helpUrl) {
+      providerKeyHelp.href = preset.helpUrl;
+      providerKeyHelp.innerHTML = `<span>${preset.helpText}</span><i data-lucide="external-link" class="w-3 h-3"></i>`;
+      providerKeyHelp.classList.remove('hidden');
+    } else {
+      providerKeyHelp.classList.add('hidden');
+    }
+  }
+
+  hideTestResult();
+  refreshIcons();
+}
+
+function getActiveModelValue() {
+  if (isCustomModelMode) {
+    return document.getElementById('inputAiModel')?.value.trim() || '';
+  }
+  const select = document.getElementById('selectAiModel');
+  return select ? select.value.trim() : (document.getElementById('inputAiModel')?.value.trim() || '');
+}
+
+async function openAiSettingsModal(isFirstRun = false) {
+  const modal = document.getElementById('aiSettingsModal');
+  if (!modal) return;
+
+  try {
+    const res = await fetch('/api/settings/ai');
+    if (res.ok) {
+      const data = await res.json();
+      currentAiProvider = data.provider || 'deepseek';
+      if (data.apiKey) document.getElementById('inputAiKey').value = data.apiKey;
+      const modelVal = data.model || '';
+      selectAiProvider(currentAiProvider, modelVal, data.apiBase || '');
+      const inputAiModel = document.getElementById('inputAiModel');
+      if (inputAiModel) inputAiModel.value = modelVal;
+
+      // 如果已有有效 Key，自动静默拉取真实模型列表填充下拉框
+      if (data.apiKey && data.apiKey !== 'sk-none') {
+        fetchAvailableModels(true);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load AI settings:', e);
+  }
+
+  hideTestResult();
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  refreshIcons();
+}
+
+function closeAiSettingsModal() {
+  const modal = document.getElementById('aiSettingsModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function toggleApiKeyVisibility() {
+  const input = document.getElementById('inputAiKey');
+  const eyeIcon = document.getElementById('eyeIcon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    eyeIcon?.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    eyeIcon?.setAttribute('data-lucide', 'eye');
+  }
+  refreshIcons();
+}
+
+async function testAiConnection() {
+  const btn = document.getElementById('btnTestAi');
+  const btnText = document.getElementById('testAiBtnText');
+  const apiKey = document.getElementById('inputAiKey').value.trim();
+  const model = getActiveModelValue();
+  const apiBase = document.getElementById('inputAiBase').value.trim();
+
+  if (!apiKey) {
+    showTestResult(false, '请先填入 API Key 密钥');
+    return;
+  }
+
+  btn.disabled = true;
+  btnText.textContent = '测试中...';
+  hideTestResult();
+
+  try {
+    const res = await fetch('/api/settings/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiBase, apiKey, model })
+    });
+    const result = await res.json();
+    if (res.ok && result.success) {
+      showTestResult(true, `✅ ${result.message || '连接成功！'}`);
+    } else {
+      showTestResult(false, `❌ ${result.error || '连接失败'}`);
+    }
+  } catch (err) {
+    showTestResult(false, `❌ 网络异常: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '测试连通性';
+  }
+}
+
+function showTestResult(isSuccess, message) {
+  const banner = document.getElementById('testAiResult');
+  const bannerText = document.getElementById('testAiResultText');
+  if (!banner || !bannerText) return;
+
+  bannerText.textContent = message;
+  banner.className = `p-3 rounded-xl text-xs flex items-center justify-between border ${
+    isSuccess ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'
+  }`;
+  banner.classList.remove('hidden');
+}
+
+function hideTestResult() {
+  const banner = document.getElementById('testAiResult');
+  if (banner) banner.classList.add('hidden');
+}
+
+async function saveAiSettings() {
+  const apiKey = document.getElementById('inputAiKey').value.trim();
+  const model = getActiveModelValue();
+  const apiBase = document.getElementById('inputAiBase').value.trim();
+  const btnSave = document.getElementById('btnSaveAiModal');
+
+  btnSave.disabled = true;
+  btnSave.textContent = '保存中...';
+
+  try {
+    const res = await fetch('/api/settings/ai', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: currentAiProvider,
+        apiBase,
+        apiKey,
+        model
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert('保存失败：' + (err.error || '未知错误'));
+      return;
+    }
+
+    const hasKey = Boolean(apiKey && apiKey !== 'sk-none');
+    updateAiStatusBadge(hasKey, currentAiProvider, model);
+    closeAiSettingsModal();
+  } catch (e) {
+    alert('保存失败：' + e.message);
+  } finally {
+    btnSave.disabled = false;
+    btnSave.textContent = '保存配置';
+  }
+}
+
+function updateAiStatusBadge(hasKey, provider, model) {
+  const btnAi = document.getElementById('btnAiSettings');
+  const text = document.getElementById('aiModelStatusText');
+  const dot = document.getElementById('aiStatusDot');
+  if (!btnAi || !text || !dot) return;
+
+  if (hasKey) {
+    const providerName = provider === 'aliyun' ? '阿里云百炼' : (provider === 'custom' ? '自定义' : 'DeepSeek');
+    text.textContent = `AI 引擎：${providerName}`;
+    dot.className = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot';
+    btnAi.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-brand-500/35 bg-brand-500/10 hover:bg-brand-500/20 text-xs font-semibold text-brand-300 transition cursor-pointer shadow-sm';
+  } else {
+    text.textContent = '⚠️ 点击配置 AI 密钥';
+    dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+    btnAi.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 text-xs font-semibold text-amber-300 transition cursor-pointer shadow-sm animate-pulse';
   }
 }
 
@@ -670,8 +1156,13 @@ async function handleCreateTask(e) {
   e.preventDefault();
 
   if (!token) {
-    openAuthModal('login');
-    return;
+    if (window.isStandalone) {
+      token = 'standalone_local_token';
+      localStorage.setItem('itls_token', token);
+    } else {
+      openAuthModal('login');
+      return;
+    }
   }
 
   const grade = document.getElementById('selectGrade').value;
@@ -721,7 +1212,7 @@ async function handleCreateTask(e) {
     if (!res.ok) {
       alert(data.error || '任务启动失败');
       btnSubmit.disabled = false;
-      btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>立即合成全套四位一体教学资料</span>`;
+      btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
       refreshIcons();
       return;
     }
@@ -732,7 +1223,7 @@ async function handleCreateTask(e) {
   } catch (err) {
     alert('创建任务失败: ' + err.message);
     btnSubmit.disabled = false;
-    btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>立即合成全套四位一体教学资料</span>`;
+    btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
     refreshIcons();
   }
 }
@@ -753,7 +1244,7 @@ function resetTaskProgressUI() {
   document.getElementById('progressCard').classList.add('hidden');
   const btnSubmit = document.getElementById('btnSubmit');
   btnSubmit.disabled = false;
-  btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>立即合成全套四位一体教学资料</span>`;
+  btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
 
   document.getElementById('btnCancelTask').classList.remove('hidden');
   document.getElementById('btnRetryTask').classList.add('hidden');
@@ -781,10 +1272,10 @@ function resetToGeneratingState() {
   document.getElementById('btnRetryTask').classList.add('hidden');
   document.getElementById('btnBackEdit').classList.add('hidden');
 
-  updateStepState('stepPlan', 'running', '备课教案', '≤4页公文精排');
-  updateStepState('stepWorksheet', 'waiting', '探究导学单', '严格单面防溢出');
-  updateStepState('stepSlides', 'waiting', '大屏演示课件', 'Marp 16:9纯净卡片');
-  updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
+  updateStepState('stepPlan', 'running', '备课教案');
+  updateStepState('stepWorksheet', 'waiting', '探究导学单');
+  updateStepState('stepSlides', 'waiting', '演示课件');
+  updateStepState('stepClasswork', 'waiting', '随堂互动作业');
 
   progressStartTime = Date.now();
   if (progressDurationTimer) clearInterval(progressDurationTimer);
@@ -842,10 +1333,10 @@ function showProgressCard(title) {
   document.getElementById('btnBackEdit').classList.add('hidden');
 
   // 重置 4 个打卡步骤
-  updateStepState('stepPlan', 'running', '备课教案', '≤4页公文精排');
-  updateStepState('stepWorksheet', 'waiting', '探究导学单', '严格单面防溢出');
-  updateStepState('stepSlides', 'waiting', '大屏演示课件', 'Marp 16:9纯净卡片');
-  updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
+  updateStepState('stepPlan', 'running', '备课教案');
+  updateStepState('stepWorksheet', 'waiting', '探究导学单');
+  updateStepState('stepSlides', 'waiting', '演示课件');
+  updateStepState('stepClasswork', 'waiting', '随堂互动作业');
 
   // 启动计时器
   progressStartTime = Date.now();
@@ -873,8 +1364,8 @@ function updateStepState(stepId, state, name, desc) {
   const descEl = el.querySelector('.step-desc');
   const statusEl = el.querySelector('.step-status');
 
-  nameEl.textContent = name;
-  descEl.textContent = desc;
+  if (nameEl) nameEl.textContent = name;
+  if (descEl && desc) descEl.textContent = desc;
 
   if (state === 'waiting') {
     el.className = 'p-3.5 rounded-2xl bg-dark-surface/50 border border-dark-borderLight transition-all duration-300 flex items-center gap-3 opacity-60';
@@ -914,40 +1405,40 @@ function applyProgressVisuals(percentVal) {
 
   // 根据当前动态百分比推进四大环节打卡灯与文案
   if (pInt < 25) {
-    textEl.textContent = '正在精细构建 4 页公文备课教案...';
-    subDetailEl.textContent = '首行缩进两格 · 取消板书 · 注入通俗生活比喻';
-    updateStepState('stepPlan', 'running', '备课教案', '≤4页公文精排');
-    updateStepState('stepWorksheet', 'waiting', '探究导学单', '严格单面防溢出');
-    updateStepState('stepSlides', 'waiting', '大屏演示课件', 'Marp 16:9纯净卡片');
-    updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
+    textEl.textContent = '正在构建备课教案...';
+    subDetailEl.textContent = '情境设计 · 任务分解 · 降坡度支架';
+    updateStepState('stepPlan', 'running', '备课教案');
+    updateStepState('stepWorksheet', 'waiting', '探究导学单');
+    updateStepState('stepSlides', 'waiting', '演示课件');
+    updateStepState('stepClasswork', 'waiting', '随堂互动作业');
   } else if (pInt < 50) {
-    textEl.textContent = '正在编排探究导学单与学生上机脚手架...';
-    subDetailEl.textContent = '严格单面A4防溢出 · 显式□槽位 · 剥离机房座号';
-    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
-    updateStepState('stepWorksheet', 'running', '探究导学单', '严格单面防溢出');
-    updateStepState('stepSlides', 'waiting', '大屏演示课件', 'Marp 16:9纯净卡片');
-    updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
+    textEl.textContent = '正在编排探究导学单...';
+    subDetailEl.textContent = '上机实操支架 · 核心探究任务';
+    updateStepState('stepPlan', 'done', '备课教案');
+    updateStepState('stepWorksheet', 'running', '探究导学单');
+    updateStepState('stepSlides', 'waiting', '演示课件');
+    updateStepState('stepClasswork', 'waiting', '随堂互动作业');
   } else if (pInt < 75) {
-    textEl.textContent = '正在转译 Marp 16:9 现代大屏演示课件...';
-    subDetailEl.textContent = '纯净第一人称视角 · 双栏卡片网格 · 清除后台台词';
-    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
-    updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
-    updateStepState('stepSlides', 'running', '大屏演示课件', 'Marp 16:9纯净卡片');
-    updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
+    textEl.textContent = '正在制作演示课件...';
+    subDetailEl.textContent = '卡片网格布局 · 课堂任务引导';
+    updateStepState('stepPlan', 'done', '备课教案');
+    updateStepState('stepWorksheet', 'done', '探究导学单');
+    updateStepState('stepSlides', 'running', '演示课件');
+    updateStepState('stepClasswork', 'waiting', '随堂互动作业');
   } else if (pInt < 95) {
-    textEl.textContent = '正在构建单文件轻量 HTML 随堂互动作业...';
-    subDetailEl.textContent = '零依赖秒开 · 微型仿真台 · 标准txt凭单与电子通关奖状';
-    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
-    updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
-    updateStepState('stepSlides', 'done', '大屏演示课件', 'Marp 16:9纯净卡片');
-    updateStepState('stepClasswork', 'running', '随堂互动作业', '单文件微型仿真台');
+    textEl.textContent = '正在构建随堂互动作业...';
+    subDetailEl.textContent = '单文件离线秒开 · 仿真关卡与凭单导出';
+    updateStepState('stepPlan', 'done', '备课教案');
+    updateStepState('stepWorksheet', 'done', '探究导学单');
+    updateStepState('stepSlides', 'done', '演示课件');
+    updateStepState('stepClasswork', 'running', '随堂互动作业');
   } else if (pInt < 100) {
-    textEl.textContent = '正在执行 OpenXML 公文精排与全套资源打包...';
-    subDetailEl.textContent = 'Pandoc 转译 · beautify_docx 精排 · ZIP 打包';
-    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
-    updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
-    updateStepState('stepSlides', 'done', '大屏演示课件', 'Marp 16:9纯净卡片');
-    updateStepState('stepClasswork', 'done', '随堂互动作业', '单文件微型仿真台');
+    textEl.textContent = '正在执行全套资源打包...';
+    subDetailEl.textContent = '格式排版校验 · ZIP 打包';
+    updateStepState('stepPlan', 'done', '备课教案');
+    updateStepState('stepWorksheet', 'done', '探究导学单');
+    updateStepState('stepSlides', 'done', '演示课件');
+    updateStepState('stepClasswork', 'done', '随堂互动作业');
   }
 }
 
@@ -971,11 +1462,11 @@ function startPolling(taskId) {
         currentDisplayPercent = 100;
         applyProgressVisuals(100);
         document.getElementById('progressText').textContent = '🎉 四位一体全套教学资料已全部就绪！';
-        document.getElementById('progressSubDetail').textContent = '100% 同源咬合交付';
-        updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
-        updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
-        updateStepState('stepSlides', 'done', '大屏演示课件', 'Marp 16:9纯净卡片');
-        updateStepState('stepClasswork', 'done', '随堂互动作业', '单文件微型仿真台');
+        document.getElementById('progressSubDetail').textContent = '已完成全部教学资源编译';
+        updateStepState('stepPlan', 'done', '备课教案');
+        updateStepState('stepWorksheet', 'done', '探究导学单');
+        updateStepState('stepSlides', 'done', '演示课件');
+        updateStepState('stepClasswork', 'done', '随堂互动作业');
 
         setTimeout(() => {
           finishTask(task);
@@ -996,7 +1487,7 @@ function finishTask(task) {
 
   const btnSubmit = document.getElementById('btnSubmit');
   btnSubmit.disabled = false;
-  btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>立即合成全套四位一体教学资料</span>`;
+  btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
 
   document.getElementById('progressCard').classList.add('hidden');
   const deliveryCard = document.getElementById('deliveryCard');
@@ -1025,7 +1516,7 @@ function failTask(task) {
 
   const btnSubmit = document.getElementById('btnSubmit');
   btnSubmit.disabled = false;
-  btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>立即合成全套四位一体教学资料</span>`;
+  btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
 
   // 保持 progressCard 展开，切换为直观的异常态
   const progressCard = document.getElementById('progressCard');
@@ -1042,15 +1533,14 @@ function failTask(task) {
   document.getElementById('taskControlHint').textContent = '流水线已终止';
 
   // 停止未就绪卡片的旋转菊花，避免用户误以为仍在构建
-  const names = ['备课教案', '探究导学单', '大屏演示课件', '随堂互动作业'];
-  const descs = ['≤4页公文精排', '严格单面防溢出', 'Marp 16:9纯净卡片', '单文件微型仿真台'];
+  const names = ['备课教案', '探究导学单', '演示课件', '随堂互动作业'];
   ['stepPlan', 'stepWorksheet', 'stepSlides', 'stepClasswork'].forEach((id, idx) => {
     const el = document.getElementById(id);
     if (!el) return;
     const statusEl = el.querySelector('.step-status');
     const isDone = statusEl && statusEl.textContent === '已就绪';
     if (!isDone) {
-      updateStepState(id, 'stopped', names[idx], descs[idx]);
+      updateStepState(id, 'stopped', names[idx]);
     }
   });
 
@@ -1130,7 +1620,7 @@ window.retryHistoryTask = async function(taskId) {
     alert('启动重新生成失败: ' + err.message);
     const btnSubmit = document.getElementById('btnSubmit');
     btnSubmit.disabled = false;
-    btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>立即合成全套四位一体教学资料</span>`;
+    btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
     refreshIcons();
   }
 };
@@ -1260,13 +1750,13 @@ async function loadHistoryList() {
 
             <button onclick="triggerDownload('/api/download/${t.id}/pptx')" 
               class="px-2.5 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-semibold flex items-center justify-between transition cursor-pointer active:scale-95" title="点击下载演示课件PPTX">
-              <span class="flex items-center gap-1.5"><i data-lucide="presentation" class="w-3.5 h-3.5 text-purple-400"></i>大屏课件</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="presentation" class="w-3.5 h-3.5 text-purple-400"></i>演示课件</span>
               <span class="text-[10px] text-purple-400/80 font-mono">PPTX</span>
             </button>
 
             <button onclick="triggerDownload('/api/download/${t.id}/html')" 
               class="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold flex items-center justify-between transition cursor-pointer active:scale-95" title="点击下载互动作业HTML文件">
-              <span class="flex items-center gap-1.5"><i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-emerald-400"></i>随堂作业</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-emerald-400"></i>随堂互动作业</span>
               <span class="text-[10px] text-emerald-400/80 font-mono">HTML</span>
             </button>
           </div>

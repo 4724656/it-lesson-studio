@@ -287,9 +287,13 @@ export async function generateLessonFiles({
   targetDir,
   onProgress
 }) {
-  const apiBase = dbService.getSetting('ai_api_base') || process.env.AI_API_BASE || 'http://127.0.0.1:8317/v1';
-  const apiKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || 'sk-none';
-  const model = dbService.getSetting('ai_model') || process.env.AI_MODEL || 'gemini-2.5-flash';
+  const apiBase = dbService.getSetting('ai_api_base') || process.env.AI_API_BASE || 'https://api.deepseek.com/v1';
+  const apiKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
+  const model = dbService.getSetting('ai_model') || process.env.AI_MODEL || 'deepseek-chat';
+
+  if (!apiKey || !apiKey.trim() || apiKey.trim() === 'sk-none') {
+    throw new Error('未配置 AI API Key！请点击右上角【⚙️ AI 设置】填入您自己的 API Key 后再开始备课。');
+  }
 
   const systemPrompt = loadSystemPrompt();
   const gradeNum = extractGradeNum(grade);
@@ -303,7 +307,7 @@ export async function generateLessonFiles({
   // 阶段 1：生成教学文稿三件套（教案.md、导学案.md、课件.md）
   // =========================================================================
   if (onProgress) {
-    onProgress({ progress: 20, progressText: '教学引擎正在构思教案、导学单与大屏课件...' });
+    onProgress({ progress: 20, progressText: '教学引擎正在构思教案、导学单与演示课件...' });
   }
 
   const promptPhase1 = `
