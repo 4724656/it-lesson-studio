@@ -26,6 +26,8 @@ output/
 workspace/
 downloads/
 scratch/
+dist/
+runtime/
 *.log
 
 # 临时文件与 Office 临时锁定文件
