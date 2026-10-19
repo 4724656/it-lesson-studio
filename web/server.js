@@ -631,8 +631,12 @@ app.listen(PORT, '0.0.0.0', () => {
   if (cleaned > 0) {
     console.log(`🧹 已自动恢复/清理 ${cleaned} 个中断的生成任务`);
   }
-  console.log(`\n🚀 IT Lesson Studio Web 服务已启动: http://0.0.0.0:${PORT}`);
-  const maskedInvite = INVITE_CODE ? `${INVITE_CODE.slice(0, 2)}****` : '未配置';
-  console.log(`🔑 教研组注册邀请码: ${maskedInvite} (可登录管理员后台查看或修改)`);
+  console.log(`\n🚀 IT Lesson Studio Web 服务已启动: http://localhost:${PORT}`);
+  if (IS_STANDALONE) {
+    console.log(`✨ 运行模式: 单机便携免登录模式 (无需账号密码，即开即用)`);
+  } else {
+    const maskedInvite = INVITE_CODE ? `${INVITE_CODE.slice(0, 2)}****` : '未配置';
+    console.log(`🔑 教研组注册邀请码: ${maskedInvite} (可登录管理员后台查看或修改)`);
+  }
   console.log(`📁 数据目录: ${path.join(__dirname, 'data')}\n`);
 });

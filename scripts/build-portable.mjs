@@ -126,7 +126,21 @@ async function main() {
 
   // 2. 复制项目核心业务代码与静态资产（排除个人数据与开发期垃圾）
   logStep('2/6', '复制核心教学引擎、模板、课标图谱与前端代码...');
-  fs.copyFileSync(path.join(rootDir, '启动备课工坊.bat'), path.join(TARGET_DIR, '启动备课工坊.bat'));
+  const batContent = [
+    '@echo off',
+    'cd /d "%~dp0"',
+    'chcp 65001 >nul',
+    'title IT Lesson Studio',
+    'if exist "runtime\\node\\node.exe" (',
+    '    "runtime\\node\\node.exe" "scripts\\start-portable.mjs"',
+    ') else (',
+    '    node "scripts\\start-portable.mjs"',
+    ')',
+    'if errorlevel 1 pause',
+    ''
+  ].join('\r\n');
+  fs.writeFileSync(path.join(rootDir, '启动备课工坊.bat'), batContent, 'ascii');
+  fs.writeFileSync(path.join(TARGET_DIR, '启动备课工坊.bat'), batContent, 'ascii');
   fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(TARGET_DIR, 'package.json'));
 
   for (const dirName of ['references', 'resources', 'skills', 'examples']) {
@@ -140,7 +154,7 @@ async function main() {
   // 复制 scripts/ 核心运行脚本（排除测试与打包脚本本身）
   const scriptsDest = path.join(TARGET_DIR, 'scripts');
   fs.mkdirSync(scriptsDest, { recursive: true });
-  for (const scriptFile of ['export-lesson.mjs', 'beautify_docx.py', 'check_lesson.py', 'verify_layout.py', 'textbook_sources.json']) {
+  for (const scriptFile of ['start-portable.mjs', 'export-lesson.mjs', 'beautify_docx.py', 'check_lesson.py', 'verify_layout.py', 'textbook_sources.json']) {
     const srcFile = path.join(rootDir, 'scripts', scriptFile);
     if (fs.existsSync(srcFile)) {
       fs.copyFileSync(srcFile, path.join(scriptsDest, scriptFile));
