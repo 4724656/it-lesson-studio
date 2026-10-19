@@ -28,7 +28,12 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const IS_STANDALONE = process.env.APP_MODE !== 'team';
+// 智能运行模式判定：
+// 1. 若显式设置 APP_MODE，以 APP_MODE 为准 (team 或 standalone)
+// 2. 若在 Docker 容器环境且未指定，则默认为团队多用户模式 (team)
+// 3. 本地原生环境默认运行为单机免登录便携模式 (standalone)
+const isDocker = fs.existsSync('/.dockerenv') || process.env.IS_DOCKER === 'true';
+const IS_STANDALONE = process.env.APP_MODE === 'standalone' || (process.env.APP_MODE !== 'team' && !isDocker);
 
 // 单机模式下确保存在默认用户
 if (IS_STANDALONE) {
