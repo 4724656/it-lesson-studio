@@ -91,22 +91,6 @@ export const dbService = {
     return stmt.get().count;
   },
 
-  getOrCreateDefaultStandaloneUser() {
-    const existing = db.prepare('SELECT id, username, role, school, real_name, phone FROM users ORDER BY id ASC LIMIT 1').get();
-    if (existing) {
-      return existing;
-    }
-    const stmt = db.prepare("INSERT INTO users (username, password_hash, role, school, real_name) VALUES ('teacher', 'standalone', 'admin', '本地工作台', '信息科技教师')");
-    const result = stmt.run();
-    return {
-      id: Number(result.lastInsertRowid),
-      username: 'teacher',
-      role: 'admin',
-      school: '本地工作台',
-      real_name: '信息科技教师'
-    };
-  },
-
   findUserByUsername(username) {
     const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
     return stmt.get(username);

@@ -24,13 +24,13 @@
               900: '#1e1b4b',
             },
             dark: {
-              bg: '#0d111b',
-              card: '#141b2d',
-              surface: '#1a233a',
-              surfaceHover: '#222e4c',
-              border: '#232f48',
-              borderLight: '#334366'
-            }
+            bg: '#0d111b',
+            card: '#141b2d',
+            surface: '#1a233a',
+            surfaceHover: '#222e4c',
+            border: '#232f48',
+            borderLight: '#334366'
+          }
           },
           fontFamily: {
             mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
@@ -103,13 +103,8 @@
     }
 
     @keyframes progressShimmer {
-      0% {
-        background-position: 200% 0;
-      }
-
-      100% {
-        background-position: -200% 0;
-      }
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
 
     .progress-bar-shimmer {
@@ -164,14 +159,7 @@
 
       <!-- 右侧状态与用户入口 -->
       <div class="flex items-center gap-2.5" id="userArea">
-        <!-- 单机便携版：常驻 AI 引擎与密钥配置胶囊 -->
-        <button id="btnAiSettings"
-          class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-brand-500/35 bg-brand-500/10 hover:bg-brand-500/20 text-xs font-semibold text-brand-300 transition cursor-pointer shadow-sm"
-          onclick="openAiSettingsModal()" title="点击配置您的 AI 接口密钥与模型">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i>
-          <span id="aiModelStatusText">AI 引擎：DeepSeek</span>
-          <span id="aiStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
-        </button>
+        
 
         <!-- 管理员后台入口（仅管理员可见） -->
         <button id="btnAdminModal"
@@ -197,11 +185,10 @@
           <span id="userNameDisplay" class="font-bold">老师</span>
         </button>
 
-        <button id="btnLogout"
-          class="hidden text-xs text-slate-400 hover:text-red-400 transition px-2 py-1.5 cursor-pointer"
+        <button id="btnLogout" class="hidden text-xs text-slate-400 hover:text-red-400 transition px-2 py-1.5 cursor-pointer"
           onclick="logout()">退出</button>
         <button id="btnLoginModal"
-          class="hidden btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg shadow-brand-500/20 cursor-pointer"
+          class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg shadow-brand-500/20 cursor-pointer"
           onclick="openAuthModal('login')">
           登录 / 注册
         </button>
@@ -212,65 +199,37 @@
   <!-- 主体内容区（大气开阔，宽屏舒展 max-w-[1440px]） -->
   <main class="max-w-[1440px] w-full mx-auto px-6 lg:px-10 py-10 space-y-9">
 
-    <!-- 顶栏精炼标题与轻量成果标签（紧凑、透气、不占首屏高） -->
-    <div class="text-center py-2 space-y-3">
-      <div class="flex items-center justify-center gap-2">
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/25 text-xs text-brand-300 font-medium">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i>
-          浙教版 2026
-        </span>
-      </div>
-      <h1
-        class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white flex items-center justify-center gap-2">
-        <span>一体化备课工坊</span>
-      </h1>
-
-      <!-- 4 个轻量成果胶囊（取代生硬技术参数，突出教师实际所得） -->
-      <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-dark-surface/90 border border-dark-borderLight text-xs text-slate-200 shadow-sm">
-          <span class="text-brand-400 font-bold">📄</span>
-          <span class="font-medium">备课教案</span>
-        </span>
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-dark-surface/90 border border-dark-borderLight text-xs text-slate-200 shadow-sm">
-          <span class="text-cyan-400 font-bold">📝</span>
-          <span class="font-medium">探究导学单</span>
-        </span>
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-dark-surface/90 border border-dark-borderLight text-xs text-slate-200 shadow-sm">
-          <span class="text-purple-400 font-bold">🖥️</span>
-          <span class="font-medium">演示课件</span>
-        </span>
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-dark-surface/90 border border-dark-borderLight text-xs text-slate-200 shadow-sm">
-          <span class="text-emerald-400 font-bold">🎮</span>
-          <span class="font-medium">随堂互动作业</span>
-        </span>
-      </div>
+    <!-- 顶栏 Slogan 标题 -->
+    <div class="text-center py-4 space-y-3">
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+        中小学信息科技 · <span
+          class="bg-gradient-to-r from-brand-400 via-purple-400 to-cyan-300 bg-clip-text text-transparent">四位一体备课工坊</span>
+      </h2>
+      <p class="text-sm text-slate-400 max-w-2xl mx-auto font-normal">
+        备课教案 · 探究导学单 · 演示课件 · 随堂互动作业
+      </p>
     </div>
 
-    <!-- 核心备课表单卡片（提亮底色、层次透气、去框套框） -->
-    <section class="glow-card rounded-3xl p-6 sm:p-9 space-y-7">
-      <form id="lessonForm" onsubmit="handleCreateTask(event)" class="space-y-7">
+    <!-- 核心备课表单卡片（加宽、大气、充实） -->
+    <section class="glow-card rounded-3xl p-8 sm:p-10 space-y-8">
+      <form id="lessonForm" onsubmit="handleCreateTask(event)" class="space-y-8">
 
         <!-- 1. 年级与课题直选双栏网格 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <!-- 授课年级 -->
+          <!-- 授课学段与年级选择 -->
           <div class="space-y-2">
             <label class="text-sm font-bold text-slate-200 flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <i data-lucide="graduation-cap" class="w-4 h-4 text-brand-400"></i>
-                <span>授课年级</span>
+                <span>授课年级学段</span>
                 <span class="text-red-400">*</span>
               </span>
               <span class="text-xs text-slate-400 font-normal">切换年级自动联动课题</span>
             </label>
             <div class="relative">
               <select id="selectGrade" required onchange="onGradeChange()"
-                class="w-full bg-dark-surface border border-dark-borderLight rounded-2xl px-4 py-3.5 text-sm sm:text-base text-slate-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition appearance-none cursor-pointer">
+                class="w-full bg-dark-surface border border-dark-borderLight rounded-2xl px-4 py-3.5 text-base text-slate-200 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition appearance-none cursor-pointer">
                 <optgroup label="小学阶段">
                   <option value="三年级上册" selected>三年级上册</option>
                   <option value="三年级下册">三年级下册</option>
@@ -293,18 +252,19 @@
             </div>
           </div>
 
-          <!-- 课题选择 -->
+          <!-- 课题直接点选（免手动打字，支持自定义） -->
           <div class="space-y-2">
             <label class="text-sm font-bold text-slate-200 flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
-                <span>备课课题</span>
+                <span>课题选择（直接选课）</span>
                 <span class="text-red-400">*</span>
               </span>
+              
             </label>
             <div class="relative">
               <select id="selectLesson" required onchange="onLessonChange()"
-                class="w-full bg-dark-surface border border-dark-borderLight rounded-2xl px-4 py-3.5 text-sm sm:text-base text-slate-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition appearance-none cursor-pointer">
+                class="w-full bg-dark-surface border border-dark-borderLight rounded-2xl px-4 py-3.5 text-base text-slate-200 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition appearance-none cursor-pointer">
                 <!-- 由 JS 根据年级动态注入 optgroup 与课时 -->
               </select>
               <i data-lucide="chevron-down"
@@ -314,93 +274,105 @@
             <!-- 自定义课题输入框（当下拉选中“自定义课题”时平滑展示） -->
             <div id="customLessonWrapper" class="hidden mt-2">
               <input type="text" id="inputCustomLesson" placeholder="请输入自定义课题名称 (如：第10课 智能小车避障设计)..."
-                class="w-full bg-dark-surface border border-brand-500/50 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500" />
+                class="w-full bg-dark-surface border border-brand-500/50 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500" />
             </div>
           </div>
         </div>
 
-        <!-- 2. 参考资料专区 (去大框嵌套，直接作为平级分组展开) -->
-        <div class="space-y-3.5">
-          <!-- 模块标题与精炼说明 -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <label class="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <i data-lucide="file-up" class="w-4 h-4 text-brand-400"></i>
-              <span>参考资料 (课文片段或课本插图，选填)</span>
-            </label>
-            <span class="text-xs text-slate-400 font-normal">粘贴文本或上传截图</span>
+        <!-- 2. 自主上传教材与参考材料专区 (支持粘贴文本、上传图片、限制明确) -->
+        <div class="p-6 rounded-2xl bg-dark-surface/40 border border-dark-border/80 space-y-4">
+          <!-- 模块标题与规范限制标签 -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-dark-border/60">
+            <div class="flex items-center gap-2.5">
+              <div
+                class="w-8 h-8 rounded-lg bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400">
+                <i data-lucide="file-up" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-100">自主上传教材与参考资料</h3>
+                <p class="text-xs text-slate-400">选填 · 可直接粘贴教材文本或上传/粘贴课本拍照截图，为 AI 提供精准知识依据</p>
+              </div>
+            </div>
+
+            <!-- 上传规范限制胶囊群 -->
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+              <span class="px-2 py-0.5 rounded-md bg-dark-surface border border-dark-border">格式: JPG / PNG / WEBP</span>
+              <span class="px-2 py-0.5 rounded-md bg-dark-surface border border-dark-border">单图 ≤ 5MB</span>
+              <span class="px-2 py-0.5 rounded-md bg-dark-surface border border-dark-border" id="imgCountLimitTag">图片最多
+                5 张</span>
+              <span class="px-2 py-0.5 rounded-md bg-dark-surface border border-dark-border">文本 ≤ 5000 字</span>
+            </div>
           </div>
 
           <!-- 双栏主体：左侧课文文本粘贴，右侧课本拍照/截图上传 -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-1">
 
             <!-- 文本粘贴区 -->
-            <div
-              class="space-y-2 flex flex-col justify-between p-4 rounded-2xl bg-dark-surface/75 border border-dark-borderLight/90">
+            <div class="space-y-2 flex flex-col justify-between">
               <div class="flex items-center justify-between text-xs text-slate-300">
-                <span class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <span class="flex items-center gap-1.5 font-semibold">
                   <i data-lucide="align-left" class="w-3.5 h-3.5 text-brand-400"></i>
-                  课文摘录 / 教学要点
+                  课文文本 / 核心要点粘贴
                 </span>
                 <button type="button" onclick="clearMaterialsText()"
-                  class="text-xs text-slate-400 hover:text-red-400 transition cursor-pointer">
-                  清空
+                  class="text-[11px] text-slate-400 hover:text-red-400 transition">
+                  清空文本
                 </button>
               </div>
 
-              <textarea id="materialsText" rows="5" maxlength="5000" oninput="onMaterialsTextInput()"
-                placeholder="直接粘贴教材课文段落、活动任务、知识清单或教师个人构想...&#10;"
-                class="w-full flex-1 bg-dark-bg/70 border border-dark-borderLight rounded-xl p-3 text-xs sm:text-sm text-slate-100 placeholder-slate-400/80 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition resize-none"></textarea>
+              <textarea id="materialsText" rows="6" maxlength="5000" oninput="onMaterialsTextInput()"
+                placeholder="可在此直接粘贴教材课文段落、活动任务、知识清单或教师教研提炼...&#10;支持鼠标右键或键盘 Ctrl+V 直接粘贴文本"
+                class="w-full flex-1 bg-dark-surface/90 border border-dark-borderLight rounded-xl p-3.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition resize-none"></textarea>
 
-              <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
-                <span>长文锚点 · 支持达 5000 字</span>
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                <span>支持长文摘录，作为 AI 备课内容锚点</span>
                 <span>已输入 <span id="charCount" class="font-mono text-brand-400 font-bold">0</span> / 5000 字</span>
               </div>
             </div>
 
             <!-- 图片上传/拍照截图区 -->
-            <div
-              class="space-y-2 flex flex-col justify-between p-4 rounded-2xl bg-dark-surface/75 border border-dark-borderLight/90">
+            <div class="space-y-2 flex flex-col justify-between">
               <div class="flex items-center justify-between text-xs text-slate-300">
-                <span class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <span class="flex items-center gap-1.5 font-semibold">
                   <i data-lucide="images" class="w-3.5 h-3.5 text-emerald-400"></i>
-                  课本拍照 / 插图截图
+                  课本拍照 / 插图扫描件上传
                 </span>
                 <div class="flex items-center gap-3">
                   <button type="button" id="btnClearImages" onclick="clearAllImages()"
-                    class="hidden text-xs text-slate-400 hover:text-red-400 transition cursor-pointer">
+                    class="hidden text-[11px] text-slate-400 hover:text-red-400 transition">
                     清空图片
                   </button>
-                  <span class="text-xs text-slate-400 font-mono">
+                  <span class="text-[11px] text-slate-400 font-mono">
                     已添加 <span id="imageCounter" class="text-brand-400 font-bold">0</span> / 5 张
                   </span>
                 </div>
               </div>
 
-              <!-- 上传拖拽投放区 (支持点击、拖拽、以及 Ctrl+V 粘贴图片) -->
+              <!-- 上传拖拽投放区 (支持点击、拖拽、以及 Ctrl+V 粘贴图片，预览缩略图完整收纳在选区虚线框内) -->
               <div id="imageDropzone" onclick="handleDropzoneClick(event)"
-                class="upload-zone rounded-xl p-3.5 text-center cursor-pointer flex flex-col items-center justify-center min-h-[136px] bg-dark-bg/60 hover:bg-dark-bg/85 transition relative flex-1">
+                class="upload-zone rounded-xl p-3.5 text-center cursor-pointer flex flex-col items-center justify-center min-h-[148px] bg-dark-surface/50 hover:bg-dark-surface/80 transition relative flex-1">
                 <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/webp" multiple class="hidden"
                   onchange="handleImageFileSelect(event)" />
 
                 <!-- 空状态占位提示（无图片时展示） -->
                 <div id="imageDropPrompt" class="flex flex-col items-center justify-center py-2 pointer-events-none">
                   <div
-                    class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 mb-1.5">
-                    <i data-lucide="image-plus" class="w-4 h-4"></i>
+                    class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 mb-2">
+                    <i data-lucide="image-plus" class="w-5 h-5"></i>
                   </div>
-                  <p class="text-xs font-medium text-slate-200">点击选图 或 拖拽课本拍照到这里</p>
-                  <p class="text-xs text-slate-400 mt-0.5">支持按 <kbd
-                      class="px-1.5 py-0.5 rounded bg-dark-bg border border-dark-border text-brand-300 font-mono text-[11px]">Ctrl+V</kbd>
-                    粘贴屏幕截图</p>
+                  <p class="text-xs font-medium text-slate-200">点击选择图片 或 将课本拍照图拖拽至此</p>
+                  <p class="text-[11px] text-slate-400 mt-1">支持在此区域直接按 <kbd
+                      class="px-1.5 py-0.5 rounded bg-dark-bg border border-dark-border text-brand-300 font-mono text-[10px]">Ctrl+V</kbd>
+                    粘贴剪贴板截图</p>
                 </div>
 
-                <!-- 图片预览与继续添加网格 -->
+                <!-- 图片预览与继续添加网格（有图片时在虚线选区框内展示） -->
                 <div id="imagePreviewContainer" class="hidden w-full flex flex-col justify-between h-full">
                   <div id="imagePreviewGrid" class="grid grid-cols-5 gap-2 w-full">
                     <!-- 动态注入预览缩略卡片与添加插槽 -->
                   </div>
-                  <div
-                    class="text-xs text-slate-400 pt-2 flex items-center justify-between border-t border-dark-borderLight/40 mt-2 pointer-events-none">
+                  <div class="text-[11px] text-slate-400 pt-2 flex items-center justify-between border-t border-dark-borderLight/40 mt-2 pointer-events-none">
                     <span id="imageDropHint">拖拽或 Ctrl+V 可继续追加图片</span>
                     <span class="text-brand-400 font-mono">还可添加 <span id="imageRemainSlots">4</span> 张</span>
                   </div>
@@ -414,10 +386,10 @@
                 <span id="imageUploadErrorText">图片格式或大小不符合要求</span>
               </div>
 
-              <!-- 底部状态提示条 -->
-              <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
-                <span>支持 JPG / PNG / WEBP</span>
-                <span>单张 ≤ 5MB</span>
+              <!-- 底部状态提示条（与左栏对称对齐） -->
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                <span>支持 JPG / PNG / WEBP，单张 ≤ 5MB</span>
+                <span class="text-slate-400">可多选或直接截图粘贴</span>
               </div>
             </div>
 
@@ -429,18 +401,19 @@
           <label class="text-sm font-bold text-slate-200 flex items-center justify-between">
             <span class="flex items-center gap-2">
               <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
-              <span>教学设想与特别说明 (选填)</span>
+              <span>特色教学意图 / 独家设计设想</span>
             </span>
-            <span class="text-xs text-slate-400 font-normal">机房设备限制或你想设计的特色情境</span>
+            <span class="text-xs text-slate-400 font-normal">选填 · 告诉 AI 你的特色亮点或本地机房条件</span>
           </label>
-          <textarea id="inputRequirements" rows="2" placeholder="例如：第一关我想用测温枪做案例；或者本校机房键盘较旧，导学单步骤精练一些；或者希望随堂作业突出分支结构..."
-            class="w-full bg-dark-surface border border-dark-borderLight rounded-2xl p-3.5 text-xs sm:text-sm text-slate-100 placeholder-slate-400/80 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition resize-none"></textarea>
+          <textarea id="inputRequirements" rows="2"
+            placeholder="例如：第一关我想用测温枪做案例；或者本校机房键盘较旧，导学单打字步骤精炼一些；或者希望课堂作业突出算法分支判断..."
+            class="w-full bg-dark-surface border border-dark-borderLight rounded-2xl p-4 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition resize-none"></textarea>
         </div>
 
         <!-- 4. 提交大按钮 -->
         <button type="submit" id="btnSubmit"
           class="btn-gradient w-full py-4 rounded-2xl font-black text-base tracking-wide text-white flex items-center justify-center gap-2.5 shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 active:scale-[0.99] transition cursor-pointer">
-          <i data-lucide="sparkles" class="w-5 h-5"></i>
+          <i data-lucide="wand-2" class="w-5 h-5"></i>
           <span>生成整套备课资料</span>
         </button>
       </form>
@@ -450,8 +423,7 @@
     <section class="glow-card rounded-3xl p-7 sm:p-9 hidden space-y-6 border-brand-500/40 shadow-2xl" id="progressCard">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
-          <div
-            class="w-12 h-12 rounded-2xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center relative shrink-0">
+          <div class="w-12 h-12 rounded-2xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center relative shrink-0">
             <i data-lucide="loader-2" class="w-6 h-6 text-brand-400 animate-spin"></i>
             <span class="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full animate-ping"></span>
           </div>
@@ -471,19 +443,15 @@
             <span class="font-mono text-sm text-slate-200 font-bold" id="progressTimer">00:00</span>
           </div>
           <div class="px-4 py-2 rounded-2xl bg-dark-surface/90 border border-brand-500/30 flex items-center">
-            <span
-              class="font-mono text-2xl sm:text-3xl font-black bg-gradient-to-r from-brand-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent"
-              id="progressPercent">0%</span>
+            <span class="font-mono text-2xl sm:text-3xl font-black bg-gradient-to-r from-brand-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent" id="progressPercent">0%</span>
           </div>
         </div>
       </div>
 
       <!-- 动态呼吸发光进度条轨道 -->
       <div class="space-y-1.5">
-        <div
-          class="w-full h-3 bg-dark-surface rounded-full overflow-hidden p-[1px] border border-dark-borderLight shadow-inner relative">
-          <div
-            class="h-full progress-bar-shimmer rounded-full transition-all duration-300 shadow-lg shadow-brand-500/50"
+        <div class="w-full h-3 bg-dark-surface rounded-full overflow-hidden p-[1px] border border-dark-borderLight shadow-inner relative">
+          <div class="h-full progress-bar-shimmer rounded-full transition-all duration-300 shadow-lg shadow-brand-500/50"
             id="progressBarFill" style="width: 0%;"></div>
         </div>
         <div class="flex justify-between items-center text-[11px] text-slate-500 font-mono px-1">
@@ -534,7 +502,7 @@
           <div class="step-status text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-500">等待中</div>
         </div>
 
-        <!-- 4. 随堂作业 -->
+        <!-- 4. 随堂互动作业 -->
         <div id="stepClasswork"
           class="p-3.5 rounded-2xl bg-dark-surface/50 border border-dark-borderLight transition-all duration-300 flex items-center gap-3">
           <div
@@ -549,8 +517,7 @@
       </div>
 
       <!-- 任务控制栏：取消生成 / 异常重试 -->
-      <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3.5 border-t border-dark-borderLight text-xs">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3.5 border-t border-dark-borderLight text-xs">
         <div class="flex items-center gap-2 text-slate-400">
           <span class="inline-block w-2 h-2 rounded-full bg-brand-400 animate-ping" id="taskRunningDot"></span>
           <span id="taskControlHint">任务正在后台流水线处理中，请稍候...</span>
@@ -586,7 +553,7 @@
             <span class="w-3 h-3 rounded-full bg-emerald-400 pulse-dot"></span>
             <h3 class="text-xl font-black text-slate-100" id="deliveryTitle">教学资料已就绪！</h3>
           </div>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">四份资料 100% 同源咬合，已完成全套成套教学资源编译</p>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">四份资料 100% 同源咬合，已完成 OpenXML 公文精排与 Marp 16:9 大屏转译</p>
         </div>
 
         <button id="btnDownloadZip"
@@ -681,15 +648,13 @@
             </a>
             <button id="btnHtml"
               class="px-3.5 py-2 rounded-xl border border-dark-borderLight hover:border-emerald-400 text-xs font-semibold text-slate-200 transition flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>HTML</span>
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> HTML
             </button>
           </div>
         </div>
 
       </div>
     </section>
-
   </main>
 
   <!-- 历史备课抽屉 -->
@@ -744,15 +709,13 @@
         <!-- 注册时填写的可选真实信息与邀请码 -->
         <div class="space-y-3 hidden" id="registerFields">
           <div class="space-y-1.5">
-            <label class="text-xs font-semibold text-slate-300">真实姓名 <span
-                class="text-slate-500 font-normal">(选填)</span></label>
+            <label class="text-xs font-semibold text-slate-300">真实姓名 <span class="text-slate-500 font-normal">(选填)</span></label>
             <input type="text" id="authRealName" placeholder="如：张老师"
               class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500" />
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-semibold text-slate-300">任教单位 / 学校 <span
-                class="text-slate-500 font-normal">(选填)</span></label>
+            <label class="text-xs font-semibold text-slate-300">任教单位 / 学校 <span class="text-slate-500 font-normal">(选填)</span></label>
             <input type="text" id="authSchool" placeholder="如：文成县樟台学校"
               class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500" />
           </div>
@@ -788,8 +751,7 @@
     <div class="bg-dark-card border border-dark-border rounded-3xl w-full max-w-md p-7 shadow-2xl space-y-6">
       <div class="flex items-center justify-between pb-3 border-b border-dark-border">
         <div class="flex items-center gap-2.5">
-          <div
-            class="w-9 h-9 rounded-xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400">
+          <div class="w-9 h-9 rounded-xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400">
             <i data-lucide="user-check" class="w-5 h-5"></i>
           </div>
           <div>
@@ -862,13 +824,11 @@
 
   <!-- 管理员控制台模态弹窗 -->
   <div id="adminModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div
-      class="bg-dark-card border border-dark-border rounded-3xl w-full max-w-4xl p-7 shadow-2xl space-y-6 max-h-[90vh] flex flex-col">
+    <div class="bg-dark-card border border-dark-border rounded-3xl w-full max-w-4xl p-7 shadow-2xl space-y-6 max-h-[90vh] flex flex-col">
       <!-- 头部 -->
       <div class="flex items-center justify-between pb-3 border-b border-dark-border">
         <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
             <i data-lucide="shield-alert" class="w-5 h-5"></i>
           </div>
           <div>
@@ -882,21 +842,14 @@
       </div>
 
       <!-- 选项卡切换 -->
-      <div class="flex items-center justify-between border-b border-dark-border pb-2 text-xs">
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="switchAdminTab('users')" id="tabBtnUsers"
-            class="px-4 py-2 rounded-xl font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 transition cursor-pointer">
-            👥 教师成员管理
-          </button>
-          <button type="button" onclick="switchAdminTab('api')" id="tabBtnApi"
-            class="px-4 py-2 rounded-xl font-medium text-slate-400 hover:text-slate-200 transition cursor-pointer">
-            🔑 注册邀请码设置
-          </button>
-        </div>
-        <button type="button" onclick="closeAdminModal(); openAiSettingsModal();"
-          class="px-3.5 py-2 rounded-xl bg-brand-500/15 hover:bg-brand-500/25 text-brand-300 border border-brand-500/35 font-semibold flex items-center gap-1.5 transition cursor-pointer">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-          <span>AI 引擎与密钥设置</span>
+      <div class="flex items-center gap-2 border-b border-dark-border pb-2 text-xs">
+        <button type="button" onclick="switchAdminTab('users')" id="tabBtnUsers"
+          class="px-4 py-2 rounded-xl font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 transition">
+          👥 教师成员管理
+        </button>
+        <button type="button" onclick="switchAdminTab('api')" id="tabBtnApi"
+          class="px-4 py-2 rounded-xl font-medium text-slate-400 hover:text-slate-200 transition">
+          ⚡ AI 接口与配置
         </button>
       </div>
 
@@ -921,9 +874,125 @@
         </div>
       </div>
 
-      <!-- Tab 2: 注册邀请码设置 -->
+      <!-- Tab 2: AI 接口与配置 -->
       <div id="adminTabApi" class="hidden flex-1 overflow-y-auto space-y-4">
         <form id="adminApiForm" onsubmit="handleSaveAdminSettings(event)" class="space-y-4">
+
+          <!-- 1. 服务商选择网格（3 选 1） -->
+          <div class="p-4 rounded-2xl bg-dark-surface/40 border border-dark-border space-y-3">
+            <label class="text-xs font-semibold text-slate-300">选择模型服务商</label>
+            <div class="grid grid-cols-3 gap-2.5">
+              <!-- 1. DeepSeek -->
+              <button type="button" onclick="selectAdminAiProvider('deepseek')" id="adminProviderBtnDeepseek"
+                class="p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 cursor-pointer bg-brand-500/15 border-brand-500 text-brand-300">
+                <span class="text-xl">🐋</span>
+                <span class="text-xs font-bold">DeepSeek 官方</span>
+              </button>
+
+              <!-- 2. 阿里云百炼 -->
+              <button type="button" onclick="selectAdminAiProvider('aliyun')" id="adminProviderBtnAliyun"
+                class="p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center gap-1.5 cursor-pointer">
+                <span class="text-xl">☁️</span>
+                <span class="text-xs font-bold">阿里云百炼</span>
+              </button>
+
+              <!-- 3. 自定义接口 -->
+              <button type="button" onclick="selectAdminAiProvider('custom')" id="adminProviderBtnCustom"
+                class="p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center gap-1.5 cursor-pointer">
+                <span class="text-xl">⚙️</span>
+                <span class="text-xs font-bold">自定义接口</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-400">支持任何兼容 OpenAI /chat/completions 规范的 Base URL 或本地 Ollama</p>
+          </div>
+
+          <!-- 2. 核心凭证与端点 -->
+          <div class="p-4 rounded-2xl bg-dark-surface/40 border border-dark-border space-y-4">
+            <!-- API Key -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="key" class="w-3.5 h-3.5 text-brand-400"></i>
+                  <span>API Key 密钥</span>
+                  <span class="text-red-400">*</span>
+                </label>
+                <a href="https://platform.deepseek.com/api_keys" target="_blank" id="adminProviderKeyHelp"
+                  class="text-[11px] text-brand-400 hover:text-brand-300 underline inline-flex items-center gap-1">
+                  <span>获取 DeepSeek 密钥</span>
+                  <i data-lucide="external-link" class="w-3 h-3"></i>
+                </a>
+              </div>
+              <div class="relative">
+                <input type="password" id="settingApiKey" oninput="handleAdminKeyInput()" placeholder="sk-..."
+                  class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500 pr-10" />
+                <button type="button" onclick="toggleAdminApiKeyVisibility()"
+                  class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 cursor-pointer">
+                  <i data-lucide="eye" class="w-4 h-4" id="adminEyeIcon"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- 模型代号与 API 端点双栏 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- 左侧：模型代号 -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">模型代号</label>
+                  <div class="flex items-center gap-2">
+                    <button type="button" onclick="fetchAdminAvailableModels(false)" id="btnAdminFetchModels"
+                      class="text-[11px] text-brand-400 hover:text-brand-300 inline-flex items-center gap-1 cursor-pointer transition whitespace-nowrap shrink-0"
+                      title="输入 API Key 后点击可在线拉取该账号下的全部可用模型">
+                      <i data-lucide="refresh-cw" class="w-3 h-3" id="iconAdminFetchModels"></i>
+                      <span id="textAdminFetchModels">拉取模型</span>
+                    </button>
+                    <button type="button" onclick="toggleAdminCustomModelInput()" id="btnAdminToggleModelInput"
+                      class="text-[11px] text-slate-400 hover:text-slate-200 transition cursor-pointer whitespace-nowrap shrink-0" title="切换为手动自由输入">
+                      <span id="textAdminToggleModel">✍️ 手动填</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 下拉选择模式（默认） -->
+                <div id="adminModelSelectContainer" class="relative">
+                  <select id="selectAdminAiModel" onchange="handleAdminModelSelectChange(this.value)"
+                    class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500 appearance-none cursor-pointer pr-8">
+                    <!-- 动态填充 -->
+                  </select>
+                  <i data-lucide="chevron-down"
+                    class="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none"></i>
+                </div>
+
+                <!-- 手动输入模式（可自由切换） -->
+                <div id="adminModelInputContainer" class="hidden">
+                  <input type="text" id="settingModel" placeholder="如：deepseek-chat"
+                    class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500" />
+                </div>
+              </div>
+
+              <!-- 右侧：端点地址 -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-300">端点地址 (Base URL)</label>
+                <input type="text" id="settingApiBase" oninput="handleAdminBaseInput()" placeholder="https://api.deepseek.com/v1"
+                  class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500" />
+              </div>
+            </div>
+
+            <!-- 测试结果反馈条 -->
+            <div id="adminTestAiResult" class="hidden p-3 rounded-xl text-xs flex items-center justify-between">
+              <span id="adminTestAiResultText" class="font-medium"></span>
+            </div>
+
+            <!-- 测试连通性按钮 -->
+            <div class="pt-1 flex justify-start">
+              <button type="button" id="btnAdminTestAi" onclick="testAdminAiConnection()"
+                class="px-4 py-2 rounded-xl border border-dark-borderLight hover:border-brand-400 text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="activity" class="w-3.5 h-3.5 text-brand-400"></i>
+                <span id="adminTestAiBtnText">测试连通性</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. 教师注册专属邀请码 -->
           <div class="p-4 rounded-2xl bg-dark-surface/40 border border-dark-border space-y-3">
             <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
               <i data-lucide="key" class="w-4 h-4 text-emerald-400"></i>
@@ -936,159 +1005,14 @@
             </div>
           </div>
 
+          <!-- 保存按钮 -->
           <div class="pt-2 flex justify-end">
             <button type="submit" id="btnSaveSettings"
               class="btn-gradient px-6 py-2.5 rounded-xl font-bold text-xs text-white shadow-md cursor-pointer">
-              保存邀请码设置
+              保存配置并即刻生效
             </button>
           </div>
         </form>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- AI 引擎与密钥设置模态弹窗（单机版与团队版管理员共用统一清爽界面） -->
-  <div id="aiSettingsModal"
-    class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="bg-dark-card border border-dark-border rounded-3xl w-full max-w-lg p-7 shadow-2xl space-y-6">
-
-      <!-- 头部 -->
-      <div class="flex items-center justify-between pb-3 border-b border-dark-border">
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400">
-            <i data-lucide="sparkles" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-base text-slate-100">AI 引擎与密钥设置</h3>
-          </div>
-        </div>
-        <button onclick="closeAiSettingsModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <!-- 服务商选择网格（3 选 1） -->
-      <div class="space-y-2">
-        <label class="text-xs font-semibold text-slate-300">选择推荐模型服务商</label>
-        <div class="grid grid-cols-3 gap-2.5">
-          <!-- 1. DeepSeek -->
-          <button type="button" onclick="selectAiProvider('deepseek')" id="providerBtnDeepseek"
-            class="p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 cursor-pointer bg-brand-500/15 border-brand-500 text-brand-300">
-            <span class="text-xl">🐋</span>
-            <span class="text-xs font-bold">DeepSeek 官方</span>
-          </button>
-
-          <!-- 2. 阿里云百炼 -->
-          <button type="button" onclick="selectAiProvider('aliyun')" id="providerBtnAliyun"
-            class="p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center gap-1.5 cursor-pointer">
-            <span class="text-xl">☁️</span>
-            <span class="text-xs font-bold">阿里云百炼</span>
-          </button>
-
-          <!-- 3. 自定义接口 -->
-          <button type="button" onclick="selectAiProvider('custom')" id="providerBtnCustom"
-            class="p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center gap-1.5 cursor-pointer">
-            <span class="text-xl">⚙️</span>
-            <span class="text-xs font-bold">自定义接口</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 核心表单 -->
-      <div class="space-y-4">
-        <!-- API Key 输入框 -->
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-              <i data-lucide="key" class="w-3.5 h-3.5 text-brand-400"></i>
-              <span>API Key 密钥</span>
-              <span class="text-red-400">*</span>
-            </label>
-            <a href="https://platform.deepseek.com/api_keys" target="_blank" id="providerKeyHelp"
-              class="text-[11px] text-brand-400 hover:text-brand-300 underline inline-flex items-center gap-1">
-              <span>获取 DeepSeek 密钥</span>
-              <i data-lucide="external-link" class="w-3 h-3"></i>
-            </a>
-          </div>
-          <div class="relative">
-            <input type="password" id="inputAiKey" onblur="handleKeyInputBlur()" placeholder="sk-..."
-              class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500 pr-10" />
-            <button type="button" onclick="toggleApiKeyVisibility()"
-              class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 cursor-pointer">
-              <i data-lucide="eye" class="w-4 h-4" id="eyeIcon"></i>
-            </button>
-          </div>
-          <p class="text-[11px] text-slate-500 hidden" id="providerKeyTip"></p>
-        </div>
-
-        <!-- 模型代号与 API 端点双栏 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">模型代号</label>
-              <div class="flex items-center gap-2">
-                <button type="button" onclick="fetchAvailableModels(false)" id="btnFetchModels" class="text-[11px] text-brand-400 hover:text-brand-300 inline-flex items-center gap-1 cursor-pointer transition whitespace-nowrap shrink-0"
-                  title="输入 API Key 后点击可在线拉取该账号下的全部可用模型">
-                  <i data-lucide="refresh-cw" class="w-3 h-3" id="iconFetchModels"></i>
-                  <span id="textFetchModels">拉取模型</span>
-                </button>
-                <button type="button" onclick="toggleCustomModelInput()" id="btnToggleModelInput" class="text-[11px] text-slate-400 hover:text-slate-200 transition cursor-pointer whitespace-nowrap shrink-0" title="切换为手动自由输入">
-                  <span id="textToggleModel">✍️ 手动填</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- 下拉选择模式（默认） -->
-            <div id="modelSelectContainer" class="relative">
-              <select id="selectAiModel" onchange="handleModelSelectChange(this.value)"
-                class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500 appearance-none cursor-pointer pr-8">
-                <!-- 动态填充 -->
-              </select>
-              <i data-lucide="chevron-down"
-                class="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none"></i>
-            </div>
-
-            <!-- 手动输入模式（可自由切换） -->
-            <div id="modelInputContainer" class="hidden">
-              <input type="text" id="inputAiModel" placeholder="如：deepseek-chat"
-                class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500" />
-            </div>
-
-            <p class="text-[10px] text-slate-500" id="modelFetchTip">输入 Key 后可点击上方“拉取模型列表”自动填充</p>
-          </div>
-
-          <div class="space-y-1.5">
-            <label class="text-xs font-semibold text-slate-300">端点地址 (Base URL)</label>
-            <input type="text" id="inputAiBase" onblur="handleKeyInputBlur()" placeholder="https://api.deepseek.com/v1"
-              class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-3.5 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500" />
-          </div>
-        </div>
-      </div>
-
-      <!-- 测试结果反馈条 -->
-      <div id="testAiResult" class="hidden p-3 rounded-xl text-xs flex items-center justify-between">
-        <span id="testAiResultText" class="font-medium"></span>
-      </div>
-
-      <!-- 底部操作按钮 -->
-      <div class="pt-3 border-t border-dark-border flex items-center justify-between gap-3">
-        <button type="button" id="btnTestAi" onclick="testAiConnection()"
-          class="px-4 py-2 rounded-xl border border-dark-borderLight hover:border-brand-400 text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
-          <i data-lucide="activity" class="w-3.5 h-3.5 text-brand-400"></i>
-          <span id="testAiBtnText">测试连通性</span>
-        </button>
-        <div class="flex items-center gap-2.5">
-          <button type="button" onclick="closeAiSettingsModal()"
-            class="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 border border-dark-border hover:bg-dark-surface cursor-pointer">
-            取消
-          </button>
-          <button type="button" onclick="saveAiSettings()" id="btnSaveAiModal"
-            class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 cursor-pointer">
-            保存配置
-          </button>
-        </div>
       </div>
 
     </div>

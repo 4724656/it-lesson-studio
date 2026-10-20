@@ -45,18 +45,15 @@ window.toggleUserRole = toggleUserRole;
 window.resetUserPassword = resetUserPassword;
 window.deleteUser = deleteUser;
 
-// 单机版 AI 引擎与密钥设置窗口
-window.openAiSettingsModal = openAiSettingsModal;
-window.closeAiSettingsModal = closeAiSettingsModal;
-window.selectAiProvider = selectAiProvider;
-window.testAiConnection = testAiConnection;
-window.saveAiSettings = saveAiSettings;
-window.toggleApiKeyVisibility = toggleApiKeyVisibility;
-window.fetchAvailableModels = fetchAvailableModels;
-window.handleKeyInputBlur = handleKeyInputBlur;
-window.handleAiInputAutoFetch = handleAiInputAutoFetch;
-window.handleModelSelectChange = handleModelSelectChange;
-window.toggleCustomModelInput = toggleCustomModelInput;
+// 管理员 AI 接口与模型配置函数
+window.selectAdminAiProvider = selectAdminAiProvider;
+window.fetchAdminAvailableModels = fetchAdminAvailableModels;
+window.toggleAdminCustomModelInput = toggleAdminCustomModelInput;
+window.handleAdminModelSelectChange = handleAdminModelSelectChange;
+window.handleAdminKeyInput = handleAdminKeyInput;
+window.handleAdminBaseInput = handleAdminBaseInput;
+window.toggleAdminApiKeyVisibility = toggleAdminApiKeyVisibility;
+window.testAdminAiConnection = testAdminAiConnection;
 
 function refreshIcons() {
   if (window.lucide) {
@@ -74,37 +71,14 @@ async function initUser() {
   const btnHistory = document.getElementById('btnHistory');
   const btnLogout = document.getElementById('btnLogout');
   const btnLoginModal = document.getElementById('btnLoginModal');
-  const btnAiSettings = document.getElementById('btnAiSettings');
 
-  // 1. 检查运行模式与当前 AI 状态
-  let systemModeData = { standalone: false, hasApiKey: false, provider: 'deepseek', model: '' };
-  try {
-    const modeRes = await fetch('/api/system/mode');
-    if (modeRes.ok) {
-      systemModeData = await modeRes.json();
-      if (systemModeData.standalone) {
-        window.isStandalone = true;
-        if (!token) {
-          token = 'standalone_local_token';
-          localStorage.setItem('itls_token', token);
-        }
-        setupStandaloneUI(systemModeData);
-        return;
-      }
-    }
-  } catch (e) {
-    console.warn('System mode check note:', e.message);
-  }
-
-  // 2. 团队多用户服务器模式
   if (!token) {
     currentUser = null;
-    userProfileBtn?.classList.add('hidden');
-    btnAdminModal?.classList.add('hidden');
-    btnHistory?.classList.add('hidden');
-    btnLogout?.classList.add('hidden');
-    btnLoginModal?.classList.remove('hidden');
-    btnAiSettings?.classList.add('hidden');
+    userProfileBtn.classList.add('hidden');
+    btnAdminModal.classList.add('hidden');
+    btnHistory.classList.add('hidden');
+    btnLogout.classList.add('hidden');
+    btnLoginModal.classList.remove('hidden');
     return;
   }
 
@@ -130,14 +104,11 @@ async function initUser() {
       userNameDisplay.textContent = `${displayName} (管理员)`;
       userProfileBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/40 hover:border-amber-400 text-xs font-semibold transition cursor-pointer';
       btnAdminModal.classList.remove('hidden');
-      btnAiSettings?.classList.remove('hidden');
-      updateAiStatusBadge(systemModeData.hasApiKey, systemModeData.provider, systemModeData.model);
     } else {
       userRoleIcon.textContent = '👤';
       userNameDisplay.textContent = `${displayName} 老师`;
       userProfileBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/15 text-brand-300 border border-brand-500/30 hover:border-brand-500/60 text-xs font-medium transition cursor-pointer';
       btnAdminModal.classList.add('hidden');
-      btnAiSettings?.classList.add('hidden');
     }
 
     userProfileBtn.classList.remove('hidden');
@@ -147,571 +118,6 @@ async function initUser() {
     refreshIcons();
   } catch (err) {
     console.error('获取用户信息失败:', err);
-  }
-}
-
-// ======================== 单机便携版与 AI 引擎配置 ========================
-
-function setupStandaloneUI(modeData) {
-  const userProfileBtn = document.getElementById('userProfileBtn');
-  const btnAdminModal = document.getElementById('btnAdminModal');
-  const btnHistory = document.getElementById('btnHistory');
-  const btnLogout = document.getElementById('btnLogout');
-  const btnLoginModal = document.getElementById('btnLoginModal');
-  const btnAiSettings = document.getElementById('btnAiSettings');
-
-  // 单机版彻底隐藏团队多余按钮
-  userProfileBtn?.classList.add('hidden');
-  btnAdminModal?.classList.add('hidden');
-  btnLogout?.classList.add('hidden');
-  btnLoginModal?.classList.add('hidden');
-
-  // 显示历史与 AI 设置
-  btnHistory?.classList.remove('hidden');
-  btnAiSettings?.classList.remove('hidden');
-
-  // 刷新顶栏 AI 状态胶囊
-  updateAiStatusBadge(modeData.hasApiKey, modeData.provider, modeData.model);
-
-  refreshIcons();
-
-  // 若从未配置过 API Key，首次打开温和弹出配置向导
-  if (!modeData.hasApiKey && !sessionStorage.getItem('itls_ai_modal_shown')) {
-    sessionStorage.setItem('itls_ai_modal_shown', 'true');
-    setTimeout(() => {
-      openAiSettingsModal(true);
-    }, 600);
-  }
-}
-
-let currentAiProvider = 'deepseek';
-let isCustomModelMode = false;
-let autoFetchTimer = null;
-
-const PROVIDER_PRESETS = {
-  deepseek: {
-    name: 'DeepSeek 官方',
-    base: 'https://api.deepseek.com/v1',
-    helpText: '获取 DeepSeek 密钥',
-    helpUrl: 'https://platform.deepseek.com/api_keys',
-    tip: ''
-  },
-  aliyun: {
-    name: '阿里云百炼',
-    base: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    helpText: '获取百炼 API-Key',
-    helpUrl: 'https://bailian.console.aliyun.com/',
-    tip: ''
-  },
-  custom: {
-    name: '自定义接口',
-    base: '',
-    helpText: '',
-    helpUrl: '',
-    tip: '支持任何兼容 OpenAI /chat/completions 规范的 Base URL 或本地 Ollama'
-  }
-};
-
-// 三大服务商各自独立保存配置，切换绝不互相覆盖或还原
-let providerConfigs = {
-  deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [], lastFetchedSig: '' },
-  aliyun:   { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [], lastFetchedSig: '' },
-  custom:   { apiKey: '', apiBase: '', model: '', models: [], lastFetchedSig: '' }
-};
-
-function saveCurrentProviderDomState() {
-  if (!currentAiProvider || !providerConfigs[currentAiProvider]) return;
-  const keyEl = document.getElementById('inputAiKey');
-  const baseEl = document.getElementById('inputAiBase');
-  const cfg = providerConfigs[currentAiProvider];
-  if (keyEl) cfg.apiKey = keyEl.value.trim();
-  if (baseEl) cfg.apiBase = baseEl.value.trim();
-  const activeModel = getActiveModelValue();
-  if (activeModel) cfg.model = activeModel;
-}
-
-function populateModelOptions(modelList = [], selectedValue = '') {
-  const select = document.getElementById('selectAiModel');
-  if (!select) return;
-
-  select.innerHTML = '';
-  const list = Array.isArray(modelList) ? modelList : [];
-
-  if (list.length === 0) {
-    if (selectedValue) {
-      const opt = document.createElement('option');
-      opt.value = selectedValue;
-      opt.textContent = selectedValue;
-      opt.selected = true;
-      select.appendChild(opt);
-    } else {
-      const placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = '-- 填入密钥与端点后自动拉取模型 --';
-      placeholder.selected = true;
-      select.appendChild(placeholder);
-    }
-  } else {
-    let matchFound = false;
-    list.forEach(m => {
-      const id = typeof m === 'string' ? m : m.id;
-      const label = typeof m === 'string' ? m : (m.label || m.id);
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = label;
-      if (selectedValue && id === selectedValue) {
-        opt.selected = true;
-        matchFound = true;
-      }
-      select.appendChild(opt);
-    });
-
-    if (!matchFound) {
-      select.selectedIndex = 0;
-    }
-  }
-
-  const inputAiModel = document.getElementById('inputAiModel');
-  if (inputAiModel) {
-    inputAiModel.value = select.value || selectedValue || '';
-  }
-  if (providerConfigs[currentAiProvider] && select.value) {
-    providerConfigs[currentAiProvider].model = select.value;
-  }
-}
-
-function handleModelSelectChange(val) {
-  const inputAiModel = document.getElementById('inputAiModel');
-  if (inputAiModel) {
-    inputAiModel.value = val;
-  }
-  if (providerConfigs[currentAiProvider]) {
-    providerConfigs[currentAiProvider].model = val;
-  }
-}
-
-function toggleCustomModelInput() {
-  const selectBox = document.getElementById('modelSelectContainer');
-  const inputBox = document.getElementById('modelInputContainer');
-  const btnToggleText = document.getElementById('textToggleModel');
-  const inputAiModel = document.getElementById('inputAiModel');
-  const selectAiModel = document.getElementById('selectAiModel');
-
-  isCustomModelMode = !isCustomModelMode;
-
-  if (isCustomModelMode) {
-    selectBox?.classList.add('hidden');
-    inputBox?.classList.remove('hidden');
-    if (btnToggleText) btnToggleText.textContent = '📋 下拉选';
-    if (inputAiModel && selectAiModel && selectAiModel.value) {
-      inputAiModel.value = selectAiModel.value;
-    }
-    inputAiModel?.focus();
-  } else {
-    selectBox?.classList.remove('hidden');
-    inputBox?.classList.add('hidden');
-    if (btnToggleText) btnToggleText.textContent = '✍️ 手动填';
-    if (inputAiModel && selectAiModel && inputAiModel.value.trim()) {
-      const val = inputAiModel.value.trim();
-      let exists = false;
-      for (let i = 0; i < selectAiModel.options.length; i++) {
-        if (selectAiModel.options[i].value === val) {
-          selectAiModel.selectedIndex = i;
-          exists = true;
-          break;
-        }
-      }
-      if (!exists) {
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = val;
-        opt.selected = true;
-        selectAiModel.prepend(opt);
-      }
-      if (providerConfigs[currentAiProvider]) {
-        providerConfigs[currentAiProvider].model = val;
-      }
-    }
-  }
-  refreshIcons();
-}
-
-function handleAiInputAutoFetch() {
-  saveCurrentProviderDomState();
-  if (autoFetchTimer) clearTimeout(autoFetchTimer);
-  autoFetchTimer = setTimeout(() => {
-    const apiKey = document.getElementById('inputAiKey')?.value.trim() || '';
-    const apiBase = document.getElementById('inputAiBase')?.value.trim() || '';
-    const cfg = providerConfigs[currentAiProvider];
-    const sig = `${apiBase}|${apiKey}`;
-    if (apiKey.length >= 8 && apiKey !== 'sk-none' && /^https?:\/\/.+/i.test(apiBase)) {
-      if (!cfg || cfg.lastFetchedSig !== sig || !cfg.models || cfg.models.length === 0) {
-        fetchAvailableModels(true);
-      }
-    }
-  }, 600);
-}
-
-function handleKeyInputBlur() {
-  saveCurrentProviderDomState();
-  const apiKey = document.getElementById('inputAiKey')?.value.trim() || '';
-  const apiBase = document.getElementById('inputAiBase')?.value.trim() || '';
-  const cfg = providerConfigs[currentAiProvider];
-  const sig = `${apiBase}|${apiKey}`;
-  if (apiKey.length >= 8 && apiKey !== 'sk-none' && /^https?:\/\/.+/i.test(apiBase)) {
-    if (!cfg || cfg.lastFetchedSig !== sig || !cfg.models || cfg.models.length === 0) {
-      fetchAvailableModels(true);
-    }
-  }
-}
-
-async function fetchAvailableModels(silent = false) {
-  const targetProvider = currentAiProvider;
-  const btnFetch = document.getElementById('btnFetchModels');
-  const textFetch = document.getElementById('textFetchModels');
-  const iconFetch = document.getElementById('iconFetchModels');
-  const apiKey = document.getElementById('inputAiKey')?.value.trim() || '';
-  const apiBase = document.getElementById('inputAiBase')?.value.trim() || '';
-  const tip = document.getElementById('modelFetchTip');
-
-  saveCurrentProviderDomState();
-
-  if (!apiKey || apiKey === 'sk-none') {
-    if (!silent) alert('请先填入有效的 API Key 密钥');
-    return;
-  }
-  if (!apiBase || !/^https?:\/\/.+/i.test(apiBase)) {
-    if (!silent) alert('请先填入有效的端点地址 (Base URL)');
-    return;
-  }
-
-  if (iconFetch) iconFetch.classList.add('animate-spin');
-  if (textFetch) textFetch.textContent = '拉取中...';
-  if (btnFetch) btnFetch.disabled = true;
-
-  try {
-    const res = await fetch('/api/settings/fetch-models', {
-      method: 'POST',
-      headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiBase, apiKey })
-    });
-
-    const result = await res.json();
-    if (res.ok && result.success && Array.isArray(result.models) && result.models.length > 0) {
-      const cfg = providerConfigs[targetProvider];
-      if (cfg) {
-        cfg.models = result.models;
-        cfg.lastFetchedSig = `${apiBase}|${apiKey}`;
-      }
-
-      if (currentAiProvider === targetProvider) {
-        const preferredModel = cfg?.model || getActiveModelValue();
-        populateModelOptions(result.models, preferredModel);
-        if (textFetch) textFetch.textContent = `已获取 ${result.models.length} 个模型`;
-        if (tip) {
-          tip.textContent = `✅ 已自动拉取 ${result.models.length} 个可用模型`;
-          tip.className = 'text-[10px] text-emerald-400 font-medium';
-        }
-      }
-    } else {
-      if (!silent) {
-        alert('拉取模型失败：' + (result.error || '未获取到模型列表'));
-      }
-      if (currentAiProvider === targetProvider) {
-        if (textFetch) textFetch.textContent = '拉取失败(重试)';
-        if (tip) {
-          tip.textContent = `⚠️ 未能拉取模型列表 (${result.error || '接口未返回'})，可点右上角“手动填”`;
-          tip.className = 'text-[10px] text-amber-400';
-        }
-      }
-    }
-  } catch (err) {
-    if (!silent) {
-      alert('拉取模型异常：' + err.message);
-    }
-    if (currentAiProvider === targetProvider && textFetch) {
-      textFetch.textContent = '拉取异常(重试)';
-    }
-  } finally {
-    if (iconFetch) iconFetch.classList.remove('animate-spin');
-    if (btnFetch) btnFetch.disabled = false;
-    refreshIcons();
-  }
-}
-
-function selectAiProvider(providerKey, skipSaveCurrent = false) {
-  if (!skipSaveCurrent && currentAiProvider) {
-    saveCurrentProviderDomState();
-  }
-
-  currentAiProvider = providerKey;
-  const preset = PROVIDER_PRESETS[providerKey] || PROVIDER_PRESETS.deepseek;
-  const cfg = providerConfigs[providerKey] || { apiKey: '', apiBase: preset.base, model: '', models: [] };
-
-  ['deepseek', 'aliyun', 'custom'].forEach(p => {
-    const btn = document.getElementById(`providerBtn${p.charAt(0).toUpperCase() + p.slice(1)}`);
-    if (!btn) return;
-    if (p === providerKey) {
-      btn.className = 'p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-brand-500/15 border-brand-500 text-brand-300 shadow-sm';
-    } else {
-      btn.className = 'p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer';
-    }
-  });
-
-  const inputKey = document.getElementById('inputAiKey');
-  const inputBase = document.getElementById('inputAiBase');
-  const providerKeyHelp = document.getElementById('providerKeyHelp');
-  const providerKeyTip = document.getElementById('providerKeyTip');
-  const tip = document.getElementById('modelFetchTip');
-  const textFetch = document.getElementById('textFetchModels');
-
-  if (inputKey) {
-    inputKey.value = cfg.apiKey || '';
-  }
-  if (inputBase) {
-    inputBase.value = cfg.apiBase !== undefined && cfg.apiBase !== '' ? cfg.apiBase : preset.base;
-    inputBase.placeholder = preset.base || 'https://api.openai.com/v1';
-  }
-
-  if (providerKeyTip) {
-    if (preset.tip) {
-      providerKeyTip.textContent = preset.tip;
-      providerKeyTip.classList.remove('hidden');
-    } else {
-      providerKeyTip.textContent = '';
-      providerKeyTip.classList.add('hidden');
-    }
-  }
-
-  // 恢复该服务商已拉取的模型列表与选中模型（不预置固定模型）
-  const savedModels = Array.isArray(cfg.models) ? cfg.models : [];
-  populateModelOptions(savedModels, cfg.model || '');
-
-  if (savedModels.length > 0) {
-    if (textFetch) textFetch.textContent = `已获取 ${savedModels.length} 个模型`;
-    if (tip) {
-      tip.textContent = `✅ 已加载 ${savedModels.length} 个可用模型`;
-      tip.className = 'text-[10px] text-emerald-400 font-medium';
-    }
-  } else {
-    if (textFetch) textFetch.textContent = '拉取模型';
-    if (tip) {
-      tip.textContent = '填入密钥与端点后将自动拉取可用模型列表';
-      tip.className = 'text-[10px] text-slate-500';
-    }
-  }
-
-  // 默认保持下拉选择模式
-  if (isCustomModelMode) {
-    toggleCustomModelInput();
-  }
-
-  if (providerKeyHelp) {
-    if (preset.helpUrl) {
-      providerKeyHelp.href = preset.helpUrl;
-      providerKeyHelp.innerHTML = `<span>${preset.helpText}</span><i data-lucide="external-link" class="w-3 h-3"></i>`;
-      providerKeyHelp.classList.remove('hidden');
-    } else {
-      providerKeyHelp.classList.add('hidden');
-    }
-  }
-
-  hideTestResult();
-  refreshIcons();
-
-  // 如果该服务商已填有 Key 与 Base URL，则自动拉取最新模型列表
-  const effectiveBase = inputBase ? inputBase.value.trim() : '';
-  const effectiveKey = inputKey ? inputKey.value.trim() : '';
-  if (effectiveKey && effectiveKey !== 'sk-none' && /^https?:\/\/.+/i.test(effectiveBase)) {
-    if (savedModels.length === 0) {
-      fetchAvailableModels(true);
-    }
-  }
-}
-
-function getActiveModelValue() {
-  if (isCustomModelMode) {
-    return document.getElementById('inputAiModel')?.value.trim() || '';
-  }
-  const select = document.getElementById('selectAiModel');
-  return select ? select.value.trim() : (document.getElementById('inputAiModel')?.value.trim() || '');
-}
-
-async function openAiSettingsModal(isFirstRun = false) {
-  const modal = document.getElementById('aiSettingsModal');
-  if (!modal) return;
-
-  try {
-    const res = await fetch('/api/settings/ai', {
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.configs && typeof data.configs === 'object') {
-        for (const k of ['deepseek', 'aliyun', 'custom']) {
-          if (data.configs[k]) {
-            providerConfigs[k] = {
-              ...providerConfigs[k],
-              ...data.configs[k],
-              models: Array.isArray(data.configs[k].models) ? data.configs[k].models : (providerConfigs[k].models || [])
-            };
-          }
-        }
-      }
-      const activeProv = data.provider || 'deepseek';
-      if (providerConfigs[activeProv]) {
-        if (data.apiKey && !providerConfigs[activeProv].apiKey) providerConfigs[activeProv].apiKey = data.apiKey;
-        if (data.apiBase && !providerConfigs[activeProv].apiBase) providerConfigs[activeProv].apiBase = data.apiBase;
-        if (data.model && !providerConfigs[activeProv].model) providerConfigs[activeProv].model = data.model;
-      }
-      selectAiProvider(activeProv, true);
-    }
-  } catch (e) {
-    console.error('Failed to load AI settings:', e);
-  }
-
-  hideTestResult();
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  refreshIcons();
-}
-
-function closeAiSettingsModal() {
-  saveCurrentProviderDomState();
-  const modal = document.getElementById('aiSettingsModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-  }
-}
-
-function toggleApiKeyVisibility() {
-  const input = document.getElementById('inputAiKey');
-  const eyeIcon = document.getElementById('eyeIcon');
-  if (!input) return;
-  if (input.type === 'password') {
-    input.type = 'text';
-    eyeIcon?.setAttribute('data-lucide', 'eye-off');
-  } else {
-    input.type = 'password';
-    eyeIcon?.setAttribute('data-lucide', 'eye');
-  }
-  refreshIcons();
-}
-
-async function testAiConnection() {
-  saveCurrentProviderDomState();
-  const btn = document.getElementById('btnTestAi');
-  const btnText = document.getElementById('testAiBtnText');
-  const apiKey = document.getElementById('inputAiKey').value.trim();
-  const model = getActiveModelValue();
-  const apiBase = document.getElementById('inputAiBase').value.trim();
-
-  if (!apiKey) {
-    showTestResult(false, '请先填入 API Key 密钥');
-    return;
-  }
-  if (!model) {
-    showTestResult(false, '请先拉取并选择模型（或点击“手动填”输入模型代号）');
-    return;
-  }
-
-  btn.disabled = true;
-  btnText.textContent = '测试中...';
-  hideTestResult();
-
-  try {
-    const res = await fetch('/api/settings/test-connection', {
-      method: 'POST',
-      headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiBase, apiKey, model })
-    });
-    const result = await res.json();
-    if (res.ok && result.success) {
-      showTestResult(true, `✅ ${result.message || '连接成功！'}`);
-    } else {
-      showTestResult(false, `❌ ${result.error || '连接失败'}`);
-    }
-  } catch (err) {
-    showTestResult(false, `❌ 网络异常: ${err.message}`);
-  } finally {
-    btn.disabled = false;
-    btnText.textContent = '测试连通性';
-  }
-}
-
-function showTestResult(isSuccess, message) {
-  const banner = document.getElementById('testAiResult');
-  const bannerText = document.getElementById('testAiResultText');
-  if (!banner || !bannerText) return;
-
-  bannerText.textContent = message;
-  banner.className = `p-3 rounded-xl text-xs flex items-center justify-between border ${
-    isSuccess ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'
-  }`;
-  banner.classList.remove('hidden');
-}
-
-function hideTestResult() {
-  const banner = document.getElementById('testAiResult');
-  if (banner) banner.classList.add('hidden');
-}
-
-async function saveAiSettings() {
-  saveCurrentProviderDomState();
-  const apiKey = document.getElementById('inputAiKey').value.trim();
-  const model = getActiveModelValue();
-  const apiBase = document.getElementById('inputAiBase').value.trim();
-  const btnSave = document.getElementById('btnSaveAiModal');
-
-  btnSave.disabled = true;
-  btnSave.textContent = '保存中...';
-
-  try {
-    const res = await fetch('/api/settings/ai', {
-      method: 'PUT',
-      headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        provider: currentAiProvider,
-        apiBase,
-        apiKey,
-        model,
-        configs: providerConfigs
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      alert('保存失败：' + (err.error || '未知错误'));
-      return;
-    }
-
-    const hasKey = Boolean(apiKey && apiKey !== 'sk-none');
-    updateAiStatusBadge(hasKey, currentAiProvider, model);
-    closeAiSettingsModal();
-  } catch (e) {
-    alert('保存失败：' + e.message);
-  } finally {
-    btnSave.disabled = false;
-    btnSave.textContent = '保存配置';
-  }
-}
-
-function updateAiStatusBadge(hasKey, provider, model) {
-  const btnAi = document.getElementById('btnAiSettings');
-  const text = document.getElementById('aiModelStatusText');
-  const dot = document.getElementById('aiStatusDot');
-  if (!btnAi || !text || !dot) return;
-
-  if (hasKey) {
-    const providerName = provider === 'aliyun' ? '阿里云百炼' : (provider === 'custom' ? '自定义' : 'DeepSeek');
-    text.textContent = `AI 引擎：${providerName}`;
-    dot.className = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot';
-    btnAi.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-brand-500/35 bg-brand-500/10 hover:bg-brand-500/20 text-xs font-semibold text-brand-300 transition cursor-pointer shadow-sm';
-  } else {
-    text.textContent = '⚠️ 点击配置 AI 密钥';
-    dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-    btnAi.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 text-xs font-semibold text-amber-300 transition cursor-pointer shadow-sm animate-pulse';
   }
 }
 
@@ -936,24 +342,313 @@ async function deleteUser(id, username) {
   }
 }
 
-// 2. 加载与保存注册邀请码
+// 2. 加载与保存 AI 接口与系统配置（支持三服务商独立配置记忆与在线拉取）
+let adminActiveProvider = 'deepseek';
+let adminProviderConfigs = {
+  deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [] },
+  aliyun: { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [] },
+  custom: { apiKey: '', apiBase: '', model: '', models: [] }
+};
+let adminIsCustomModelInput = false;
+
+function saveCurrentAdminFormToState() {
+  const keyEl = document.getElementById('settingApiKey');
+  const baseEl = document.getElementById('settingApiBase');
+  const modelEl = document.getElementById('settingModel');
+  const selectEl = document.getElementById('selectAdminAiModel');
+
+  if (adminProviderConfigs[adminActiveProvider]) {
+    if (keyEl) adminProviderConfigs[adminActiveProvider].apiKey = keyEl.value.trim();
+    if (baseEl) adminProviderConfigs[adminActiveProvider].apiBase = baseEl.value.trim();
+    const currentModel = adminIsCustomModelInput ? (modelEl?.value.trim() || '') : (selectEl?.value.trim() || modelEl?.value.trim() || '');
+    adminProviderConfigs[adminActiveProvider].model = currentModel;
+  }
+}
+
+function selectAdminAiProvider(provider) {
+  if (!['deepseek', 'aliyun', 'custom'].includes(provider)) return;
+  saveCurrentAdminFormToState();
+  adminActiveProvider = provider;
+  renderAdminAiSettings();
+}
+
+function toggleAdminApiKeyVisibility() {
+  const input = document.getElementById('settingApiKey');
+  const icon = document.getElementById('adminEyeIcon');
+  if (!input || !icon) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    icon.setAttribute('data-lucide', 'eye');
+  }
+  refreshIcons();
+}
+
+function toggleAdminCustomModelInput() {
+  adminIsCustomModelInput = !adminIsCustomModelInput;
+  renderAdminModelDropdown(adminProviderConfigs[adminActiveProvider]);
+}
+
+function handleAdminModelSelectChange(val) {
+  if (adminProviderConfigs[adminActiveProvider]) {
+    adminProviderConfigs[adminActiveProvider].model = val;
+  }
+  const modelEl = document.getElementById('settingModel');
+  if (modelEl) modelEl.value = val;
+}
+
+function handleAdminKeyInput() {
+  const keyEl = document.getElementById('settingApiKey');
+  if (keyEl && adminProviderConfigs[adminActiveProvider]) {
+    adminProviderConfigs[adminActiveProvider].apiKey = keyEl.value.trim();
+  }
+}
+
+function handleAdminBaseInput() {
+  const baseEl = document.getElementById('settingApiBase');
+  if (baseEl && adminProviderConfigs[adminActiveProvider]) {
+    adminProviderConfigs[adminActiveProvider].apiBase = baseEl.value.trim();
+  }
+}
+
+function showAdminFeedback(msg, type = 'info') {
+  const box = document.getElementById('adminTestAiResult');
+  const text = document.getElementById('adminTestAiResultText');
+  if (!box || !text) return;
+  box.classList.remove('hidden');
+  text.textContent = msg;
+  if (type === 'success') {
+    box.className = 'p-3 rounded-xl text-xs flex items-center justify-between bg-emerald-950/40 border border-emerald-500/40 text-emerald-300';
+  } else if (type === 'error') {
+    box.className = 'p-3 rounded-xl text-xs flex items-center justify-between bg-rose-950/40 border border-rose-500/40 text-rose-300';
+  } else {
+    box.className = 'p-3 rounded-xl text-xs flex items-center justify-between bg-amber-950/40 border border-amber-500/40 text-amber-300';
+  }
+}
+
+function renderAdminModelDropdown(cfg) {
+  const selectEl = document.getElementById('selectAdminAiModel');
+  const modelEl = document.getElementById('settingModel');
+  const selectContainer = document.getElementById('adminModelSelectContainer');
+  const inputContainer = document.getElementById('adminModelInputContainer');
+  const toggleBtn = document.getElementById('textAdminToggleModel');
+
+  if (!selectEl) return;
+  selectEl.innerHTML = '';
+
+  const models = Array.isArray(cfg.models) ? cfg.models : [];
+
+  if (models.length === 0) {
+    const emptyOpt = document.createElement('option');
+    emptyOpt.value = cfg.model || '';
+    emptyOpt.textContent = cfg.model ? `${cfg.model} (当前保存)` : '-- 填入密钥与端点后自动拉取模型 --';
+    selectEl.appendChild(emptyOpt);
+  } else {
+    models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      selectEl.appendChild(opt);
+    });
+  }
+
+  if (cfg.model) {
+    selectEl.value = cfg.model;
+    if (modelEl) modelEl.value = cfg.model;
+  }
+
+  if (adminIsCustomModelInput) {
+    selectContainer?.classList.add('hidden');
+    inputContainer?.classList.remove('hidden');
+    if (toggleBtn) toggleBtn.textContent = '📋 选列表';
+  } else {
+    selectContainer?.classList.remove('hidden');
+    inputContainer?.classList.add('hidden');
+    if (toggleBtn) toggleBtn.textContent = '✍️ 手动填';
+  }
+}
+
+function renderAdminAiSettings() {
+  const cfg = adminProviderConfigs[adminActiveProvider] || { apiKey: '', apiBase: '', model: '', models: [] };
+
+  // 1. 服务商按钮高亮
+  ['deepseek', 'aliyun', 'custom'].forEach(p => {
+    const btn = document.getElementById(`adminProviderBtn${p.charAt(0).toUpperCase() + p.slice(1)}`);
+    if (!btn) return;
+    if (p === adminActiveProvider) {
+      btn.className = 'p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 cursor-pointer bg-brand-500/15 border-brand-500 text-brand-300';
+    } else {
+      btn.className = 'p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center gap-1.5 cursor-pointer';
+    }
+  });
+
+  // 2. 填充 API Base 与 API Key
+  const baseEl = document.getElementById('settingApiBase');
+  const keyEl = document.getElementById('settingApiKey');
+  if (baseEl) baseEl.value = cfg.apiBase || '';
+  if (keyEl) keyEl.value = cfg.apiKey || '';
+
+  // 3. 密钥获取链接
+  const helpEl = document.getElementById('adminProviderKeyHelp');
+  if (helpEl) {
+    if (adminActiveProvider === 'deepseek') {
+      helpEl.href = 'https://platform.deepseek.com/api_keys';
+      helpEl.querySelector('span').textContent = '获取 DeepSeek 密钥';
+      helpEl.classList.remove('hidden');
+    } else if (adminActiveProvider === 'aliyun') {
+      helpEl.href = 'https://bailian.console.aliyun.com/';
+      helpEl.querySelector('span').textContent = '获取百炼 API-KEY';
+      helpEl.classList.remove('hidden');
+    } else {
+      helpEl.classList.add('hidden');
+    }
+  }
+
+  // 4. 填充模型下拉与输入
+  renderAdminModelDropdown(cfg);
+
+  // 5. 清除测试结果反馈条
+  const testResult = document.getElementById('adminTestAiResult');
+  if (testResult) {
+    testResult.classList.add('hidden');
+    testResult.className = 'hidden p-3 rounded-xl text-xs flex items-center justify-between';
+  }
+
+  refreshIcons();
+}
+
 async function loadAdminSettings() {
   try {
     const res = await fetch('/api/admin/settings', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    if (!res.ok) throw new Error(data.error || '获取设置失败');
 
-    const inviteInput = document.getElementById('settingInviteCode');
-    if (inviteInput) inviteInput.value = data.invite_code || '';
+    adminActiveProvider = data.provider || 'deepseek';
+    if (data.configs) {
+      for (const k of ['deepseek', 'aliyun', 'custom']) {
+        if (data.configs[k]) {
+          adminProviderConfigs[k] = { ...adminProviderConfigs[k], ...data.configs[k] };
+        }
+      }
+    }
+    if (data.ai_api_key && !adminProviderConfigs[adminActiveProvider].apiKey) {
+      adminProviderConfigs[adminActiveProvider].apiKey = data.ai_api_key;
+    }
+    if (data.ai_api_base && !adminProviderConfigs[adminActiveProvider].apiBase) {
+      adminProviderConfigs[adminActiveProvider].apiBase = data.ai_api_base;
+    }
+    if (data.ai_model && !adminProviderConfigs[adminActiveProvider].model) {
+      adminProviderConfigs[adminActiveProvider].model = data.ai_model;
+    }
+
+    const settingInviteCode = document.getElementById('settingInviteCode');
+    if (settingInviteCode) {
+      settingInviteCode.value = data.invite_code || '';
+    }
+
+    renderAdminAiSettings();
   } catch (err) {
     alert('加载配置失败: ' + err.message);
   }
 }
 
+async function fetchAdminAvailableModels(isAuto = false) {
+  const keyEl = document.getElementById('settingApiKey');
+  const baseEl = document.getElementById('settingApiBase');
+  const apiKey = keyEl ? keyEl.value.trim() : '';
+  const apiBase = baseEl ? baseEl.value.trim() : '';
+
+  if (!apiKey) {
+    if (!isAuto) alert('请先输入 API Key 密钥后再拉取模型列表');
+    return;
+  }
+
+  const icon = document.getElementById('iconAdminFetchModels');
+  const text = document.getElementById('textAdminFetchModels');
+  if (icon) icon.classList.add('animate-spin');
+  if (text) text.textContent = '拉取中...';
+
+  try {
+    const res = await fetch('/api/admin/fetch-models', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ apiBase, apiKey })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '拉取模型失败');
+
+    if (Array.isArray(data.models) && data.models.length > 0) {
+      adminProviderConfigs[adminActiveProvider].models = data.models;
+      if (!adminProviderConfigs[adminActiveProvider].model || !data.models.includes(adminProviderConfigs[adminActiveProvider].model)) {
+        adminProviderConfigs[adminActiveProvider].model = data.models[0];
+      }
+      renderAdminModelDropdown(adminProviderConfigs[adminActiveProvider]);
+      if (!isAuto) {
+        showAdminFeedback(`成功获取到 ${data.models.length} 个可用模型！已自动选定最优模型`, 'success');
+      }
+    } else {
+      if (!isAuto) showAdminFeedback('端点未返回可用模型列表，请手动输入模型代号', 'warning');
+    }
+  } catch (err) {
+    if (!isAuto) showAdminFeedback('拉取失败: ' + err.message, 'error');
+  } finally {
+    if (icon) icon.classList.remove('animate-spin');
+    if (text) text.textContent = '拉取模型';
+  }
+}
+
+async function testAdminAiConnection() {
+  saveCurrentAdminFormToState();
+  const cfg = adminProviderConfigs[adminActiveProvider];
+  const apiKey = cfg.apiKey;
+  const apiBase = cfg.apiBase;
+  const model = cfg.model;
+
+  if (!apiKey) {
+    showAdminFeedback('请先输入 API Key 密钥', 'error');
+    return;
+  }
+  if (!model) {
+    showAdminFeedback('请先选择或输入模型代号', 'error');
+    return;
+  }
+
+  const btnText = document.getElementById('adminTestAiBtnText');
+  if (btnText) btnText.textContent = '测试中...';
+
+  try {
+    const res = await fetch('/api/admin/test-connection', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ apiBase, apiKey, model })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showAdminFeedback(`✅ ${data.message || '连接成功！'}`, 'success');
+    } else {
+      showAdminFeedback(`❌ ${data.error || '连接失败'}`, 'error');
+    }
+  } catch (err) {
+    showAdminFeedback('❌ 网络请求异常: ' + err.message, 'error');
+  } finally {
+    if (btnText) btnText.textContent = '测试连通性';
+  }
+}
+
 async function handleSaveAdminSettings(e) {
   e.preventDefault();
+  saveCurrentAdminFormToState();
+  const cfg = adminProviderConfigs[adminActiveProvider];
   const invite_code = document.getElementById('settingInviteCode').value.trim();
 
   try {
@@ -963,11 +658,18 @@ async function handleSaveAdminSettings(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ invite_code })
+      body: JSON.stringify({
+        ai_api_base: cfg.apiBase,
+        ai_api_key: cfg.apiKey,
+        ai_model: cfg.model,
+        invite_code,
+        provider: adminActiveProvider,
+        configs: adminProviderConfigs
+      })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    alert('✅ 注册邀请码已更新生效！');
+    if (!res.ok) throw new Error(data.error || '保存失败');
+    alert('✅ 系统配置与 AI 接口已保存，全系统即刻生效！');
   } catch (err) {
     alert('保存失败: ' + err.message);
   }
@@ -1269,13 +971,8 @@ async function handleCreateTask(e) {
   e.preventDefault();
 
   if (!token) {
-    if (window.isStandalone) {
-      token = 'standalone_local_token';
-      localStorage.setItem('itls_token', token);
-    } else {
-      openAuthModal('login');
-      return;
-    }
+    openAuthModal('login');
+    return;
   }
 
   const grade = document.getElementById('selectGrade').value;
@@ -1325,7 +1022,7 @@ async function handleCreateTask(e) {
     if (!res.ok) {
       alert(data.error || '任务启动失败');
       btnSubmit.disabled = false;
-      btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
+      btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
       refreshIcons();
       return;
     }
@@ -1336,7 +1033,7 @@ async function handleCreateTask(e) {
   } catch (err) {
     alert('创建任务失败: ' + err.message);
     btnSubmit.disabled = false;
-    btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
+    btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
     refreshIcons();
   }
 }
@@ -1357,7 +1054,7 @@ function resetTaskProgressUI() {
   document.getElementById('progressCard').classList.add('hidden');
   const btnSubmit = document.getElementById('btnSubmit');
   btnSubmit.disabled = false;
-  btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
+  btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
 
   document.getElementById('btnCancelTask').classList.remove('hidden');
   document.getElementById('btnRetryTask').classList.add('hidden');
@@ -1385,10 +1082,10 @@ function resetToGeneratingState() {
   document.getElementById('btnRetryTask').classList.add('hidden');
   document.getElementById('btnBackEdit').classList.add('hidden');
 
-  updateStepState('stepPlan', 'running', '备课教案');
-  updateStepState('stepWorksheet', 'waiting', '探究导学单');
-  updateStepState('stepSlides', 'waiting', '演示课件');
-  updateStepState('stepClasswork', 'waiting', '随堂互动作业');
+  updateStepState('stepPlan', 'running', '备课教案', '≤4页公文精排');
+  updateStepState('stepWorksheet', 'waiting', '探究导学单', '严格单面防溢出');
+  updateStepState('stepSlides', 'waiting', '演示课件', 'Marp 16:9纯净卡片');
+  updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
 
   progressStartTime = Date.now();
   if (progressDurationTimer) clearInterval(progressDurationTimer);
@@ -1446,10 +1143,10 @@ function showProgressCard(title) {
   document.getElementById('btnBackEdit').classList.add('hidden');
 
   // 重置 4 个打卡步骤
-  updateStepState('stepPlan', 'running', '备课教案');
-  updateStepState('stepWorksheet', 'waiting', '探究导学单');
-  updateStepState('stepSlides', 'waiting', '演示课件');
-  updateStepState('stepClasswork', 'waiting', '随堂互动作业');
+  updateStepState('stepPlan', 'running', '备课教案', '≤4页公文精排');
+  updateStepState('stepWorksheet', 'waiting', '探究导学单', '严格单面防溢出');
+  updateStepState('stepSlides', 'waiting', '演示课件', 'Marp 16:9纯净卡片');
+  updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
 
   // 启动计时器
   progressStartTime = Date.now();
@@ -1477,8 +1174,8 @@ function updateStepState(stepId, state, name, desc) {
   const descEl = el.querySelector('.step-desc');
   const statusEl = el.querySelector('.step-status');
 
-  if (nameEl) nameEl.textContent = name;
-  if (descEl && desc) descEl.textContent = desc;
+  nameEl.textContent = name;
+  if (descEl) descEl.textContent = desc;
 
   if (state === 'waiting') {
     el.className = 'p-3.5 rounded-2xl bg-dark-surface/50 border border-dark-borderLight transition-all duration-300 flex items-center gap-3 opacity-60';
@@ -1518,40 +1215,40 @@ function applyProgressVisuals(percentVal) {
 
   // 根据当前动态百分比推进四大环节打卡灯与文案
   if (pInt < 25) {
-    textEl.textContent = '正在构建备课教案...';
-    subDetailEl.textContent = '情境设计 · 任务分解 · 降坡度支架';
-    updateStepState('stepPlan', 'running', '备课教案');
-    updateStepState('stepWorksheet', 'waiting', '探究导学单');
-    updateStepState('stepSlides', 'waiting', '演示课件');
-    updateStepState('stepClasswork', 'waiting', '随堂互动作业');
+    textEl.textContent = '正在精细构建 4 页公文备课教案...';
+    subDetailEl.textContent = '首行缩进两格 · 取消板书 · 注入通俗生活比喻';
+    updateStepState('stepPlan', 'running', '备课教案', '≤4页公文精排');
+    updateStepState('stepWorksheet', 'waiting', '探究导学单', '严格单面防溢出');
+    updateStepState('stepSlides', 'waiting', '演示课件', 'Marp 16:9纯净卡片');
+    updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
   } else if (pInt < 50) {
-    textEl.textContent = '正在编排探究导学单...';
-    subDetailEl.textContent = '上机实操支架 · 核心探究任务';
-    updateStepState('stepPlan', 'done', '备课教案');
-    updateStepState('stepWorksheet', 'running', '探究导学单');
-    updateStepState('stepSlides', 'waiting', '演示课件');
-    updateStepState('stepClasswork', 'waiting', '随堂互动作业');
+    textEl.textContent = '正在编排探究导学单与学生上机脚手架...';
+    subDetailEl.textContent = '严格单面A4防溢出 · 显式□槽位 · 剥离机房座号';
+    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
+    updateStepState('stepWorksheet', 'running', '探究导学单', '严格单面防溢出');
+    updateStepState('stepSlides', 'waiting', '演示课件', 'Marp 16:9纯净卡片');
+    updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
   } else if (pInt < 75) {
-    textEl.textContent = '正在制作演示课件...';
-    subDetailEl.textContent = '卡片网格布局 · 课堂任务引导';
-    updateStepState('stepPlan', 'done', '备课教案');
-    updateStepState('stepWorksheet', 'done', '探究导学单');
-    updateStepState('stepSlides', 'running', '演示课件');
-    updateStepState('stepClasswork', 'waiting', '随堂互动作业');
+    textEl.textContent = '正在转译 Marp 16:9 现代演示课件...';
+    subDetailEl.textContent = '纯净第一人称视角 · 双栏卡片网格 · 清除后台台词';
+    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
+    updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
+    updateStepState('stepSlides', 'running', '演示课件', 'Marp 16:9纯净卡片');
+    updateStepState('stepClasswork', 'waiting', '随堂互动作业', '单文件微型仿真台');
   } else if (pInt < 95) {
-    textEl.textContent = '正在构建随堂互动作业...';
-    subDetailEl.textContent = '单文件离线秒开 · 仿真关卡与凭单导出';
-    updateStepState('stepPlan', 'done', '备课教案');
-    updateStepState('stepWorksheet', 'done', '探究导学单');
-    updateStepState('stepSlides', 'done', '演示课件');
-    updateStepState('stepClasswork', 'running', '随堂互动作业');
+    textEl.textContent = '正在构建单文件轻量 HTML 随堂互动作业...';
+    subDetailEl.textContent = '零依赖秒开 · 微型仿真台 · 标准txt凭单与电子通关奖状';
+    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
+    updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
+    updateStepState('stepSlides', 'done', '演示课件', 'Marp 16:9纯净卡片');
+    updateStepState('stepClasswork', 'running', '随堂互动作业', '单文件微型仿真台');
   } else if (pInt < 100) {
-    textEl.textContent = '正在执行全套资源打包...';
-    subDetailEl.textContent = '格式排版校验 · ZIP 打包';
-    updateStepState('stepPlan', 'done', '备课教案');
-    updateStepState('stepWorksheet', 'done', '探究导学单');
-    updateStepState('stepSlides', 'done', '演示课件');
-    updateStepState('stepClasswork', 'done', '随堂互动作业');
+    textEl.textContent = '正在执行 OpenXML 公文精排与全套资源打包...';
+    subDetailEl.textContent = 'Pandoc 转译 · beautify_docx 精排 · ZIP 打包';
+    updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
+    updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
+    updateStepState('stepSlides', 'done', '演示课件', 'Marp 16:9纯净卡片');
+    updateStepState('stepClasswork', 'done', '随堂互动作业', '单文件微型仿真台');
   }
 }
 
@@ -1575,11 +1272,11 @@ function startPolling(taskId) {
         currentDisplayPercent = 100;
         applyProgressVisuals(100);
         document.getElementById('progressText').textContent = '🎉 四位一体全套教学资料已全部就绪！';
-        document.getElementById('progressSubDetail').textContent = '已完成全部教学资源编译';
-        updateStepState('stepPlan', 'done', '备课教案');
-        updateStepState('stepWorksheet', 'done', '探究导学单');
-        updateStepState('stepSlides', 'done', '演示课件');
-        updateStepState('stepClasswork', 'done', '随堂互动作业');
+        document.getElementById('progressSubDetail').textContent = '100% 同源咬合交付';
+        updateStepState('stepPlan', 'done', '备课教案', '≤4页公文精排');
+        updateStepState('stepWorksheet', 'done', '探究导学单', '严格单面防溢出');
+        updateStepState('stepSlides', 'done', '演示课件', 'Marp 16:9纯净卡片');
+        updateStepState('stepClasswork', 'done', '随堂互动作业', '单文件微型仿真台');
 
         setTimeout(() => {
           finishTask(task);
@@ -1600,7 +1297,7 @@ function finishTask(task) {
 
   const btnSubmit = document.getElementById('btnSubmit');
   btnSubmit.disabled = false;
-  btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
+  btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
 
   document.getElementById('progressCard').classList.add('hidden');
   const deliveryCard = document.getElementById('deliveryCard');
@@ -1629,7 +1326,7 @@ function failTask(task) {
 
   const btnSubmit = document.getElementById('btnSubmit');
   btnSubmit.disabled = false;
-  btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
+  btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
 
   // 保持 progressCard 展开，切换为直观的异常态
   const progressCard = document.getElementById('progressCard');
@@ -1647,13 +1344,14 @@ function failTask(task) {
 
   // 停止未就绪卡片的旋转菊花，避免用户误以为仍在构建
   const names = ['备课教案', '探究导学单', '演示课件', '随堂互动作业'];
+  const descs = ['≤4页公文精排', '严格单面防溢出', 'Marp 16:9纯净卡片', '单文件微型仿真台'];
   ['stepPlan', 'stepWorksheet', 'stepSlides', 'stepClasswork'].forEach((id, idx) => {
     const el = document.getElementById(id);
     if (!el) return;
     const statusEl = el.querySelector('.step-status');
     const isDone = statusEl && statusEl.textContent === '已就绪';
     if (!isDone) {
-      updateStepState(id, 'stopped', names[idx]);
+      updateStepState(id, 'stopped', names[idx], descs[idx]);
     }
   });
 
@@ -1733,7 +1431,7 @@ window.retryHistoryTask = async function(taskId) {
     alert('启动重新生成失败: ' + err.message);
     const btnSubmit = document.getElementById('btnSubmit');
     btnSubmit.disabled = false;
-    btnSubmit.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
+    btnSubmit.innerHTML = `<i data-lucide="wand-2" class="w-5 h-5"></i><span>生成整套备课资料</span>`;
     refreshIcons();
   }
 };
@@ -1869,7 +1567,7 @@ async function loadHistoryList() {
 
             <button onclick="triggerDownload('/api/download/${t.id}/html')" 
               class="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold flex items-center justify-between transition cursor-pointer active:scale-95" title="点击下载互动作业HTML文件">
-              <span class="flex items-center gap-1.5"><i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-emerald-400"></i>随堂互动作业</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-emerald-400"></i>随堂作业</span>
               <span class="text-[10px] text-emerald-400/80 font-mono">HTML</span>
             </button>
           </div>

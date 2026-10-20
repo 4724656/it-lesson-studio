@@ -5,8 +5,6 @@ services:
     restart: unless-stopped
     ports:
       - "3800:3800"
-    environment:
-      - APP_MODE=team
     env_file:
       - ./web/.env
     volumes:
