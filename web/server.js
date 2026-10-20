@@ -28,6 +28,22 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 智能运行模式判定：
+// 1. 若显式设置 APP_MODE，以 APP_MODE 为准 (team 或 standalone)
+// 2. 若在 Docker 容器环境且未指定，则默认为团队多用户模式 (team)
+// 3. 本地原生环境默认运行为单机免登录便携模式 (standalone)
+const isDocker = fs.existsSync('/.dockerenv') || process.env.IS_DOCKER === 'true';
+const IS_STANDALONE = process.env.APP_MODE === 'standalone' || (process.env.APP_MODE !== 'team' && !isDocker);
+
+// 单机模式下确保存在默认用户
+if (IS_STANDALONE) {
+  try {
+    dbService.getOrCreateDefaultStandaloneUser();
+  } catch (e) {
+    console.error('Standalone user init note:', e.message);
+  }
+}
+
 // 静态托管教材图谱目录，供前端下拉框快速选择
 app.get('/api/textbook-catalog', (req, res) => {
   const catalogPath = path.join(rootDir, 'references', 'textbook-zj2026.md');
@@ -37,8 +53,25 @@ app.get('/api/textbook-catalog', (req, res) => {
   res.status(404).send('Catalog not found');
 });
 
+// 查询系统运行模式与 AI 配置概要
+app.get('/api/system/mode', (req, res) => {
+  const currentKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
+  res.json({
+    standalone: IS_STANDALONE,
+    hasApiKey: Boolean(currentKey && currentKey.trim() && currentKey.trim() !== 'sk-none'),
+    provider: dbService.getSetting('ai_provider') || 'deepseek',
+    model: dbService.getSetting('ai_model') || 'deepseek-chat',
+    apiBase: dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1'
+  });
+});
+
 // 身份校验中间件（支持 Authorization: Bearer <token> 或 query param ?token=<token>）
 function authenticate(req, res, next) {
+  if (IS_STANDALONE) {
+    req.user = dbService.getOrCreateDefaultStandaloneUser();
+    return next();
+  }
+
   let token = null;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -62,12 +95,222 @@ function authenticate(req, res, next) {
 
 // 管理员权限校验中间件
 function requireAdmin(req, res, next) {
+  if (IS_STANDALONE) {
+    return next();
+  }
   const user = dbService.findUserById(req.user.id);
   if (!user || user.role !== 'admin') {
     return res.status(403).json({ error: '权限不足，仅管理员可访问' });
   }
   next();
 }
+
+// 获取 AI 设置（支持多服务商独立记忆配置）
+app.get('/api/settings/ai', authenticate, requireAdmin, (req, res) => {
+  const activeProvider = dbService.getSetting('ai_provider') || 'deepseek';
+  const activeBase = dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1';
+  const activeKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
+  const activeModel = dbService.getSetting('ai_model') || '';
+
+  let configs = {
+    deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [] },
+    aliyun: { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [] },
+    custom: { apiKey: '', apiBase: '', model: '', models: [] }
+  };
+
+  try {
+    const raw = dbService.getSetting('ai_provider_configs');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      for (const k of ['deepseek', 'aliyun', 'custom']) {
+        if (parsed[k] && typeof parsed[k] === 'object') {
+          configs[k] = { ...configs[k], ...parsed[k] };
+        }
+      }
+    }
+  } catch {}
+
+  if (configs[activeProvider]) {
+    if (activeKey && !configs[activeProvider].apiKey) configs[activeProvider].apiKey = activeKey;
+    if (activeBase && !configs[activeProvider].apiBase) configs[activeProvider].apiBase = activeBase;
+    if (activeModel && !configs[activeProvider].model) configs[activeProvider].model = activeModel;
+  }
+
+  res.json({
+    provider: activeProvider,
+    apiBase: configs[activeProvider]?.apiBase || activeBase,
+    apiKey: configs[activeProvider]?.apiKey || activeKey,
+    model: configs[activeProvider]?.model || activeModel,
+    configs
+  });
+});
+
+// 保存 AI 设置（同时持久化当前激活项与各服务商独立配置）
+app.put('/api/settings/ai', authenticate, requireAdmin, (req, res) => {
+  const { provider, apiBase, apiKey, model, configs } = req.body;
+  const activeProvider = (provider || 'deepseek').trim();
+  dbService.setSetting('ai_provider', activeProvider);
+  if (apiBase !== undefined) dbService.setSetting('ai_api_base', apiBase.trim());
+  if (apiKey !== undefined) dbService.setSetting('ai_api_key', apiKey.trim());
+  if (model !== undefined) dbService.setSetting('ai_model', model.trim());
+
+  let mergedConfigs = {
+    deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [] },
+    aliyun: { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [] },
+    custom: { apiKey: '', apiBase: '', model: '', models: [] }
+  };
+  try {
+    const existingRaw = dbService.getSetting('ai_provider_configs');
+    if (existingRaw) {
+      const parsed = JSON.parse(existingRaw);
+      for (const k of ['deepseek', 'aliyun', 'custom']) {
+        if (parsed[k]) mergedConfigs[k] = { ...mergedConfigs[k], ...parsed[k] };
+      }
+    }
+  } catch {}
+
+  if (configs && typeof configs === 'object') {
+    for (const k of ['deepseek', 'aliyun', 'custom']) {
+      if (configs[k] && typeof configs[k] === 'object') {
+        mergedConfigs[k] = {
+          apiKey: (configs[k].apiKey ?? mergedConfigs[k].apiKey ?? '').trim(),
+          apiBase: (configs[k].apiBase ?? mergedConfigs[k].apiBase ?? '').trim(),
+          model: (configs[k].model ?? mergedConfigs[k].model ?? '').trim(),
+          models: Array.isArray(configs[k].models) ? configs[k].models : (mergedConfigs[k].models || [])
+        };
+      }
+    }
+  }
+
+  if (mergedConfigs[activeProvider]) {
+    if (apiKey !== undefined) mergedConfigs[activeProvider].apiKey = apiKey.trim();
+    if (apiBase !== undefined) mergedConfigs[activeProvider].apiBase = apiBase.trim();
+    if (model !== undefined) mergedConfigs[activeProvider].model = model.trim();
+  }
+
+  dbService.setSetting('ai_provider_configs', JSON.stringify(mergedConfigs));
+  res.json({ message: 'AI 模型与密钥设置已保存并即时生效', configs: mergedConfigs });
+});
+
+// 测试大模型连通性
+app.post('/api/settings/test-connection', authenticate, requireAdmin, async (req, res) => {
+  const { apiBase, apiKey, model } = req.body;
+  const targetBase = (apiBase || dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1').trim();
+  const targetKey = (apiKey !== undefined ? apiKey : (dbService.getSetting('ai_api_key') || '')).trim();
+  const targetModel = (model || dbService.getSetting('ai_model') || 'deepseek-chat').trim();
+
+  if (!targetKey) {
+    return res.status(400).json({ success: false, error: '请先填写 API Key 密钥' });
+  }
+
+  const endpoint = `${targetBase.replace(/\/+$/, '')}/chat/completions`;
+  const startTime = Date.now();
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${targetKey}`
+      },
+      body: JSON.stringify({
+        model: targetModel,
+        messages: [{ role: 'user', content: 'hi' }],
+        max_tokens: 5
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    const latency = Date.now() - startTime;
+    if (!resp.ok) {
+      const errText = await resp.text();
+      let msg = `HTTP ${resp.status}`;
+      try {
+        const json = JSON.parse(errText);
+        if (json.error?.message) msg = json.error.message;
+        else if (json.message) msg = json.message;
+      } catch {
+        msg = errText.slice(0, 150);
+      }
+      return res.status(resp.status).json({ success: false, error: `连接失败 (${resp.status}): ${msg}`, latency });
+    }
+
+    res.json({ success: true, latency, message: `连接成功！响应延迟 ${latency}ms` });
+  } catch (err) {
+    const latency = Date.now() - startTime;
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ success: false, error: '连接超时（超过 12 秒），请检查 Base URL 是否正确或网络连接', latency });
+    }
+    return res.status(500).json({ success: false, error: `网络异常: ${err.message}`, latency });
+  }
+});
+
+// 在线拉取大模型列表（支持 OpenAI /models 规范，包括 DeepSeek 与阿里云百炼）
+app.post('/api/settings/fetch-models', authenticate, requireAdmin, async (req, res) => {
+  const { apiBase, apiKey } = req.body;
+  const targetBase = (apiBase || dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1').trim();
+  const targetKey = (apiKey !== undefined ? apiKey : (dbService.getSetting('ai_api_key') || '')).trim();
+
+  if (!targetKey) {
+    return res.status(400).json({ success: false, error: '请先填写 API Key 密钥' });
+  }
+
+  const endpoint = `${targetBase.replace(/\/+$/, '')}/models`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const resp = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${targetKey}`
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      let msg = `HTTP ${resp.status}`;
+      try {
+        const json = JSON.parse(errText);
+        if (json.error?.message) msg = json.error.message;
+        else if (json.message) msg = json.message;
+      } catch {
+        msg = errText.slice(0, 100);
+      }
+      return res.status(resp.status).json({ success: false, error: `拉取失败 (${resp.status}): ${msg}` });
+    }
+
+    const json = await resp.json();
+    let modelList = [];
+    if (Array.isArray(json.data)) {
+      modelList = json.data.map(m => (typeof m === 'string' ? m : m.id)).filter(Boolean);
+    } else if (Array.isArray(json)) {
+      modelList = json.map(m => (typeof m === 'string' ? m : m.id)).filter(Boolean);
+    }
+
+    // 智能排序：优质对话模型优先排前
+    const priorityKeywords = ['chat', 'plus', 'max', 'v3', 'r1', 'qwen', 'deepseek', 'gpt-4', 'gpt-5', 'gpt-6'];
+    modelList.sort((a, b) => {
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      const aScore = priorityKeywords.reduce((score, kw, idx) => aLower.includes(kw) ? Math.min(score, idx) : score, 999);
+      const bScore = priorityKeywords.reduce((score, kw, idx) => bLower.includes(kw) ? Math.min(score, idx) : score, 999);
+      if (aScore !== bScore) return aScore - bScore;
+      return a.localeCompare(b);
+    });
+
+    res.json({ success: true, models: modelList });
+  } catch (err) {
+    res.status(500).json({ success: false, error: `请求异常: ${err.message}` });
+  }
+});
 
 // ======================= 用户认证与个人资料 =======================
 
@@ -188,212 +431,25 @@ app.delete('/api/admin/users/:id', authenticate, requireAdmin, (req, res) => {
   res.json({ message: '用户已删除' });
 });
 
-// 5. 获取系统配置与 AI 接口（支持三服务商独立配置记忆）
+// 5. 获取系统配置与 AI 接口
 app.get('/api/admin/settings', authenticate, requireAdmin, (req, res) => {
   const settings = dbService.getAllSettings();
-  const activeProvider = settings.ai_provider || 'deepseek';
-  const activeBase = settings.ai_api_base || process.env.AI_API_BASE || 'https://api.deepseek.com/v1';
-  const activeKey = settings.ai_api_key || process.env.AI_API_KEY || '';
-  const activeModel = settings.ai_model || process.env.AI_MODEL || '';
-
-  let configs = {
-    deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [] },
-    aliyun: { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [] },
-    custom: { apiKey: '', apiBase: '', model: '', models: [] }
-  };
-
-  try {
-    if (settings.ai_provider_configs) {
-      const parsed = JSON.parse(settings.ai_provider_configs);
-      for (const k of ['deepseek', 'aliyun', 'custom']) {
-        if (parsed[k] && typeof parsed[k] === 'object') {
-          configs[k] = { ...configs[k], ...parsed[k] };
-        }
-      }
-    }
-  } catch {}
-
-  if (configs[activeProvider]) {
-    if (activeKey && !configs[activeProvider].apiKey) configs[activeProvider].apiKey = activeKey;
-    if (activeBase && !configs[activeProvider].apiBase) configs[activeProvider].apiBase = activeBase;
-    if (activeModel && !configs[activeProvider].model) configs[activeProvider].model = activeModel;
-  }
-
   res.json({
-    ai_api_base: configs[activeProvider]?.apiBase || activeBase,
-    ai_api_key: configs[activeProvider]?.apiKey || activeKey,
-    ai_model: configs[activeProvider]?.model || activeModel,
-    invite_code: settings.invite_code || process.env.INVITE_CODE || 'ZJ2026',
-    provider: activeProvider,
-    configs
+    ai_api_base: settings.ai_api_base || process.env.AI_API_BASE || 'http://127.0.0.1:8317/v1',
+    ai_api_key: settings.ai_api_key || process.env.AI_API_KEY || 'sk-none',
+    ai_model: settings.ai_model || process.env.AI_MODEL || 'gemini-2.5-flash',
+    invite_code: settings.invite_code || process.env.INVITE_CODE || 'ZJ2026'
   });
 });
 
 // 6. 保存系统配置与 AI 接口
 app.put('/api/admin/settings', authenticate, requireAdmin, (req, res) => {
-  const { ai_api_base, ai_api_key, ai_model, invite_code, provider, configs } = req.body;
-  const activeProvider = (provider || 'deepseek').trim();
-  dbService.setSetting('ai_provider', activeProvider);
+  const { ai_api_base, ai_api_key, ai_model, invite_code } = req.body;
   if (ai_api_base !== undefined) dbService.setSetting('ai_api_base', ai_api_base.trim());
   if (ai_api_key !== undefined) dbService.setSetting('ai_api_key', ai_api_key.trim());
   if (ai_model !== undefined) dbService.setSetting('ai_model', ai_model.trim());
   if (invite_code !== undefined) dbService.setSetting('invite_code', invite_code.trim());
-
-  let mergedConfigs = {
-    deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [] },
-    aliyun: { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [] },
-    custom: { apiKey: '', apiBase: '', model: '', models: [] }
-  };
-  try {
-    const existingRaw = dbService.getSetting('ai_provider_configs');
-    if (existingRaw) {
-      const parsed = JSON.parse(existingRaw);
-      for (const k of ['deepseek', 'aliyun', 'custom']) {
-        if (parsed[k]) mergedConfigs[k] = { ...mergedConfigs[k], ...parsed[k] };
-      }
-    }
-  } catch {}
-
-  if (configs && typeof configs === 'object') {
-    for (const k of ['deepseek', 'aliyun', 'custom']) {
-      if (configs[k] && typeof configs[k] === 'object') {
-        mergedConfigs[k] = {
-          apiKey: (configs[k].apiKey ?? mergedConfigs[k].apiKey ?? '').trim(),
-          apiBase: (configs[k].apiBase ?? mergedConfigs[k].apiBase ?? '').trim(),
-          model: (configs[k].model ?? mergedConfigs[k].model ?? '').trim(),
-          models: Array.isArray(configs[k].models) ? configs[k].models : (mergedConfigs[k].models || [])
-        };
-      }
-    }
-  }
-
-  if (mergedConfigs[activeProvider]) {
-    if (ai_api_key !== undefined) mergedConfigs[activeProvider].apiKey = ai_api_key.trim();
-    if (ai_api_base !== undefined) mergedConfigs[activeProvider].apiBase = ai_api_base.trim();
-    if (ai_model !== undefined) mergedConfigs[activeProvider].model = ai_model.trim();
-  }
-
-  dbService.setSetting('ai_provider_configs', JSON.stringify(mergedConfigs));
-  res.json({ message: '系统设置已更新并即时生效', configs: mergedConfigs });
-});
-
-// 测试大模型连通性（仅管理员）
-app.post('/api/admin/test-connection', authenticate, requireAdmin, async (req, res) => {
-  const { apiBase, apiKey, model } = req.body;
-  const targetBase = (apiBase || dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1').trim();
-  const targetKey = (apiKey !== undefined ? apiKey : (dbService.getSetting('ai_api_key') || '')).trim();
-  const targetModel = (model || dbService.getSetting('ai_model') || 'deepseek-chat').trim();
-
-  if (!targetKey) {
-    return res.status(400).json({ success: false, error: '请先填写 API Key 密钥' });
-  }
-
-  const endpoint = `${targetBase.replace(/\/+$/, '')}/chat/completions`;
-  const startTime = Date.now();
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-    const resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${targetKey}`
-      },
-      body: JSON.stringify({
-        model: targetModel,
-        messages: [{ role: 'user', content: 'hi' }],
-        max_tokens: 5
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    const latency = Date.now() - startTime;
-    if (!resp.ok) {
-      const errText = await resp.text();
-      let msg = `HTTP ${resp.status}`;
-      try {
-        const json = JSON.parse(errText);
-        if (json.error?.message) msg = json.error.message;
-        else if (json.message) msg = json.message;
-      } catch {
-        msg = errText.slice(0, 150);
-      }
-      return res.status(resp.status).json({ success: false, error: `连接失败 (${resp.status}): ${msg}`, latency });
-    }
-
-    res.json({ success: true, latency, message: `连接成功！响应延迟 ${latency}ms` });
-  } catch (err) {
-    const latency = Date.now() - startTime;
-    if (err.name === 'AbortError') {
-      return res.status(504).json({ success: false, error: '连接超时（超过 12 秒），请检查 Base URL 是否正确或网络连接', latency });
-    }
-    return res.status(500).json({ success: false, error: `网络异常: ${err.message}`, latency });
-  }
-});
-
-// 在线拉取大模型列表（仅管理员）
-app.post('/api/admin/fetch-models', authenticate, requireAdmin, async (req, res) => {
-  const { apiBase, apiKey } = req.body;
-  const targetBase = (apiBase || dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1').trim();
-  const targetKey = (apiKey !== undefined ? apiKey : (dbService.getSetting('ai_api_key') || '')).trim();
-
-  if (!targetKey) {
-    return res.status(400).json({ success: false, error: '请先填写 API Key 密钥' });
-  }
-
-  const endpoint = `${targetBase.replace(/\/+$/, '')}/models`;
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    const resp = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${targetKey}`
-      },
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      let msg = `HTTP ${resp.status}`;
-      try {
-        const json = JSON.parse(errText);
-        if (json.error?.message) msg = json.error.message;
-        else if (json.message) msg = json.message;
-      } catch {
-        msg = errText.slice(0, 100);
-      }
-      return res.status(resp.status).json({ success: false, error: `拉取失败 (${resp.status}): ${msg}` });
-    }
-
-    const json = await resp.json();
-    let modelList = [];
-    if (Array.isArray(json.data)) {
-      modelList = json.data.map(m => (typeof m === 'string' ? m : m.id)).filter(Boolean);
-    } else if (Array.isArray(json)) {
-      modelList = json.map(m => (typeof m === 'string' ? m : m.id)).filter(Boolean);
-    }
-
-    const priorityKeywords = ['chat', 'plus', 'max', 'v3', 'r1', 'qwen', 'deepseek', 'gpt-4', 'gpt-5', 'gpt-6'];
-    modelList.sort((a, b) => {
-      const aLower = a.toLowerCase();
-      const bLower = b.toLowerCase();
-      const aScore = priorityKeywords.reduce((score, kw, idx) => aLower.includes(kw) ? Math.min(score, idx) : score, 999);
-      const bScore = priorityKeywords.reduce((score, kw, idx) => bLower.includes(kw) ? Math.min(score, idx) : score, 999);
-      if (aScore !== bScore) return aScore - bScore;
-      return a.localeCompare(b);
-    });
-
-    res.json({ success: true, models: modelList });
-  } catch (err) {
-    res.status(500).json({ success: false, error: `请求异常: ${err.message}` });
-  }
+  res.json({ message: '系统设置已更新并即时生效' });
 });
 
 
@@ -422,19 +478,24 @@ app.post('/api/tasks', authenticate, async (req, res) => {
     }
   }
 
-  const task = dbService.createTask({
-    id: taskId,
-    userId: req.user.id,
-    grade: grade.trim(),
-    lessonTitle: lessonTitle.trim(),
-    requirements: requirements ? requirements.trim() : '',
-    materialsText: materialsText ? materialsText.trim() : ''
-  });
+  try {
+    const task = dbService.createTask({
+      id: taskId,
+      userId: req.user.id,
+      grade: grade.trim(),
+      lessonTitle: lessonTitle.trim(),
+      requirements: requirements ? requirements.trim() : '',
+      materialsText: materialsText ? materialsText.trim() : ''
+    });
 
-  // 异步在后台运行全套生成与编译流水线
-  startLessonGenerationPipeline(taskId, req.user.id, grade.trim(), lessonTitle.trim(), requirements, materialsText, images);
+    // 异步在后台运行全套生成与编译流水线
+    startLessonGenerationPipeline(taskId, req.user.id, grade.trim(), lessonTitle.trim(), requirements, materialsText, images);
 
-  res.json({ taskId, message: '任务已启动' });
+    res.json({ taskId, message: '任务已启动' });
+  } catch (err) {
+    console.error(`[Task ${taskId}] 创建任务失败:`, err);
+    res.status(500).json({ error: '创建任务失败: ' + err.message });
+  }
 });
 
 // 查询任务进度与状态
@@ -637,8 +698,12 @@ app.listen(PORT, '0.0.0.0', () => {
   if (cleaned > 0) {
     console.log(`🧹 已自动恢复/清理 ${cleaned} 个中断的生成任务`);
   }
-  console.log(`\n🚀 IT Lesson Studio Web 服务已启动: http://0.0.0.0:${PORT}`);
-  const maskedInvite = INVITE_CODE ? `${INVITE_CODE.slice(0, 2)}****` : '未配置';
-  console.log(`🔑 教研组注册邀请码: ${maskedInvite} (可登录管理员后台查看或修改)`);
+  console.log(`\n🚀 IT Lesson Studio Web 服务已启动: http://localhost:${PORT}`);
+  if (IS_STANDALONE) {
+    console.log(`✨ 运行模式: 单机便携免登录模式 (无需账号密码，即开即用)`);
+  } else {
+    const maskedInvite = INVITE_CODE ? `${INVITE_CODE.slice(0, 2)}****` : '未配置';
+    console.log(`🔑 教研组注册邀请码: ${maskedInvite} (可登录管理员后台查看或修改)`);
+  }
   console.log(`📁 数据目录: ${path.join(__dirname, 'data')}\n`);
 });
