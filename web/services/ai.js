@@ -294,6 +294,11 @@ export async function generateLessonFiles({
   const systemPrompt = loadSystemPrompt();
   const gradeNum = extractGradeNum(grade);
 
+  let requirementsPrompt = '';
+  if (requirements && requirements.trim()) {
+    requirementsPrompt = `\n【🚨 教师教学设想与特别说明（最高优先级，必须100%优先遵循）】：\n${requirements.trim()}\n(特别声明：教师输入的特色情境、专属案例或机房特别要求拥有最高优先级，所有任务关卡与微型仿真器必须以此为主导量身定制，严禁机械套用教材默认情境！)\n`;
+  }
+
   let materialsPrompt = '';
   if (materialsText && materialsText.trim()) {
     materialsPrompt = `\n【教师自主上传/提供的课本教材与知识点参考资料】：\n${materialsText.trim()}\n(请务必参考并吸收上述教材知识点与案例，融入到教学任务与活动设计中)\n`;
@@ -310,7 +315,7 @@ export async function generateLessonFiles({
 请为以下中小学信息科技课程设计前三件套教学资料（教案、导学单、课件）：
 - 授课年级：${grade}（第 ${gradeNum} 学段）
 - 课程课题：${lessonTitle}
-- 教师补充要求 / 教学意图：${requirements || '无特殊补充，请严格紧扣浙教版 2026 最新教材体系与 2022 义务教育信息科技新课标。'}
+${requirementsPrompt || '- 教师补充要求 / 教学意图：无特殊补充，请严格紧扣浙教版 2026 最新教材体系与 2022 义务教育信息科技新课标。'}
 ${materialsPrompt}
 【输出格式强制要求】：
 必须严格按照以下三个文件标记完整输出，严禁省略，保证四位一体任务同源呼应：
@@ -403,13 +408,17 @@ ${materialsPrompt}
 【课程基本信息】：
 - 授课年级：${grade}（${gradeNum}年级）
 - 课程课题：${lessonTitle}
+${requirementsPrompt}
 - 刚才生成的教案核心内容片段：
 ${planContent.slice(0, 1800)}
 
 【导学单任务情境】：
 ${worksheetContent.slice(0, 1000)}
 
-【🚨 课堂作业.html 工业级与自动化质检铁律（必须 100% 遵守，绝不能漏！）】：
+【🚨 课堂作业.html 核心规范与自动化质检标准（必须 100% 遵守，绝不能漏！）】：
+0. **教师个性化教学设想绝对优先**：
+   - 如果教师在上方提供了【教师教学设想与特别说明】，必须 100% 优先遵循教师设想的特色情境、生活案例或仿真需求量身设计！
+   - 绝不可机械照搬教材默认案例；只有当教师未输入特殊要求时，才采用教材常规课型的仿真模式。
 1. **单文件纯原生断网运行**：
    - 严禁任何外部网络资源链接（严禁引入外部 CSS、CDN 或 JS 文件，全部内嵌）；
    - 头部必须包含：
