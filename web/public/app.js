@@ -76,18 +76,19 @@ async function initUser() {
   const btnLoginModal = document.getElementById('btnLoginModal');
   const btnAiSettings = document.getElementById('btnAiSettings');
 
-  // 1. 优先检查是否运行在单机模式 (Standalone Mode)
+  // 1. 检查运行模式与当前 AI 状态
+  let systemModeData = { standalone: false, hasApiKey: false, provider: 'deepseek', model: '' };
   try {
     const modeRes = await fetch('/api/system/mode');
     if (modeRes.ok) {
-      const modeData = await modeRes.json();
-      if (modeData.standalone) {
+      systemModeData = await modeRes.json();
+      if (systemModeData.standalone) {
         window.isStandalone = true;
         if (!token) {
           token = 'standalone_local_token';
           localStorage.setItem('itls_token', token);
         }
-        setupStandaloneUI(modeData);
+        setupStandaloneUI(systemModeData);
         return;
       }
     }
@@ -129,11 +130,14 @@ async function initUser() {
       userNameDisplay.textContent = `${displayName} (管理员)`;
       userProfileBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/40 hover:border-amber-400 text-xs font-semibold transition cursor-pointer';
       btnAdminModal.classList.remove('hidden');
+      btnAiSettings?.classList.remove('hidden');
+      updateAiStatusBadge(systemModeData.hasApiKey, systemModeData.provider, systemModeData.model);
     } else {
       userRoleIcon.textContent = '👤';
       userNameDisplay.textContent = `${displayName} 老师`;
       userProfileBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/15 text-brand-300 border border-brand-500/30 hover:border-brand-500/60 text-xs font-medium transition cursor-pointer';
       btnAdminModal.classList.add('hidden');
+      btnAiSettings?.classList.add('hidden');
     }
 
     userProfileBtn.classList.remove('hidden');
@@ -388,7 +392,7 @@ async function fetchAvailableModels(silent = false) {
   try {
     const res = await fetch('/api/settings/fetch-models', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiBase, apiKey })
     });
 
@@ -538,7 +542,9 @@ async function openAiSettingsModal(isFirstRun = false) {
   if (!modal) return;
 
   try {
-    const res = await fetch('/api/settings/ai');
+    const res = await fetch('/api/settings/ai', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
     if (res.ok) {
       const data = await res.json();
       if (data.configs && typeof data.configs === 'object') {
@@ -617,7 +623,7 @@ async function testAiConnection() {
   try {
     const res = await fetch('/api/settings/test-connection', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiBase, apiKey, model })
     });
     const result = await res.json();
@@ -664,7 +670,7 @@ async function saveAiSettings() {
   try {
     const res = await fetch('/api/settings/ai', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         provider: currentAiProvider,
         apiBase,
@@ -930,7 +936,7 @@ async function deleteUser(id, username) {
   }
 }
 
-// 2. 加载与保存 AI 接口与邀请码
+// 2. 加载与保存注册邀请码
 async function loadAdminSettings() {
   try {
     const res = await fetch('/api/admin/settings', {
@@ -939,10 +945,8 @@ async function loadAdminSettings() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
-    document.getElementById('settingApiBase').value = data.ai_api_base || '';
-    document.getElementById('settingApiKey').value = data.ai_api_key || '';
-    document.getElementById('settingModel').value = data.ai_model || '';
-    document.getElementById('settingInviteCode').value = data.invite_code || '';
+    const inviteInput = document.getElementById('settingInviteCode');
+    if (inviteInput) inviteInput.value = data.invite_code || '';
   } catch (err) {
     alert('加载配置失败: ' + err.message);
   }
@@ -950,9 +954,6 @@ async function loadAdminSettings() {
 
 async function handleSaveAdminSettings(e) {
   e.preventDefault();
-  const ai_api_base = document.getElementById('settingApiBase').value.trim();
-  const ai_api_key = document.getElementById('settingApiKey').value.trim();
-  const ai_model = document.getElementById('settingModel').value.trim();
   const invite_code = document.getElementById('settingInviteCode').value.trim();
 
   try {
@@ -962,11 +963,11 @@ async function handleSaveAdminSettings(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ ai_api_base, ai_api_key, ai_model, invite_code })
+      body: JSON.stringify({ invite_code })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
-    alert('✅ AI 接口与系统配置已保存，全系统即刻生效！');
+    alert('✅ 注册邀请码已更新生效！');
   } catch (err) {
     alert('保存失败: ' + err.message);
   }

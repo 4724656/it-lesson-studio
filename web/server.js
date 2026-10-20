@@ -106,7 +106,7 @@ function requireAdmin(req, res, next) {
 }
 
 // 获取 AI 设置（支持多服务商独立记忆配置）
-app.get('/api/settings/ai', authenticate, (req, res) => {
+app.get('/api/settings/ai', authenticate, requireAdmin, (req, res) => {
   const activeProvider = dbService.getSetting('ai_provider') || 'deepseek';
   const activeBase = dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1';
   const activeKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
@@ -146,7 +146,7 @@ app.get('/api/settings/ai', authenticate, (req, res) => {
 });
 
 // 保存 AI 设置（同时持久化当前激活项与各服务商独立配置）
-app.put('/api/settings/ai', authenticate, (req, res) => {
+app.put('/api/settings/ai', authenticate, requireAdmin, (req, res) => {
   const { provider, apiBase, apiKey, model, configs } = req.body;
   const activeProvider = (provider || 'deepseek').trim();
   dbService.setSetting('ai_provider', activeProvider);
@@ -193,7 +193,7 @@ app.put('/api/settings/ai', authenticate, (req, res) => {
 });
 
 // 测试大模型连通性
-app.post('/api/settings/test-connection', authenticate, async (req, res) => {
+app.post('/api/settings/test-connection', authenticate, requireAdmin, async (req, res) => {
   const { apiBase, apiKey, model } = req.body;
   const targetBase = (apiBase || dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1').trim();
   const targetKey = (apiKey !== undefined ? apiKey : (dbService.getSetting('ai_api_key') || '')).trim();
@@ -250,7 +250,7 @@ app.post('/api/settings/test-connection', authenticate, async (req, res) => {
 });
 
 // 在线拉取大模型列表（支持 OpenAI /models 规范，包括 DeepSeek 与阿里云百炼）
-app.post('/api/settings/fetch-models', authenticate, async (req, res) => {
+app.post('/api/settings/fetch-models', authenticate, requireAdmin, async (req, res) => {
   const { apiBase, apiKey } = req.body;
   const targetBase = (apiBase || dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1').trim();
   const targetKey = (apiKey !== undefined ? apiKey : (dbService.getSetting('ai_api_key') || '')).trim();

@@ -882,14 +882,21 @@
       </div>
 
       <!-- 选项卡切换 -->
-      <div class="flex items-center gap-2 border-b border-dark-border pb-2 text-xs">
-        <button type="button" onclick="switchAdminTab('users')" id="tabBtnUsers"
-          class="px-4 py-2 rounded-xl font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 transition">
-          👥 教师成员管理
-        </button>
-        <button type="button" onclick="switchAdminTab('api')" id="tabBtnApi"
-          class="px-4 py-2 rounded-xl font-medium text-slate-400 hover:text-slate-200 transition">
-          ⚡ AI 接口与配置
+      <div class="flex items-center justify-between border-b border-dark-border pb-2 text-xs">
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="switchAdminTab('users')" id="tabBtnUsers"
+            class="px-4 py-2 rounded-xl font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 transition cursor-pointer">
+            👥 教师成员管理
+          </button>
+          <button type="button" onclick="switchAdminTab('api')" id="tabBtnApi"
+            class="px-4 py-2 rounded-xl font-medium text-slate-400 hover:text-slate-200 transition cursor-pointer">
+            🔑 注册邀请码设置
+          </button>
+        </div>
+        <button type="button" onclick="closeAdminModal(); openAiSettingsModal();"
+          class="px-3.5 py-2 rounded-xl bg-brand-500/15 hover:bg-brand-500/25 text-brand-300 border border-brand-500/35 font-semibold flex items-center gap-1.5 transition cursor-pointer">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>AI 引擎与密钥设置</span>
         </button>
       </div>
 
@@ -914,38 +921,9 @@
         </div>
       </div>
 
-      <!-- Tab 2: AI 接口与配置 -->
+      <!-- Tab 2: 注册邀请码设置 -->
       <div id="adminTabApi" class="hidden flex-1 overflow-y-auto space-y-4">
         <form id="adminApiForm" onsubmit="handleSaveAdminSettings(event)" class="space-y-4">
-          <div class="p-4 rounded-2xl bg-dark-surface/40 border border-dark-border space-y-4">
-            <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
-              <i data-lucide="cpu" class="w-4 h-4 text-brand-400"></i>
-              <span>大语言模型 API 接入配置</span>
-            </h4>
-
-            <div class="space-y-1.5">
-              <label class="text-xs font-semibold text-slate-300">AI API 端点 (Base URL)</label>
-              <input type="text" id="settingApiBase" required
-                placeholder="如：http://127.0.0.1:8317/v1 或 https://api.openai.com/v1"
-                class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500" />
-              <p class="text-[11px] text-slate-500">支持 OpenAI 规范端点、DeepSeek、局域网 CLI Proxy API 等</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-slate-300">AI API Key</label>
-                <input type="password" id="settingApiKey" placeholder="sk-..."
-                  class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500" />
-              </div>
-
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">模型 (Model)</label>
-                <input type="text" id="settingModel" required placeholder="如：gemini-2.5-flash / deepseek-chat"
-                  class="w-full bg-dark-surface border border-dark-borderLight rounded-xl px-4 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500" />
-              </div>
-            </div>
-          </div>
-
           <div class="p-4 rounded-2xl bg-dark-surface/40 border border-dark-border space-y-3">
             <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
               <i data-lucide="key" class="w-4 h-4 text-emerald-400"></i>
@@ -960,8 +938,8 @@
 
           <div class="pt-2 flex justify-end">
             <button type="submit" id="btnSaveSettings"
-              class="btn-gradient px-6 py-2.5 rounded-xl font-bold text-xs text-white shadow-md">
-              保存配置并即刻生效
+              class="btn-gradient px-6 py-2.5 rounded-xl font-bold text-xs text-white shadow-md cursor-pointer">
+              保存邀请码设置
             </button>
           </div>
         </form>
@@ -970,7 +948,7 @@
     </div>
   </div>
 
-  <!-- 单机便携版专属：AI 引擎与密钥设置模态弹窗 -->
+  <!-- AI 引擎与密钥设置模态弹窗（单机版与团队版管理员共用统一清爽界面） -->
   <div id="aiSettingsModal"
     class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="bg-dark-card border border-dark-border rounded-3xl w-full max-w-lg p-7 shadow-2xl space-y-6">
