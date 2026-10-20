@@ -1008,7 +1008,10 @@ async function saveAdminAiAndSettings() {
   }
 }
 
-const handleSaveAdminSettings = saveAdminAiAndSettings;
+function handleSaveAdminSettings(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  return saveAdminAiAndSettings();
+}
 // ======================== 年级与课题联动 ========================
 
 function initGradeAndLessons() {
