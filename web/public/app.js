@@ -41,6 +41,7 @@ window.openAdminModal = openAdminModal;
 window.closeAdminModal = closeAdminModal;
 window.switchAdminTab = switchAdminTab;
 window.handleSaveAdminSettings = handleSaveAdminSettings;
+window.saveAdminAiAndSettings = saveAdminAiAndSettings;
 window.toggleUserRole = toggleUserRole;
 window.resetUserPassword = resetUserPassword;
 window.deleteUser = deleteUser;
@@ -74,44 +75,20 @@ async function initUser() {
   const btnHistory = document.getElementById('btnHistory');
   const btnLogout = document.getElementById('btnLogout');
   const btnLoginModal = document.getElementById('btnLoginModal');
-  const btnAiSettings = document.getElementById('btnAiSettings');
 
-  // 1. 检查运行模式与当前 AI 状态
-  let systemModeData = { standalone: false, hasApiKey: false, provider: 'deepseek', model: '' };
-  try {
-    const modeRes = await fetch('/api/system/mode');
-    if (modeRes.ok) {
-      systemModeData = await modeRes.json();
-      if (systemModeData.standalone) {
-        window.isStandalone = true;
-        if (!token) {
-          token = 'standalone_local_token';
-          localStorage.setItem('itls_token', token);
-        }
-        setupStandaloneUI(systemModeData);
-        return;
-      }
-    }
-  } catch (e) {
-    console.warn('System mode check note:', e.message);
-  }
-
-  // 2. 团队多用户服务器模式
+  // 1. 未登录状态：只保留 登录 / 注册 按钮，严禁暴露备课历史、管理员后台或 AI 引擎
   if (!token) {
     currentUser = null;
     userProfileBtn?.classList.add('hidden');
     btnAdminModal?.classList.add('hidden');
+    btnHistory?.classList.add('hidden');
     btnLogout?.classList.add('hidden');
     btnLoginModal?.classList.remove('hidden');
-
-    // 引擎就绪状态胶囊与历史常驻，界面与单机版一致舒展清爽
-    btnAiSettings?.classList.remove('hidden');
-    updateAiStatusBadge(systemModeData.hasApiKey, systemModeData.provider, systemModeData.model);
-    btnHistory?.classList.remove('hidden');
     refreshIcons();
     return;
   }
 
+  // 2. 已登录状态：获取当前登录用户信息
   try {
     const res = await fetch('/api/me', {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -124,8 +101,6 @@ async function initUser() {
     }
 
     currentUser = await res.json();
-
-    // 根据是否录入真实姓名与角色精确定制展示
     const displayName = currentUser.real_name ? currentUser.real_name : currentUser.username;
     const isAdmin = currentUser.role === 'admin';
 
@@ -133,22 +108,18 @@ async function initUser() {
       userRoleIcon.textContent = '🛡️';
       userNameDisplay.textContent = `${displayName} (管理员)`;
       userProfileBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/40 hover:border-amber-400 text-xs font-semibold transition cursor-pointer';
-      btnAdminModal.classList.remove('hidden');
-      btnAiSettings?.classList.remove('hidden');
-      updateAiStatusBadge(systemModeData.hasApiKey, systemModeData.provider, systemModeData.model);
+      btnAdminModal?.classList.remove('hidden');
     } else {
       userRoleIcon.textContent = '👤';
       userNameDisplay.textContent = `${displayName} 老师`;
       userProfileBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/15 text-brand-300 border border-brand-500/30 hover:border-brand-500/60 text-xs font-medium transition cursor-pointer';
-      btnAdminModal.classList.add('hidden');
-      btnAiSettings?.classList.remove('hidden');
-      updateAiStatusBadge(systemModeData.hasApiKey, systemModeData.provider, systemModeData.model);
+      btnAdminModal?.classList.add('hidden');
     }
 
-    userProfileBtn.classList.remove('hidden');
-    btnHistory.classList.remove('hidden');
-    btnLogout.classList.remove('hidden');
-    btnLoginModal.classList.add('hidden');
+    userProfileBtn?.classList.remove('hidden');
+    btnHistory?.classList.remove('hidden');
+    btnLogout?.classList.remove('hidden');
+    btnLoginModal?.classList.add('hidden');
     refreshIcons();
   } catch (err) {
     console.error('获取用户信息失败:', err);
@@ -948,42 +919,96 @@ async function deleteUser(id, username) {
   }
 }
 
-// 2. 加载与保存注册邀请码
+// 2. 加载与保存系统设置与 AI 配置
 async function loadAdminSettings() {
   try {
-    const res = await fetch('/api/admin/settings', {
+    const res = await fetch('/api/settings/ai', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || '无法读取设置');
+    }
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+
+    if (data.configs && typeof data.configs === 'object') {
+      for (const k of ['deepseek', 'aliyun', 'custom']) {
+        if (data.configs[k]) {
+          providerConfigs[k] = {
+            ...providerConfigs[k],
+            ...data.configs[k],
+            models: Array.isArray(data.configs[k].models) ? data.configs[k].models : (providerConfigs[k].models || [])
+          };
+        }
+      }
+    }
+
+    const activeProv = data.provider || 'deepseek';
+    if (providerConfigs[activeProv]) {
+      if (data.apiKey && !providerConfigs[activeProv].apiKey) providerConfigs[activeProv].apiKey = data.apiKey;
+      if (data.apiBase && !providerConfigs[activeProv].apiBase) providerConfigs[activeProv].apiBase = data.apiBase;
+      if (data.model && !providerConfigs[activeProv].model) providerConfigs[activeProv].model = data.model;
+    }
+
+    selectAiProvider(activeProv, true);
 
     const inviteInput = document.getElementById('settingInviteCode');
-    if (inviteInput) inviteInput.value = data.invite_code || '';
+    if (inviteInput) {
+      inviteInput.value = data.inviteCode || '';
+    }
   } catch (err) {
+    console.error('加载系统与 AI 配置失败:', err);
     alert('加载配置失败: ' + err.message);
   }
 }
 
-async function handleSaveAdminSettings(e) {
-  e.preventDefault();
-  const invite_code = document.getElementById('settingInviteCode').value.trim();
+async function saveAdminAiAndSettings() {
+  saveCurrentProviderDomState();
+  const apiKey = document.getElementById('inputAiKey')?.value.trim() || '';
+  const model = getActiveModelValue();
+  const apiBase = document.getElementById('inputAiBase')?.value.trim() || '';
+  const inviteCode = document.getElementById('settingInviteCode')?.value.trim() || '';
+  const btnSave = document.getElementById('btnSaveAdminSettings');
+
+  if (btnSave) {
+    btnSave.disabled = true;
+    btnSave.textContent = '保存中...';
+  }
 
   try {
-    const res = await fetch('/api/admin/settings', {
+    const res = await fetch('/api/settings/ai', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ invite_code })
+      body: JSON.stringify({
+        provider: currentAiProvider,
+        apiBase,
+        apiKey,
+        model,
+        configs: providerConfigs,
+        inviteCode
+      })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    alert('✅ 注册邀请码已更新生效！');
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || '保存失败');
+    }
+
+    alert('✅ AI 接口配置与注册邀请码已成功保存并即时生效！');
   } catch (err) {
     alert('保存失败: ' + err.message);
+  } finally {
+    if (btnSave) {
+      btnSave.disabled = false;
+      btnSave.textContent = '保存全部设置';
+    }
   }
 }
+
+const handleSaveAdminSettings = saveAdminAiAndSettings;
 // ======================== 年级与课题联动 ========================
 
 function initGradeAndLessons() {

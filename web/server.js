@@ -136,18 +136,21 @@ app.get('/api/settings/ai', authenticate, requireAdmin, (req, res) => {
     if (activeModel && !configs[activeProvider].model) configs[activeProvider].model = activeModel;
   }
 
+  const inviteCode = dbService.getSetting('invite_code') || process.env.INVITE_CODE || 'ZJ2026';
   res.json({
     provider: activeProvider,
     apiBase: configs[activeProvider]?.apiBase || activeBase,
     apiKey: configs[activeProvider]?.apiKey || activeKey,
     model: configs[activeProvider]?.model || activeModel,
-    configs
+    configs,
+    inviteCode
   });
 });
 
 // 保存 AI 设置（同时持久化当前激活项与各服务商独立配置）
 app.put('/api/settings/ai', authenticate, requireAdmin, (req, res) => {
-  const { provider, apiBase, apiKey, model, configs } = req.body;
+  const { provider, apiBase, apiKey, model, configs, inviteCode } = req.body;
+  if (inviteCode !== undefined) dbService.setSetting('invite_code', inviteCode.trim());
   const activeProvider = (provider || 'deepseek').trim();
   dbService.setSetting('ai_provider', activeProvider);
   if (apiBase !== undefined) dbService.setSetting('ai_api_base', apiBase.trim());
