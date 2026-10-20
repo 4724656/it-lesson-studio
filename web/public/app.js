@@ -54,6 +54,7 @@ window.saveAiSettings = saveAiSettings;
 window.toggleApiKeyVisibility = toggleApiKeyVisibility;
 window.fetchAvailableModels = fetchAvailableModels;
 window.handleKeyInputBlur = handleKeyInputBlur;
+window.handleAiInputAutoFetch = handleAiInputAutoFetch;
 window.handleModelSelectChange = handleModelSelectChange;
 window.toggleCustomModelInput = toggleCustomModelInput;
 
@@ -181,80 +182,97 @@ function setupStandaloneUI(modeData) {
 
 let currentAiProvider = 'deepseek';
 let isCustomModelMode = false;
+let autoFetchTimer = null;
 
 const PROVIDER_PRESETS = {
   deepseek: {
     name: 'DeepSeek 官方',
-    defaultModels: [
-      { id: 'deepseek-chat', label: 'deepseek-chat (通用对话 · 推荐)' },
-      { id: 'deepseek-reasoner', label: 'deepseek-reasoner (深度思考 R1)' }
-    ],
-    defaultModel: 'deepseek-chat',
     base: 'https://api.deepseek.com/v1',
     helpText: '获取 DeepSeek 密钥',
     helpUrl: 'https://platform.deepseek.com/api_keys',
-    tip: '推荐！1 元钱即可备课几十节课，高智力且格式排版遵循极佳'
+    tip: ''
   },
   aliyun: {
     name: '阿里云百炼',
-    defaultModels: [
-      { id: 'qwen-plus', label: 'qwen-plus (通义千问 Plus · 推荐)' },
-      { id: 'qwen-max', label: 'qwen-max (通义千问 Max · 旗舰高智)' },
-      { id: 'qwen-turbo', label: 'qwen-turbo (通义千问 Turbo · 极速)' },
-      { id: 'qwen-long', label: 'qwen-long (通义千问 Long · 超长文档)' }
-    ],
-    defaultModel: 'qwen-plus',
     base: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     helpText: '获取百炼 API-Key',
     helpUrl: 'https://bailian.console.aliyun.com/',
-    tip: '通义千问官方接口，国企合规，新注册通常赠送大额免费 Token'
+    tip: ''
   },
   custom: {
     name: '自定义接口',
-    defaultModels: [
-      { id: 'gpt-4o-mini', label: 'gpt-4o-mini' },
-      { id: 'gpt-4o', label: 'gpt-4o' }
-    ],
-    defaultModel: 'gpt-4o-mini',
-    base: 'https://api.openai.com/v1',
+    base: '',
     helpText: '',
     helpUrl: '',
     tip: '支持任何兼容 OpenAI /chat/completions 规范的 Base URL 或本地 Ollama'
   }
 };
 
-function populateModelOptions(modelList, selectedValue = '') {
+// 三大服务商各自独立保存配置，切换绝不互相覆盖或还原
+let providerConfigs = {
+  deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [], lastFetchedSig: '' },
+  aliyun:   { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [], lastFetchedSig: '' },
+  custom:   { apiKey: '', apiBase: '', model: '', models: [], lastFetchedSig: '' }
+};
+
+function saveCurrentProviderDomState() {
+  if (!currentAiProvider || !providerConfigs[currentAiProvider]) return;
+  const keyEl = document.getElementById('inputAiKey');
+  const baseEl = document.getElementById('inputAiBase');
+  const cfg = providerConfigs[currentAiProvider];
+  if (keyEl) cfg.apiKey = keyEl.value.trim();
+  if (baseEl) cfg.apiBase = baseEl.value.trim();
+  const activeModel = getActiveModelValue();
+  if (activeModel) cfg.model = activeModel;
+}
+
+function populateModelOptions(modelList = [], selectedValue = '') {
   const select = document.getElementById('selectAiModel');
   if (!select) return;
 
   select.innerHTML = '';
-  let matchFound = false;
+  const list = Array.isArray(modelList) ? modelList : [];
 
-  modelList.forEach(m => {
-    const id = typeof m === 'string' ? m : m.id;
-    const label = typeof m === 'string' ? m : (m.label || m.id);
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = label;
-    if (selectedValue && id === selectedValue) {
+  if (list.length === 0) {
+    if (selectedValue) {
+      const opt = document.createElement('option');
+      opt.value = selectedValue;
+      opt.textContent = selectedValue;
       opt.selected = true;
-      matchFound = true;
+      select.appendChild(opt);
+    } else {
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '-- 填入密钥与端点后自动拉取模型 --';
+      placeholder.selected = true;
+      select.appendChild(placeholder);
     }
-    select.appendChild(opt);
-  });
+  } else {
+    let matchFound = false;
+    list.forEach(m => {
+      const id = typeof m === 'string' ? m : m.id;
+      const label = typeof m === 'string' ? m : (m.label || m.id);
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = label;
+      if (selectedValue && id === selectedValue) {
+        opt.selected = true;
+        matchFound = true;
+      }
+      select.appendChild(opt);
+    });
 
-  // 若传入的已有配置不在列表中，动态置顶添加
-  if (selectedValue && !matchFound) {
-    const customOpt = document.createElement('option');
-    customOpt.value = selectedValue;
-    customOpt.textContent = `${selectedValue} (当前配置)`;
-    customOpt.selected = true;
-    select.prepend(customOpt);
+    if (!matchFound) {
+      select.selectedIndex = 0;
+    }
   }
 
   const inputAiModel = document.getElementById('inputAiModel');
   if (inputAiModel) {
-    inputAiModel.value = select.value;
+    inputAiModel.value = select.value || selectedValue || '';
+  }
+  if (providerConfigs[currentAiProvider] && select.value) {
+    providerConfigs[currentAiProvider].model = select.value;
   }
 }
 
@@ -262,6 +280,9 @@ function handleModelSelectChange(val) {
   const inputAiModel = document.getElementById('inputAiModel');
   if (inputAiModel) {
     inputAiModel.value = val;
+  }
+  if (providerConfigs[currentAiProvider]) {
+    providerConfigs[currentAiProvider].model = val;
   }
 }
 
@@ -278,50 +299,85 @@ function toggleCustomModelInput() {
     selectBox?.classList.add('hidden');
     inputBox?.classList.remove('hidden');
     if (btnToggleText) btnToggleText.textContent = '📋 下拉选';
-    if (inputAiModel && selectAiModel) inputAiModel.value = selectAiModel.value;
+    if (inputAiModel && selectAiModel && selectAiModel.value) {
+      inputAiModel.value = selectAiModel.value;
+    }
     inputAiModel?.focus();
   } else {
     selectBox?.classList.remove('hidden');
     inputBox?.classList.add('hidden');
     if (btnToggleText) btnToggleText.textContent = '✍️ 手动填';
-    if (inputAiModel && selectAiModel) {
+    if (inputAiModel && selectAiModel && inputAiModel.value.trim()) {
+      const val = inputAiModel.value.trim();
       let exists = false;
       for (let i = 0; i < selectAiModel.options.length; i++) {
-        if (selectAiModel.options[i].value === inputAiModel.value) {
+        if (selectAiModel.options[i].value === val) {
           selectAiModel.selectedIndex = i;
           exists = true;
           break;
         }
       }
-      if (!exists && inputAiModel.value.trim()) {
+      if (!exists) {
         const opt = document.createElement('option');
-        opt.value = inputAiModel.value.trim();
-        opt.textContent = `${inputAiModel.value.trim()} (自定义)`;
+        opt.value = val;
+        opt.textContent = val;
         opt.selected = true;
         selectAiModel.prepend(opt);
+      }
+      if (providerConfigs[currentAiProvider]) {
+        providerConfigs[currentAiProvider].model = val;
       }
     }
   }
   refreshIcons();
 }
 
+function handleAiInputAutoFetch() {
+  saveCurrentProviderDomState();
+  if (autoFetchTimer) clearTimeout(autoFetchTimer);
+  autoFetchTimer = setTimeout(() => {
+    const apiKey = document.getElementById('inputAiKey')?.value.trim() || '';
+    const apiBase = document.getElementById('inputAiBase')?.value.trim() || '';
+    const cfg = providerConfigs[currentAiProvider];
+    const sig = `${apiBase}|${apiKey}`;
+    if (apiKey.length >= 8 && apiKey !== 'sk-none' && /^https?:\/\/.+/i.test(apiBase)) {
+      if (!cfg || cfg.lastFetchedSig !== sig || !cfg.models || cfg.models.length === 0) {
+        fetchAvailableModels(true);
+      }
+    }
+  }, 600);
+}
+
 function handleKeyInputBlur() {
-  const apiKey = document.getElementById('inputAiKey')?.value.trim();
-  if (apiKey && apiKey.length >= 10 && apiKey !== 'sk-none') {
-    fetchAvailableModels(true);
+  saveCurrentProviderDomState();
+  const apiKey = document.getElementById('inputAiKey')?.value.trim() || '';
+  const apiBase = document.getElementById('inputAiBase')?.value.trim() || '';
+  const cfg = providerConfigs[currentAiProvider];
+  const sig = `${apiBase}|${apiKey}`;
+  if (apiKey.length >= 8 && apiKey !== 'sk-none' && /^https?:\/\/.+/i.test(apiBase)) {
+    if (!cfg || cfg.lastFetchedSig !== sig || !cfg.models || cfg.models.length === 0) {
+      fetchAvailableModels(true);
+    }
   }
 }
 
 async function fetchAvailableModels(silent = false) {
+  const targetProvider = currentAiProvider;
   const btnFetch = document.getElementById('btnFetchModels');
   const textFetch = document.getElementById('textFetchModels');
   const iconFetch = document.getElementById('iconFetchModels');
-  const apiKey = document.getElementById('inputAiKey')?.value.trim();
-  const apiBase = document.getElementById('inputAiBase')?.value.trim();
+  const apiKey = document.getElementById('inputAiKey')?.value.trim() || '';
+  const apiBase = document.getElementById('inputAiBase')?.value.trim() || '';
   const tip = document.getElementById('modelFetchTip');
+
+  saveCurrentProviderDomState();
 
   if (!apiKey || apiKey === 'sk-none') {
     if (!silent) alert('请先填入有效的 API Key 密钥');
+    return;
+  }
+  if (!apiBase || !/^https?:\/\/.+/i.test(apiBase)) {
+    if (!silent) alert('请先填入有效的端点地址 (Base URL)');
     return;
   }
 
@@ -338,32 +394,40 @@ async function fetchAvailableModels(silent = false) {
 
     const result = await res.json();
     if (res.ok && result.success && Array.isArray(result.models) && result.models.length > 0) {
-      const currentSelected = isCustomModelMode 
-        ? document.getElementById('inputAiModel')?.value 
-        : document.getElementById('selectAiModel')?.value;
+      const cfg = providerConfigs[targetProvider];
+      if (cfg) {
+        cfg.models = result.models;
+        cfg.lastFetchedSig = `${apiBase}|${apiKey}`;
+      }
 
-      populateModelOptions(result.models, currentSelected);
-
-      if (textFetch) textFetch.textContent = `已获取 ${result.models.length} 个模型`;
-      if (tip) {
-        tip.textContent = `✅ 已成功从账号在线拉取到 ${result.models.length} 个可用模型，可直接下拉选择`;
-        tip.className = 'text-[10px] text-emerald-400 font-medium';
+      if (currentAiProvider === targetProvider) {
+        const preferredModel = cfg?.model || getActiveModelValue();
+        populateModelOptions(result.models, preferredModel);
+        if (textFetch) textFetch.textContent = `已获取 ${result.models.length} 个模型`;
+        if (tip) {
+          tip.textContent = `✅ 已自动拉取 ${result.models.length} 个可用模型`;
+          tip.className = 'text-[10px] text-emerald-400 font-medium';
+        }
       }
     } else {
       if (!silent) {
         alert('拉取模型失败：' + (result.error || '未获取到模型列表'));
       }
-      if (textFetch) textFetch.textContent = '拉取失败(重试)';
-      if (tip) {
-        tip.textContent = `⚠️ 未能拉取到模型列表 (${result.error || '接口未返回模型'})，可手动输入`;
-        tip.className = 'text-[10px] text-amber-400';
+      if (currentAiProvider === targetProvider) {
+        if (textFetch) textFetch.textContent = '拉取失败(重试)';
+        if (tip) {
+          tip.textContent = `⚠️ 未能拉取模型列表 (${result.error || '接口未返回'})，可点右上角“手动填”`;
+          tip.className = 'text-[10px] text-amber-400';
+        }
       }
     }
   } catch (err) {
     if (!silent) {
       alert('拉取模型异常：' + err.message);
     }
-    if (textFetch) textFetch.textContent = '拉取异常(重试)';
+    if (currentAiProvider === targetProvider && textFetch) {
+      textFetch.textContent = '拉取异常(重试)';
+    }
   } finally {
     if (iconFetch) iconFetch.classList.remove('animate-spin');
     if (btnFetch) btnFetch.disabled = false;
@@ -371,45 +435,69 @@ async function fetchAvailableModels(silent = false) {
   }
 }
 
-function selectAiProvider(providerKey, explicitModel = '', explicitBase = '') {
+function selectAiProvider(providerKey, skipSaveCurrent = false) {
+  if (!skipSaveCurrent && currentAiProvider) {
+    saveCurrentProviderDomState();
+  }
+
   currentAiProvider = providerKey;
   const preset = PROVIDER_PRESETS[providerKey] || PROVIDER_PRESETS.deepseek;
+  const cfg = providerConfigs[providerKey] || { apiKey: '', apiBase: preset.base, model: '', models: [] };
 
   ['deepseek', 'aliyun', 'custom'].forEach(p => {
     const btn = document.getElementById(`providerBtn${p.charAt(0).toUpperCase() + p.slice(1)}`);
     if (!btn) return;
     if (p === providerKey) {
-      btn.className = 'p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 cursor-pointer bg-brand-500/15 border-brand-500 text-brand-300 shadow-sm';
+      btn.className = 'p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-brand-500/15 border-brand-500 text-brand-300 shadow-sm';
     } else {
-      btn.className = 'p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center gap-1.5 cursor-pointer';
+      btn.className = 'p-3 rounded-2xl border border-dark-border bg-dark-surface/60 hover:bg-dark-surface text-slate-300 text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer';
     }
   });
 
+  const inputKey = document.getElementById('inputAiKey');
   const inputBase = document.getElementById('inputAiBase');
   const providerKeyHelp = document.getElementById('providerKeyHelp');
   const providerKeyTip = document.getElementById('providerKeyTip');
   const tip = document.getElementById('modelFetchTip');
   const textFetch = document.getElementById('textFetchModels');
 
+  if (inputKey) {
+    inputKey.value = cfg.apiKey || '';
+  }
   if (inputBase) {
-    if (explicitBase) {
-      inputBase.value = explicitBase;
-    } else if (providerKey !== 'custom' || !inputBase.value || inputBase.value === 'https://api.openai.com/v1') {
-      inputBase.value = preset.base;
+    inputBase.value = cfg.apiBase !== undefined && cfg.apiBase !== '' ? cfg.apiBase : preset.base;
+    inputBase.placeholder = preset.base || 'https://api.openai.com/v1';
+  }
+
+  if (providerKeyTip) {
+    if (preset.tip) {
+      providerKeyTip.textContent = preset.tip;
+      providerKeyTip.classList.remove('hidden');
+    } else {
+      providerKeyTip.textContent = '';
+      providerKeyTip.classList.add('hidden');
     }
   }
-  if (providerKeyTip) providerKeyTip.textContent = preset.tip;
-  if (textFetch) textFetch.textContent = '拉取模型列表';
-  if (tip) {
-    tip.textContent = '输入 Key 后可点击上方“拉取模型列表”自动填充';
-    tip.className = 'text-[10px] text-slate-500';
+
+  // 恢复该服务商已拉取的模型列表与选中模型（不预置固定模型）
+  const savedModels = Array.isArray(cfg.models) ? cfg.models : [];
+  populateModelOptions(savedModels, cfg.model || '');
+
+  if (savedModels.length > 0) {
+    if (textFetch) textFetch.textContent = `已获取 ${savedModels.length} 个模型`;
+    if (tip) {
+      tip.textContent = `✅ 已加载 ${savedModels.length} 个可用模型`;
+      tip.className = 'text-[10px] text-emerald-400 font-medium';
+    }
+  } else {
+    if (textFetch) textFetch.textContent = '拉取模型';
+    if (tip) {
+      tip.textContent = '填入密钥与端点后将自动拉取可用模型列表';
+      tip.className = 'text-[10px] text-slate-500';
+    }
   }
 
-  // 填充下拉选项
-  const targetModel = explicitModel || preset.defaultModel;
-  populateModelOptions(preset.defaultModels, targetModel);
-
-  // 统一默认使用下拉选择模式
+  // 默认保持下拉选择模式
   if (isCustomModelMode) {
     toggleCustomModelInput();
   }
@@ -426,6 +514,15 @@ function selectAiProvider(providerKey, explicitModel = '', explicitBase = '') {
 
   hideTestResult();
   refreshIcons();
+
+  // 如果该服务商已填有 Key 与 Base URL，则自动拉取最新模型列表
+  const effectiveBase = inputBase ? inputBase.value.trim() : '';
+  const effectiveKey = inputKey ? inputKey.value.trim() : '';
+  if (effectiveKey && effectiveKey !== 'sk-none' && /^https?:\/\/.+/i.test(effectiveBase)) {
+    if (savedModels.length === 0) {
+      fetchAvailableModels(true);
+    }
+  }
 }
 
 function getActiveModelValue() {
@@ -444,17 +541,24 @@ async function openAiSettingsModal(isFirstRun = false) {
     const res = await fetch('/api/settings/ai');
     if (res.ok) {
       const data = await res.json();
-      currentAiProvider = data.provider || 'deepseek';
-      if (data.apiKey) document.getElementById('inputAiKey').value = data.apiKey;
-      const modelVal = data.model || '';
-      selectAiProvider(currentAiProvider, modelVal, data.apiBase || '');
-      const inputAiModel = document.getElementById('inputAiModel');
-      if (inputAiModel) inputAiModel.value = modelVal;
-
-      // 如果已有有效 Key，自动静默拉取真实模型列表填充下拉框
-      if (data.apiKey && data.apiKey !== 'sk-none') {
-        fetchAvailableModels(true);
+      if (data.configs && typeof data.configs === 'object') {
+        for (const k of ['deepseek', 'aliyun', 'custom']) {
+          if (data.configs[k]) {
+            providerConfigs[k] = {
+              ...providerConfigs[k],
+              ...data.configs[k],
+              models: Array.isArray(data.configs[k].models) ? data.configs[k].models : (providerConfigs[k].models || [])
+            };
+          }
+        }
       }
+      const activeProv = data.provider || 'deepseek';
+      if (providerConfigs[activeProv]) {
+        if (data.apiKey && !providerConfigs[activeProv].apiKey) providerConfigs[activeProv].apiKey = data.apiKey;
+        if (data.apiBase && !providerConfigs[activeProv].apiBase) providerConfigs[activeProv].apiBase = data.apiBase;
+        if (data.model && !providerConfigs[activeProv].model) providerConfigs[activeProv].model = data.model;
+      }
+      selectAiProvider(activeProv, true);
     }
   } catch (e) {
     console.error('Failed to load AI settings:', e);
@@ -467,6 +571,7 @@ async function openAiSettingsModal(isFirstRun = false) {
 }
 
 function closeAiSettingsModal() {
+  saveCurrentProviderDomState();
   const modal = document.getElementById('aiSettingsModal');
   if (modal) {
     modal.classList.add('hidden');
@@ -489,6 +594,7 @@ function toggleApiKeyVisibility() {
 }
 
 async function testAiConnection() {
+  saveCurrentProviderDomState();
   const btn = document.getElementById('btnTestAi');
   const btnText = document.getElementById('testAiBtnText');
   const apiKey = document.getElementById('inputAiKey').value.trim();
@@ -497,6 +603,10 @@ async function testAiConnection() {
 
   if (!apiKey) {
     showTestResult(false, '请先填入 API Key 密钥');
+    return;
+  }
+  if (!model) {
+    showTestResult(false, '请先拉取并选择模型（或点击“手动填”输入模型代号）');
     return;
   }
 
@@ -542,6 +652,7 @@ function hideTestResult() {
 }
 
 async function saveAiSettings() {
+  saveCurrentProviderDomState();
   const apiKey = document.getElementById('inputAiKey').value.trim();
   const model = getActiveModelValue();
   const apiBase = document.getElementById('inputAiBase').value.trim();
@@ -558,7 +669,8 @@ async function saveAiSettings() {
         provider: currentAiProvider,
         apiBase,
         apiKey,
-        model
+        model,
+        configs: providerConfigs
       })
     });
 

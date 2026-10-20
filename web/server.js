@@ -105,24 +105,91 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// 获取 AI 设置
+// 获取 AI 设置（支持多服务商独立记忆配置）
 app.get('/api/settings/ai', authenticate, (req, res) => {
+  const activeProvider = dbService.getSetting('ai_provider') || 'deepseek';
+  const activeBase = dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1';
+  const activeKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
+  const activeModel = dbService.getSetting('ai_model') || '';
+
+  let configs = {
+    deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [] },
+    aliyun: { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [] },
+    custom: { apiKey: '', apiBase: '', model: '', models: [] }
+  };
+
+  try {
+    const raw = dbService.getSetting('ai_provider_configs');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      for (const k of ['deepseek', 'aliyun', 'custom']) {
+        if (parsed[k] && typeof parsed[k] === 'object') {
+          configs[k] = { ...configs[k], ...parsed[k] };
+        }
+      }
+    }
+  } catch {}
+
+  if (configs[activeProvider]) {
+    if (activeKey && !configs[activeProvider].apiKey) configs[activeProvider].apiKey = activeKey;
+    if (activeBase && !configs[activeProvider].apiBase) configs[activeProvider].apiBase = activeBase;
+    if (activeModel && !configs[activeProvider].model) configs[activeProvider].model = activeModel;
+  }
+
   res.json({
-    provider: dbService.getSetting('ai_provider') || 'deepseek',
-    apiBase: dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1',
-    apiKey: dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '',
-    model: dbService.getSetting('ai_model') || 'deepseek-chat'
+    provider: activeProvider,
+    apiBase: configs[activeProvider]?.apiBase || activeBase,
+    apiKey: configs[activeProvider]?.apiKey || activeKey,
+    model: configs[activeProvider]?.model || activeModel,
+    configs
   });
 });
 
-// 保存 AI 设置
+// 保存 AI 设置（同时持久化当前激活项与各服务商独立配置）
 app.put('/api/settings/ai', authenticate, (req, res) => {
-  const { provider, apiBase, apiKey, model } = req.body;
-  if (provider !== undefined) dbService.setSetting('ai_provider', provider.trim());
+  const { provider, apiBase, apiKey, model, configs } = req.body;
+  const activeProvider = (provider || 'deepseek').trim();
+  dbService.setSetting('ai_provider', activeProvider);
   if (apiBase !== undefined) dbService.setSetting('ai_api_base', apiBase.trim());
   if (apiKey !== undefined) dbService.setSetting('ai_api_key', apiKey.trim());
   if (model !== undefined) dbService.setSetting('ai_model', model.trim());
-  res.json({ message: 'AI 模型与密钥设置已保存并即时生效' });
+
+  let mergedConfigs = {
+    deepseek: { apiKey: '', apiBase: 'https://api.deepseek.com/v1', model: '', models: [] },
+    aliyun: { apiKey: '', apiBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '', models: [] },
+    custom: { apiKey: '', apiBase: '', model: '', models: [] }
+  };
+  try {
+    const existingRaw = dbService.getSetting('ai_provider_configs');
+    if (existingRaw) {
+      const parsed = JSON.parse(existingRaw);
+      for (const k of ['deepseek', 'aliyun', 'custom']) {
+        if (parsed[k]) mergedConfigs[k] = { ...mergedConfigs[k], ...parsed[k] };
+      }
+    }
+  } catch {}
+
+  if (configs && typeof configs === 'object') {
+    for (const k of ['deepseek', 'aliyun', 'custom']) {
+      if (configs[k] && typeof configs[k] === 'object') {
+        mergedConfigs[k] = {
+          apiKey: (configs[k].apiKey ?? mergedConfigs[k].apiKey ?? '').trim(),
+          apiBase: (configs[k].apiBase ?? mergedConfigs[k].apiBase ?? '').trim(),
+          model: (configs[k].model ?? mergedConfigs[k].model ?? '').trim(),
+          models: Array.isArray(configs[k].models) ? configs[k].models : (mergedConfigs[k].models || [])
+        };
+      }
+    }
+  }
+
+  if (mergedConfigs[activeProvider]) {
+    if (apiKey !== undefined) mergedConfigs[activeProvider].apiKey = apiKey.trim();
+    if (apiBase !== undefined) mergedConfigs[activeProvider].apiBase = apiBase.trim();
+    if (model !== undefined) mergedConfigs[activeProvider].model = model.trim();
+  }
+
+  dbService.setSetting('ai_provider_configs', JSON.stringify(mergedConfigs));
+  res.json({ message: 'AI 模型与密钥设置已保存并即时生效', configs: mergedConfigs });
 });
 
 // 测试大模型连通性
