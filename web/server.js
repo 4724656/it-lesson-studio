@@ -53,15 +53,14 @@ app.get('/api/textbook-catalog', (req, res) => {
   res.status(404).send('Catalog not found');
 });
 
-// 查询系统运行模式与 AI 配置概要
+// 查询系统运行模式与 AI 配置概要（仅返回前端渲染状态胶囊所需的最小字段，不暴露端点地址）
 app.get('/api/system/mode', (req, res) => {
   const currentKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
   res.json({
     standalone: IS_STANDALONE,
     hasApiKey: Boolean(currentKey && currentKey.trim() && currentKey.trim() !== 'sk-none'),
     provider: dbService.getSetting('ai_provider') || 'deepseek',
-    model: dbService.getSetting('ai_model') || 'deepseek-chat',
-    apiBase: dbService.getSetting('ai_api_base') || 'https://api.deepseek.com/v1'
+    model: dbService.getSetting('ai_model') || 'deepseek-chat'
   });
 });
 
@@ -431,25 +430,17 @@ app.delete('/api/admin/users/:id', authenticate, requireAdmin, (req, res) => {
   res.json({ message: '用户已删除' });
 });
 
-// 5. 获取系统配置与 AI 接口
+// 5. 获取注册邀请码（AI 配置走独立的 /api/settings/ai 端点，此处仅返回邀请码）
 app.get('/api/admin/settings', authenticate, requireAdmin, (req, res) => {
-  const settings = dbService.getAllSettings();
-  res.json({
-    ai_api_base: settings.ai_api_base || process.env.AI_API_BASE || 'http://127.0.0.1:8317/v1',
-    ai_api_key: settings.ai_api_key || process.env.AI_API_KEY || 'sk-none',
-    ai_model: settings.ai_model || process.env.AI_MODEL || 'gemini-2.5-flash',
-    invite_code: settings.invite_code || process.env.INVITE_CODE || 'ZJ2026'
-  });
+  const inviteCode = dbService.getSetting('invite_code') || process.env.INVITE_CODE || 'ZJ2026';
+  res.json({ invite_code: inviteCode });
 });
 
-// 6. 保存系统配置与 AI 接口
+// 6. 保存注册邀请码
 app.put('/api/admin/settings', authenticate, requireAdmin, (req, res) => {
-  const { ai_api_base, ai_api_key, ai_model, invite_code } = req.body;
-  if (ai_api_base !== undefined) dbService.setSetting('ai_api_base', ai_api_base.trim());
-  if (ai_api_key !== undefined) dbService.setSetting('ai_api_key', ai_api_key.trim());
-  if (ai_model !== undefined) dbService.setSetting('ai_model', ai_model.trim());
+  const { invite_code } = req.body;
   if (invite_code !== undefined) dbService.setSetting('invite_code', invite_code.trim());
-  res.json({ message: '系统设置已更新并即时生效' });
+  res.json({ message: '注册邀请码已更新并即时生效' });
 });
 
 

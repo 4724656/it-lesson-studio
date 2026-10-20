@@ -1,0 +1,129 @@
+name: Build Windows Portable Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_release:
+        description: '是否发布到 GitHub Release（若希望自动生成 Release 请勾选）'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - feature/standalone-portable
+    tags:
+      - 'v*'
+    paths:
+      - 'scripts/build-portable.mjs'
+      - 'scripts/start-portable.mjs'
+      - 'scripts/export-lesson.mjs'
+      - 'scripts/beautify_docx.py'
+      - '启动备课工坊.bat'
+      - 'web/**'
+      - 'references/**'
+      - 'resources/**'
+      - 'skills/**'
+      - 'examples/**'
+      - 'package.json'
+      - 'pyproject.toml'
+      - '.github/workflows/build-portable.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-portable:
+    name: Build & Package Windows Portable Edition
+    runs-on: windows-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Node.js (v22)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 配置 uv 与 Python 环境
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: 安装最新版 Pandoc 文档引擎
+        shell: pwsh
+        run: |
+          choco install pandoc --no-progress -y
+          # 验证并持久化 PANDOC_HOME 环境变量
+          if (Test-Path "C:\Program Files\Pandoc\pandoc.exe") {
+            echo "PANDOC_HOME=C:\Program Files\Pandoc" >> $env:GITHUB_ENV
+            Write-Host "✔ Pandoc 安装成功: C:\Program Files\Pandoc"
+          } else {
+            Write-Host "Pandoc 已通过 PATH 管理"
+          }
+
+      - name: 安装项目依赖 (Root + Web)
+        shell: pwsh
+        run: |
+          Write-Host "📦 正在安装根目录 NPM 依赖..."
+          npm ci
+          Write-Host "📦 正在安装 Web 子项目 NPM 依赖..."
+          cd web
+          npm ci
+          cd ..
+
+      - name: 初始化 Python 3.12 虚拟环境并安装排版依赖
+        shell: pwsh
+        run: |
+          uv python install 3.12
+          uv sync --frozen
+
+      - name: 执行绿色免安装版一键打包脚本
+        shell: pwsh
+        run: |
+          node scripts/build-portable.mjs
+
+      - name: 校验产物并计算哈希校验码
+        shell: pwsh
+        run: |
+          $zipPath = "dist\IT-Lesson-Studio-便携版.zip"
+          if (-not (Test-Path $zipPath)) {
+            throw "打包失败：未找到输出文件 $zipPath"
+          }
+          $item = Get-Item $zipPath
+          $sizeMB = ($item.Length / 1MB).ToString("F1")
+          $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
+          Write-Host "================================================================"
+          Write-Host "  🎉 Windows 便携版构建打包成功！"
+          Write-Host "  文件名称: $($item.Name)"
+          Write-Host "  文件大小: $sizeMB MB ($($item.Length) 字节)"
+          Write-Host "  SHA-256:  $hash"
+          Write-Host "================================================================"
+
+      - name: 上传构建产物至 GitHub Artifacts (保留 30 天)
+        uses: actions/upload-artifact@v4
+        with:
+          name: IT-Lesson-Studio-Windows-便携版
+          path: dist/IT-Lesson-Studio-便携版.zip
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: 自动发布到 GitHub Release (打 tag 或勾选发布时触发)
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.upload_release == true
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/IT-Lesson-Studio-便携版.zip
+          name: IT Lesson Studio Windows 便携版 ${{ github.ref_name }}
+          body: |
+            ## 🎓 IT Lesson Studio · Windows 绿色免安装单机便携版
+
+            专为中小学信息科技教师打造的离线即开即用备课工作台。
+            **零编程环境门槛**：内置 Node.js + Pandoc + Python 3.12 公文精排引擎，无需配置任何开发环境！
+
+            ### 🚀 极速上手
+            1. 下载附件中的 `IT-Lesson-Studio-便携版.zip` 并解压到电脑任意目录；
+            2. 双击运行目录下的 **`启动备课工坊.bat`**；
+            3. 浏览器将自动打开 `http://localhost:3800`，填入您的 AI API Key 即可一键备课！
+          draft: false
+          prerelease: false

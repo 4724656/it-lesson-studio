@@ -96,7 +96,12 @@ async function initUser() {
     console.warn('System mode check note:', e.message);
   }
 
-  // 2. 团队多用户服务器模式
+  // 2. 团队多用户服务器模式（若从单机便携模式切入，主动清理单机伪 Token）
+  if (token === 'standalone_local_token') {
+    token = null;
+    localStorage.removeItem('itls_token');
+  }
+
   if (!token) {
     currentUser = null;
     userProfileBtn?.classList.add('hidden');
@@ -689,6 +694,8 @@ async function saveAiSettings() {
     const hasKey = Boolean(apiKey && apiKey !== 'sk-none');
     updateAiStatusBadge(hasKey, currentAiProvider, model);
     closeAiSettingsModal();
+    // 轻量成功反馈（与管理后台保存体验一致）
+    alert('✅ AI 引擎配置已保存并即时生效！');
   } catch (e) {
     alert('保存失败：' + e.message);
   } finally {

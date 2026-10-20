@@ -274,4 +274,34 @@ CI 的 `export-pipeline` Job 将产物上传至 GitHub Actions Artifacts（保�
 3. **自定义代理持久化**：修复切换 AI 供应商下拉框时意外重置自定义 `apiBase` 的缺陷，完美支持各类 OpenAI 兼容网关与 Copilot 反代模型。
 
 
-
+
+
+---
+
+## 13. Windows 免安装单机便携版深度审计与全闭环记录 (2026-10-20)
+
+针对 eature/standalone-portable 分支进行了全面深度安全、架构与工程规范审计，对发现的全部问题进行闭环修复与加固：
+
+### 🔴 P0 级：Bug / 安全漏洞闭环
+1. **/api/system/mode 移除敏感端点泄露**：
+   - 彻底剔除无鉴权端点返回的 piBase，仅对外暴露前端状态胶囊必需的布尔值（hasApiKey）与模型简名，阻断针对内网/代理地址的未授权探测。
+2. **/api/admin/settings 敏感配置彻底隔离**：
+   - 将系统邀请码端点与 AI 密钥配置彻底解耦，GET/PUT 仅处理 invite_code，彻底避免明文 i_api_key 在管理员接口冗余返回。
+3. **build-portable.mjs 移除硬编码路径并完善多级降级**：
+   - 移除写死的 D:\\Scoop 路径，支持 PANDOC_HOME 环境变量及 where pandoc 智能 Shim 解析；
+   - 支持 PYTHON_HOME 环境变量，自动回退本地 .venv 与系统 where python，确保跨机或 CI 构建零报错。
+
+### 🟡 P1 级：功能健壮性与交互细节闭环
+1. **archiver 依赖正规化**：在根目录 package.json 显式引入 rchiver: ^7.0.0，移除从 ../web/node_modules/archiver/index.js 的脆弱相对路径引用。
+2. **AI 配置保存即时视觉反馈**：在 saveAiSettings() 执行成功后加入即时反馈弹窗，与管理后台的更新体验完全拉齐。
+3. **双模切换伪 Token 自动净化**：在前端 initUser() 中加入防御性清理，当系统处于团队模式时主动清除单机残留的 standalone_local_token，避免不必要的 401 报错。
+4. **统一启动脚本源头**：构建脚本直接复制根目录的 启动备课工坊.bat，避免两份批处理脚本内容产生不一致漂移。
+
+### ☁️ 云端构建全自动支持
+1. **新增 GitHub Actions 云端便携包打包流**：创建 .github/workflows/build-portable.yml，支持 workflow_dispatch 手动点按、打 tag 自动发布 Release 以及特定文件变更触发。
+2. **零本机开销**：由 GitHub 云端 Windows Runner 自动安装 Pandoc、Python 3.12 与 Node 依赖并打包成 .zip 上传至 Artifacts，老旧机型教师无需在本机消耗 CPU 与磁盘空间。
+
+### 🟠 P2 级：文档与工程规范修复
+1. **README.md 全面恢复与模式完善**：恢复产品定位、四大教学成套产物介绍，并结构化覆盖免安装便携版、Docker 团队版与开发者本地运行三种模式及详细参数表。
+2. **默认 AI 服务商配置严格拉齐**：全系统服务端与前端全部统一定位至 https://api.deepseek.com/v1 与 deepseek-chat。
+3. **代码与配置格式整洁**：清理 .gitignore 尾部空行。

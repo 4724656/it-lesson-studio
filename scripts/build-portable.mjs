@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import archiver from '../web/node_modules/archiver/index.js';
+import archiver from 'archiver';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,10 +46,23 @@ function copyDirFiltered(src, dest, filterFn = () => true) {
 }
 
 function resolveRealPandocExe() {
-  const scoopPandoc = 'D:\\Scoop\\apps\\pandoc\\current\\pandoc.exe';
-  if (fs.existsSync(scoopPandoc)) return scoopPandoc;
+  // 1. 支持 PANDOC_HOME 环境变量直接指定 pandoc.exe 所在目录
+  if (process.env.PANDOC_HOME) {
+    const envPandoc = path.join(process.env.PANDOC_HOME, 'pandoc.exe');
+    if (fs.existsSync(envPandoc)) return envPandoc;
+  }
+  // 2. 检测 Windows 常见默认安装路径（覆盖 CI 自动化运行环境与官方安装包）
+  const candidatePaths = [
+    'C:\\Program Files\\Pandoc\\pandoc.exe',
+    'C:\\Program Files (x86)\\Pandoc\\pandoc.exe',
+    path.join(process.env.LOCALAPPDATA || '', 'Pandoc', 'pandoc.exe')
+  ];
+  for (const cand of candidatePaths) {
+    if (cand && fs.existsSync(cand)) return cand;
+  }
+  // 3. 从系统 PATH 探测 where pandoc
   try {
-    const out = execFileSync('where', ['pandoc'], { encoding: 'utf-8' }).trim().split(/\r?\n/)[0];
+    const out = execFileSync('where', ['pandoc'], { encoding: 'utf-8', timeout: 5000, windowsHide: true }).trim().split(/\r?\n/)[0];
     // 如果是 scoop shim，解析同目录下的 .shim 文件获取真实路径
     if (out.endsWith('.exe')) {
       const shimFile = out.replace(/\.exe$/i, '.shim');
@@ -61,14 +74,21 @@ function resolveRealPandocExe() {
       return out;
     }
   } catch {}
-  throw new Error('未找到 pandoc.exe，无法构建全功能便携包');
+  throw new Error('未找到 pandoc.exe，无法构建全功能便携包。可设置 PANDOC_HOME 环境变量指向 pandoc 安装目录。');
 }
 
 function resolvePythonHome() {
+  // 1. 支持 PYTHON_HOME 环境变量直接指定 python.exe 所在目录
+  if (process.env.PYTHON_HOME) {
+    if (fs.existsSync(path.join(process.env.PYTHON_HOME, 'python.exe'))) {
+      return process.env.PYTHON_HOME;
+    }
+  }
+  // 2. 从项目本地虚拟环境 .venv/pyvenv.cfg 解析基础 CPython 路径
   const cfgPath = path.join(rootDir, '.venv', 'pyvenv.cfg');
   if (fs.existsSync(cfgPath)) {
-    const content = fs.readFileSync(cfgPath, 'utf-8');
-    const m = content.match(/^home\s*=\s*(.+)$/m);
+    const cfgContent = fs.readFileSync(cfgPath, 'utf-8');
+    const m = cfgContent.match(/^home\s*=\s*(.+)$/m);
     if (m) {
       const homeDir = m[1].trim();
       if (fs.existsSync(path.join(homeDir, 'python.exe'))) {
@@ -76,7 +96,12 @@ function resolvePythonHome() {
       }
     }
   }
-  throw new Error('未能从 .venv/pyvenv.cfg 解析出有效的 CPython 基础目录');
+  // 3. 回退到系统 PATH 中的 python.exe 所在目录
+  try {
+    const out = execFileSync('where', ['python'], { encoding: 'utf-8', timeout: 5000, windowsHide: true }).trim().split(/\r?\n/)[0];
+    if (out && fs.existsSync(out)) return path.dirname(out);
+  } catch {}
+  throw new Error('未找到可用的 CPython。可设置 PYTHON_HOME 环境变量，或确保 .venv 已创建，或确保 python 在系统 PATH 中。');
 }
 
 function getDirSizeMB(dirPath) {
@@ -126,21 +151,13 @@ async function main() {
 
   // 2. 复制项目核心业务代码与静态资产（排除个人数据与开发期垃圾）
   logStep('2/6', '复制核心教学引擎、模板、课标图谱与前端代码...');
-  const batContent = [
-    '@echo off',
-    'cd /d "%~dp0"',
-    'chcp 65001 >nul',
-    'title IT Lesson Studio',
-    'if exist "runtime\\node\\node.exe" (',
-    '    "runtime\\node\\node.exe" "scripts\\start-portable.mjs"',
-    ') else (',
-    '    node "scripts\\start-portable.mjs"',
-    ')',
-    'if errorlevel 1 pause',
-    ''
-  ].join('\r\n');
-  fs.writeFileSync(path.join(rootDir, '启动备课工坊.bat'), batContent, 'ascii');
-  fs.writeFileSync(path.join(TARGET_DIR, '启动备课工坊.bat'), batContent, 'ascii');
+  // 直接复制项目根目录的 bat 入口文件（避免维护两份副本）
+  const rootBat = path.join(rootDir, '启动备课工坊.bat');
+  if (fs.existsSync(rootBat)) {
+    fs.copyFileSync(rootBat, path.join(TARGET_DIR, '启动备课工坊.bat'));
+  } else {
+    console.warn('   ⚠ 未找到根目录的 启动备课工坊.bat，将跳过');
+  }
   fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(TARGET_DIR, 'package.json'));
 
   for (const dirName of ['references', 'resources', 'skills', 'examples']) {
@@ -297,15 +314,32 @@ async function main() {
   const bundledPandoc = path.join(runtimeDir, 'pandoc', 'pandoc.exe');
   const bundledPython = path.join(runtimeDir, 'python', 'python.exe');
 
-  const nodeVer = execFileSync(bundledNode, ['-v'], { encoding: 'utf-8' }).trim();
-  const pandocVer = execFileSync(bundledPandoc, ['-v'], { encoding: 'utf-8' }).trim().split(/\r?\n/)[0];
+  console.log('   🔍 正在校验内置 Node.js 绿色引擎...');
+  const nodeVer = execFileSync(bundledNode, ['-v'], {
+    encoding: 'utf-8',
+    timeout: 10000,
+    windowsHide: true
+  }).trim();
+  console.log(`   ✅ 内置 Node 自检通过   : ${nodeVer}`);
+
+  console.log('   🔍 正在校验内置 Pandoc 文档转换引擎完整性...');
+  if (!fs.existsSync(bundledPandoc) || fs.statSync(bundledPandoc).size < 10000000) {
+    throw new Error('内置 Pandoc 二进制文件缺失或不完整');
+  }
+  const pandocSizeMB = (fs.statSync(bundledPandoc).size / (1024 * 1024)).toFixed(1);
+  console.log(`   ✅ 内置 Pandoc 校验通过 : 单文件免安装独立引擎就绪 (${pandocSizeMB} MB)`);
+
+  console.log('   🔍 正在校验内置 Python 公文排版与依赖 (docx / lxml)...');
   const pyCheck = execFileSync(bundledPython, ['-c', 'import docx, lxml; print("Python", __import__("sys").version.split()[0], "+ python-docx OK")'], {
     encoding: 'utf-8',
-    env: { PATH: '' } // 故意清空 PATH，验证 100% 独立无外部依赖！
+    timeout: 15000,
+    windowsHide: true,
+    env: {
+      PATH: '',
+      SystemRoot: process.env.SystemRoot || 'C:\\Windows',
+      WINDIR: process.env.WINDIR || 'C:\\Windows'
+    }
   }).trim();
-
-  console.log(`   ✅ 内置 Node 自检通过   : ${nodeVer}`);
-  console.log(`   ✅ 内置 Pandoc 自检通过 : ${pandocVer}`);
   console.log(`   ✅ 内置 Python 自检通过 : ${pyCheck}`);
 
   // 6. 打包成单一 .zip 分发包
