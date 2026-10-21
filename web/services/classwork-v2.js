@@ -38,7 +38,7 @@ export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, plan
   const blueprintBlock = simBlueprint ? `\n推荐仿真原型与关卡拆解（若教师未指定冲突设想则优先以此构建多屏探究主线）：\n- 原型：${simBlueprint.archetypeName}\n${simBlueprint.interactiveDesign}` : '';
   return {
     system: [globalRules, read('skills/it-lesson-studio/modules/classwork.md'), read('references/classwork-v2-contract.md')].join('\n\n'),
-    user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。\n定位：支撑 35—40 分钟机房主课堂的完整数字化探究舱（非课后小练习），请设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“痛点体验 ➔ 原理建模 ➔ 核心动手仿真沙箱（基础+⭐进阶） ➔ 调试或迁移应用”。\n年级：${grade}；课题：${lessonTitle}\n实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}\n教师设想（在硬性契约内优先）：${requirements || '未指定'}\n已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}${blueprintBlock}\n以下文稿是任务同源依据，使用完整文本，不另造任务名称：\n<lesson-plan>\n${planContent}\n</lesson-plan>\n<worksheet>\n${worksheetContent}\n</worksheet>\n<slides>\n${slidesContent || ''}\n</slides>\n仅输出接口契约要求的 JSON 对象。`
+    user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。\n定位：支撑 35—40 分钟机房主课堂的完整数字化探究舱（非课后小练习），请设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“痛点体验 ➔ 原理建模 ➔ 核心动手仿真沙箱（基础+⭐进阶） ➔ 调试或迁移应用”。注意：screens 每一屏的 kind 属性必须严格二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏），严禁自造其他词汇。\n年级：${grade}；课题：${lessonTitle}\n实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}\n教师设想（在硬性契约内优先）：${requirements || '未指定'}\n已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}${blueprintBlock}\n以下文稿是任务同源依据，使用完整文本，不另造任务名称：\n<lesson-plan>\n${planContent}\n</lesson-plan>\n<worksheet>\n${worksheetContent}\n</worksheet>\n<slides>\n${slidesContent || ''}\n</slides>\n仅输出接口契约要求的 JSON 对象。`
   };
 }
 
@@ -71,10 +71,21 @@ export function validateV2Payload(payload, gradeNum) {
   const ids = new Set();
   let handsOn = 0;
   payload.screens.forEach(screen => {
+    if (typeof screen.id === 'string') {
+      screen.id = screen.id.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
+    }
     requireThat(/^[a-z][a-z0-9-]{0,31}$/.test(screen.id) && !ids.has(screen.id), '仿真 ID 非法或重复');
     ids.add(screen.id);
     requireThat(nonempty(screen.sourceTask), '缺少文稿同源任务名');
     requireThat(nonempty(screen.title) && nonempty(screen.prose) && words(screen.prose) <= limits.prose_per_screen, '任务标题或导语不合规');
+    if (typeof screen.kind === 'string') {
+      const k = screen.kind.trim().toLowerCase().replace(/_/g, '-');
+      if (/^hands[_-]?on$|^handson$|^practice$|^sandbox$|^实操$|^动手$|^操作$|^调试$|^代码/i.test(k) || k.includes('hand')) {
+        screen.kind = 'hands-on';
+      } else if (/^explore$|^exploration$|^match$|^pairing$|^inspect$|^dissect$|^concept$|^classify$|^categorize$|^adjust$|^slider$|^view$|^demo$|^探究$|^配对$|^解剖$|^观察$|^分类/i.test(k) || k.includes('explore') || k.includes('match')) {
+        screen.kind = 'explore';
+      }
+    }
     requireThat(['explore', 'hands-on'].includes(screen.kind), '任务类型非法');
     if (screen.kind === 'hands-on') handsOn++;
     requireThat(['goal', 'basicCriterion', 'starCriterion'].every(k => nonempty(screen[k])), '缺少目标或基础/进阶判据');
@@ -97,7 +108,9 @@ export function validateV2Payload(payload, gradeNum) {
 
 export function validateSourceTasks(payload, documents) {
   for (const screen of payload.screens) {
-    requireThat(Object.values(documents).length === 3 && Object.values(documents).every(text => nonempty(text) && text.includes(screen.sourceTask)),
+    const raw = String(screen.sourceTask || '').trim();
+    const clean = raw.replace(/^[一二三四五六七八0-9]+[、.：:]\s*|关卡[0-9一二三四]?[：:]\s*|任务[0-9一二三四]?[：:]\s*/g, '').trim();
+    requireThat(Object.values(documents).length === 3 && Object.values(documents).every(text => nonempty(text) && (text.includes(raw) || (clean && text.includes(clean)))),
       '探究任务名未在教案、导学单、课件中共同出现：' + screen.sourceTask);
   }
 }

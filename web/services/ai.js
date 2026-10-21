@@ -862,7 +862,10 @@ ${materialsPrompt}
       diagnostics({ type: 'audit', phase: 'classwork-v2', ...audit, legacySanitizerUsed: false });
       return [...Object.keys(filesPhase1), htmlName];
     } catch (error) {
-      diagnostics({ type: 'integrity', phase: 'classwork-v2', status: 'failed' });
+      if (raw) {
+        try { fs.writeFileSync(path.join(targetDir, 'HTML_V2_RAW_ERROR.json'), String(raw), 'utf8'); } catch {}
+      }
+      diagnostics?.({ type: 'integrity', phase: 'classwork-v2', status: 'failed' });
       throw error;
     }
   }
