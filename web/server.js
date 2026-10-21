@@ -11,6 +11,7 @@ import { dbService } from './db.js';
 import { generateLessonFiles } from './services/ai.js';
 import { runExportPipeline } from './services/pipeline.js';
 import { createZipArchive } from './services/zip.js';
+import { resolveJwtSecret } from './auth.js';
 
 dotenv.config();
 
@@ -20,7 +21,7 @@ const rootDir = path.resolve(__dirname, '..');
 
 const app = express();
 const PORT = process.env.PORT || 3800;
-const JWT_SECRET = process.env.JWT_SECRET || 'it-lesson-studio-secret-key-2026';
+const JWT_SECRET = resolveJwtSecret(dbService);
 const INVITE_CODE = process.env.INVITE_CODE || 'ZJ2026';
 
 app.use(cors());
