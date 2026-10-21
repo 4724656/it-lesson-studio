@@ -34,6 +34,7 @@ import os
 import re
 import sys
 import subprocess
+from html.parser import HTMLParser
 
 # 确保在 Windows 控制台环境下输出 UTF-8 中文字符，杜绝乱码
 if hasattr(sys.stdout, "reconfigure"):
@@ -167,6 +168,37 @@ def prose_len_of_panel(inner):
     return total, marked
 
 
+def html_completeness_errors(text):
+    """Reject missing document boundaries and unfinished raw-text/section elements.
+
+    HTMLParser ignores tag-shaped strings in comments and script/style bodies.
+    This is a completeness heuristic, not a full HTML validator or browser test.
+    """
+    class Boundaries(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.opened = {}
+            self.closed = {}
+
+        def handle_starttag(self, tag, attrs):
+            self.opened[tag] = self.opened.get(tag, 0) + 1
+
+        def handle_endtag(self, tag):
+            self.closed[tag] = self.closed.get(tag, 0) + 1
+
+    parser = Boundaries()
+    parser.feed(text)
+    parser.close()
+    errors = []
+    for tag in ("html", "head", "body"):
+        if parser.opened.get(tag) != 1 or parser.closed.get(tag) != 1:
+            errors.append("HTML 文档不完整：需要一对 <%s> 与 </%s>" % (tag, tag))
+    for tag in ("script", "style", "section"):
+        if parser.opened.get(tag, 0) != parser.closed.get(tag, 0):
+            errors.append("HTML 文档不完整：<%s> 起止标签数量不一致" % tag)
+    return errors
+
+
 def check_html(path):
     print("=" * 60)
     print("检查课堂作业 HTML:", path)
@@ -182,6 +214,8 @@ def check_html(path):
 
     if not re.search(r'<meta\s+charset="UTF-8"', text, re.I):
         fails.append('缺少 <meta charset="UTF-8">，导出 txt 会乱码')
+
+    fails.extend(html_completeness_errors(text))
 
     if not re.search(r"<title>.+</title>", text, re.S):
         warns.append("没有 <title>")

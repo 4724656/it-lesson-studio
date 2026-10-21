@@ -26,6 +26,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --frozen
+      - name: Python regression checks
+        run: |
+          uv run python tests/test_check_manifest_textbook_id.py
+          uv run python tests/test_verify_layout_manifest.py
+          uv run python tests/test_html_completeness.py
       - name: 全库门禁（0 FAIL / 0 WARN）
         run: |
           set -o pipefail

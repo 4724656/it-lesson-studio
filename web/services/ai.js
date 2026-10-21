@@ -7,6 +7,8 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..', '..');
 
 import { dbService } from '../db.js';
+import { callLlmApi } from './llm.js';
+import { createDiagnostics, assertFileMarkers, assertCompleteFiles, auditClasswork } from './generation-diagnostics.js';
 
 // 加载项目 Master Skill 作为大模型核心系统提示词
 function loadSystemPrompt() {
@@ -289,39 +291,6 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
     interactiveDesign: matched.interactiveDesign.trim(),
     codePatternHint: matched.codePatternHint.trim()
   };
-}
-
-/**
- * 通用 LLM 请求封装（支持 AbortSignal 取消与超时控制）
- */
-async function callLlmApi({ apiBase, apiKey, model, messages, temperature = 0.3, signal }) {
-  const endpoint = `${apiBase.replace(/\/+$/, '')}/chat/completions`;
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature
-    }),
-    signal
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`AI 服务请求失败 [HTTP ${response.status}]: ${errText}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || '';
-  if (!content) {
-    throw new Error('AI 未返回有效内容');
-  }
-  return content;
 }
 
 /**
@@ -737,6 +706,26 @@ export async function generateLessonFiles({
     throw new Error('未配置 AI API Key！请联系管理员在【管理后台 -> AI 接口与系统设置】中填入有效的 API Key 后再开始备课。');
   }
 
+  const diagnostics = process.env.AI_GENERATION_DIAGNOSTICS === '1' ? createDiagnostics(targetDir) : null;
+  const validate = (files, phase) => {
+    if (!diagnostics) return;
+    try {
+      assertCompleteFiles(files, phase);
+      diagnostics({ type: 'integrity', phase, status: 'passed' });
+    } catch (error) {
+      diagnostics({ type: 'integrity', phase, status: 'failed' });
+      throw error;
+    }
+  };
+  const parsePhase = (raw, phase) => {
+    try {
+      if (diagnostics) assertFileMarkers(raw, phase);
+      return parseDelimitedFiles(raw, grade, lessonTitle);
+    } catch (error) {
+      if (diagnostics) diagnostics({ type: 'integrity', phase, status: 'parse_failed' });
+      throw error;
+    }
+  };
   const systemPrompt = loadSystemPrompt();
   const gradeNum = extractGradeNum(grade);
   const limits = getGradeLimits(gradeNum);
@@ -821,11 +810,13 @@ ${materialsPrompt}
       { role: 'user', content: userMessagePhase1 }
     ],
     temperature: 0.3,
+    onMetadata: diagnostics ? metadata => diagnostics({ type: 'api', phase: 'documents', ...metadata }) : undefined,
     signal
   });
 
   // 解析并落盘前三件套
-  const filesPhase1 = parseDelimitedFiles(rawPhase1, grade, lessonTitle);
+  const filesPhase1 = parsePhase(rawPhase1, 'documents');
+  validate(filesPhase1, 'documents');
   if (!fs.existsSync(targetDir)) {
     fs.mkdirSync(targetDir, { recursive: true });
   }
@@ -937,15 +928,22 @@ ${worksheetContent.slice(0, 1000)}
       { role: 'user', content: promptPhase2 }
     ],
     temperature: 0.2,
+    onMetadata: diagnostics ? metadata => diagnostics({ type: 'api', phase: 'classwork', ...metadata }) : undefined,
     signal
   });
 
-  const filesPhase2 = parseDelimitedFiles(rawPhase2, grade, lessonTitle);
+  const filesPhase2 = parsePhase(rawPhase2, 'classwork');
+  validate(filesPhase2, 'classwork');
   for (const [filename, fileContent] of Object.entries(filesPhase2)) {
     const filePath = path.join(targetDir, filename);
     const finalContent = filename.endsWith('.html')
       ? sanitizeGeneratedClassworkHtml(fileContent, gradeNum, grade, lessonTitle)
       : fileContent.trim();
+    if (diagnostics) {
+      diagnostics({ type: 'audit', phase: 'classwork', before: auditClasswork(fileContent),
+        after: auditClasswork(finalContent), changedByLegacySanitizer: finalContent !== fileContent });
+      validate({ [filename]: finalContent }, 'classwork');
+    }
     filesPhase2[filename] = finalContent;
     fs.writeFileSync(filePath, finalContent, 'utf-8');
   }
