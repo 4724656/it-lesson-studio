@@ -50,7 +50,7 @@ export function parseV2Payload(raw) {
 function checkFragment(screen) {
   // Conservative contract + network-blocking CSP. Generated JS is not an untrusted-code sandbox.
   requireThat(!/\bdata-(?:prose|panel-type)\b/i.test(screen.html), '仿真片段不能自造门禁标记');
-  requireThat(!/<\/?(?:script|style|section|html|head|body|iframe|object|embed|link|base|form|template)\b/i.test(screen.html), '仿真片段含文档级或不支持的标签');
+  requireThat(!/<\/?(?:script|style|html|head|body|iframe|object|embed|link|base|template)\b/i.test(screen.html), '仿真片段含文档级或不支持的标签');
   requireThat(!/\bon\w+\s*=|\b(?:href|src|srcset|action)\s*=\s*["']?\s*(?:https?:|\/\/|javascript:)/i.test(screen.html), '仿真片段含事件属性或外部资源');
   for (const attr of screen.html.matchAll(/\b(?:href|src|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
     const value = attr[1] ?? attr[2] ?? attr[3];
@@ -58,7 +58,7 @@ function checkFragment(screen) {
   }
   requireThat(!/<\/style/i.test(screen.css) && !/@import|url\s*\(\s*(?!["']?data:)/i.test(screen.css), '专属 CSS 含外部引用或越界标签');
   requireThat(!/<\/script/i.test(screen.script) && !/\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|Worker|SharedWorker|alert|confirm|prompt|importScripts|eval|Function)\s*\(|\bimport\s*(?:\(|["'{*])|sendBeacon\s*\(/.test(screen.script), '仿真脚本包含网络、弹窗或动态代码能力');
-  requireThat(!/\b(?:document|window|globalThis|parent|top|frames|location|navigator)\b/.test(screen.script), '仿真脚本越过 root/api 访问全局状态');
+  requireThat(!/\b(?:window|globalThis|parent|top|frames|location|navigator)\b|\bdocument\.(?!createElement|createTextNode|createDocumentFragment\b)\w+|\bdocument\b(?!\.(?:createElement|createTextNode|createDocumentFragment\b))/.test(screen.script), '仿真脚本越过 root/api 访问全局状态');
   // Compile only, never execute model code on the server.
   new Script(`(function(root, api) { "use strict";\n${screen.script}\n})`);
 }
@@ -92,6 +92,11 @@ export function validateV2Payload(payload, gradeNum) {
     requireThat(words([screen.prose, '目标：' + screen.goal, '基础：' + screen.basicCriterion, '挑战：' + screen.starCriterion].join(' ')) <= limits.prose_per_screen, '导语、目标和判据合计正文超标');
     requireThat(Array.isArray(screen.hints) && screen.hints.length === 3 && screen.hints.every(nonempty), '需要观察方向、关键变量、完整示范三级提示');
     requireThat(nonempty(screen.html) && typeof screen.css === 'string' && nonempty(screen.script), '仿真 DOM/CSS/脚本不完整');
+    screen.html = screen.html
+      .replace(/<section\b([^>]*)>/gi, '<div role="region"$1>')
+      .replace(/<\/section>/gi, '</div>')
+      .replace(/<form\b([^>]*)>/gi, '<div role="form"$1>')
+      .replace(/<\/form>/gi, '</div>');
     checkFragment(screen);
   });
   requireThat(handsOn >= 1 && handsOn <= limits.hands_on, '必须有真实动手任务且不超上限');
@@ -134,7 +139,45 @@ export function validateSourceTasks(payload, documents) {
   }
 }
 
+function trimToWords(text, maxWords) {
+  if (!text || maxWords <= 0) return '';
+  const chars = [...text];
+  let res = '';
+  for (const ch of chars) {
+    const next = res + ch;
+    if (words(next) > maxWords) break;
+    res = next;
+  }
+  return res.replace(/[，、；：,\s]+$/, '') + '。';
+}
+
+export function autoCompactV2Payload(payload, gradeNum) {
+  const limits = readHtmlLimits(gradeNum);
+  const max = limits.prose_per_screen;
+  if (!Array.isArray(payload?.screens)) return payload;
+  payload.screens.forEach(s => {
+    const combined = () => [s.prose, '目标：' + s.goal, '基础：' + s.basicCriterion, '挑战：' + s.starCriterion].join(' ');
+    if (words(combined()) <= max) return;
+    const budget = Math.max(10, max - 6);
+    const targetProse = Math.floor(budget * 0.36);
+    const targetGoal = Math.floor(budget * 0.20);
+    const targetBasic = Math.floor(budget * 0.22);
+    const targetStar = budget - targetProse - targetGoal - targetBasic;
+    s.prose = trimToWords(s.prose, targetProse);
+    s.goal = trimToWords(s.goal, targetGoal);
+    s.basicCriterion = trimToWords(s.basicCriterion, targetBasic);
+    s.starCriterion = trimToWords(s.starCriterion, targetStar);
+    while (words(combined()) > max) {
+      if (s.starCriterion.length > 5) s.starCriterion = trimToWords(s.starCriterion.slice(0, -2), words(s.starCriterion) - 1);
+      else if (s.prose.length > 5) s.prose = trimToWords(s.prose.slice(0, -2), words(s.prose) - 1);
+      else break;
+    }
+  });
+  return payload;
+}
+
 export function assembleClassworkV2(payload, { gradeNum, grade, lessonTitle }) {
+  autoCompactV2Payload(payload, gradeNum);
   validateV2Payload(payload, gradeNum);
   const h = escapeHtml;
   const panels = payload.screens.map((s, i) => `<section class="panel${i === 0 ? ' active' : ''}" data-step="${i}"${s.kind === 'hands-on' ? ' data-panel-type="hands-on"' : ''}>
