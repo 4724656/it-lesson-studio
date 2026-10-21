@@ -34,6 +34,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 3. 本地原生环境默认运行为单机免登录便携模式 (standalone)
 const isDocker = fs.existsSync('/.dockerenv') || process.env.IS_DOCKER === 'true';
 const IS_STANDALONE = process.env.APP_MODE === 'standalone' || (process.env.APP_MODE !== 'team' && !isDocker);
+const activeTaskControllers = new Map();
 
 // 单机模式下确保存在默认用户
 if (IS_STANDALONE) {
@@ -517,6 +518,11 @@ app.post('/api/tasks/:id/cancel', authenticate, (req, res) => {
   if (task.user_id !== req.user.id && req.user.role !== 'admin') {
     return res.status(403).json({ error: '无权操作此任务' });
   }
+  const controller = activeTaskControllers.get(req.params.id);
+  if (controller) {
+    controller.abort();
+    activeTaskControllers.delete(req.params.id);
+  }
   const updated = dbService.cancelTask(req.params.id, '用户手动取消生成');
   res.json({ message: '任务已取消', task: updated });
 });
@@ -527,6 +533,13 @@ app.post('/api/tasks/:id/retry', authenticate, async (req, res) => {
   if (!task) return res.status(404).json({ error: '任务不存在' });
   if (task.user_id !== req.user.id && req.user.role !== 'admin') {
     return res.status(403).json({ error: '无权操作此任务' });
+  }
+
+  // 若旧任务仍在运行，先中止
+  const prevController = activeTaskControllers.get(task.id);
+  if (prevController) {
+    prevController.abort();
+    activeTaskControllers.delete(task.id);
   }
 
   // 重置状态为 generating
@@ -577,10 +590,16 @@ app.get('/api/preview/:id/html', authenticate, (req, res) => {
   res.type('text/html; charset=utf-8').sendFile(path.join(task.output_dir, htmlFile));
 });
 
-// 单项或打包下载
+// 单项或打包下载（鉴权保护：仅限任务所有者或管理员下载）
 app.get('/api/download/:id/:type', authenticate, async (req, res) => {
   const task = dbService.getTaskById(req.params.id);
-  if (!task || !task.output_dir || !fs.existsSync(task.output_dir)) {
+  if (!task) {
+    return res.status(404).send('任务不存在');
+  }
+  if (task.user_id !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).send('无权下载此任务的教学资料');
+  }
+  if (!task.output_dir || !fs.existsSync(task.output_dir)) {
     return res.status(404).send('任务目录不存在');
   }
 
@@ -621,8 +640,22 @@ app.get('/api/download/:id/:type', authenticate, async (req, res) => {
 
 async function startLessonGenerationPipeline(taskId, userId, grade, lessonTitle, requirements, materialsText, images) {
   const taskDir = path.join(__dirname, 'data', 'workspaces', taskId);
+  const controller = new AbortController();
+  activeTaskControllers.set(taskId, controller);
+  const { signal } = controller;
+
+  const ensureNotCancelled = () => {
+    if (signal.aborted) {
+      throw new Error('用户手动取消生成');
+    }
+    const latest = dbService.getTaskById(taskId);
+    if (!latest || latest.status === 'failed') {
+      throw new Error(latest?.error_msg || '用户手动取消生成');
+    }
+  };
 
   try {
+    ensureNotCancelled();
     // 阶段 1：AI 构思并流式生成四件套 Markdown & HTML 源码
     dbService.updateTaskProgress(taskId, {
       status: 'generating',
@@ -638,7 +671,9 @@ async function startLessonGenerationPipeline(taskId, userId, grade, lessonTitle,
       materialsText,
       images,
       targetDir: taskDir,
+      signal,
       onProgress: ({ progress, progressText }) => {
+        if (signal.aborted) return;
         dbService.updateTaskProgress(taskId, {
           status: 'generating',
           progress,
@@ -647,6 +682,7 @@ async function startLessonGenerationPipeline(taskId, userId, grade, lessonTitle,
       }
     });
 
+    ensureNotCancelled();
     // 阶段 2：调用导出流水线（Pandoc 编译 Word ➔ beautify_docx 精排 ➔ Marp CLI 导出课件）
     dbService.updateTaskProgress(taskId, {
       status: 'compiling',
@@ -654,8 +690,9 @@ async function startLessonGenerationPipeline(taskId, userId, grade, lessonTitle,
       progressText: '正在执行公文级排版与 PPTX/PDF 课件编译...'
     });
 
-    await runExportPipeline(taskDir);
+    await runExportPipeline(taskDir, { signal });
 
+    ensureNotCancelled();
     // 阶段 3：预先打好 ZIP 压缩包
     dbService.updateTaskProgress(taskId, {
       progress: 90,
@@ -666,6 +703,7 @@ async function startLessonGenerationPipeline(taskId, userId, grade, lessonTitle,
     const zipPath = path.join(taskDir, zipName);
     await createZipArchive(taskDir, zipPath);
 
+    ensureNotCancelled();
     // 完成
     dbService.updateTaskProgress(taskId, {
       status: 'completed',
@@ -674,6 +712,10 @@ async function startLessonGenerationPipeline(taskId, userId, grade, lessonTitle,
       outputDir: taskDir
     });
   } catch (err) {
+    if (signal.aborted || err.message === '用户手动取消生成') {
+      console.log(`[Task ${taskId}] 已中止: ${err.message}`);
+      return;
+    }
     console.error(`[Task ${taskId} Error]:`, err);
     dbService.updateTaskProgress(taskId, {
       status: 'failed',
@@ -681,17 +723,22 @@ async function startLessonGenerationPipeline(taskId, userId, grade, lessonTitle,
       progressText: '生成失败',
       errorMsg: err.message
     });
+  } finally {
+    if (activeTaskControllers.get(taskId) === controller) {
+      activeTaskControllers.delete(taskId);
+    }
   }
 }
 
-app.listen(PORT, '0.0.0.0', () => {
+const HOST = process.env.HOST || (IS_STANDALONE ? '127.0.0.1' : '0.0.0.0');
+app.listen(PORT, HOST, () => {
   const cleaned = dbService.cleanHangingTasks();
   if (cleaned > 0) {
     console.log(`🧹 已自动恢复/清理 ${cleaned} 个中断的生成任务`);
   }
   console.log(`\n🚀 IT Lesson Studio Web 服务已启动: http://localhost:${PORT}`);
   if (IS_STANDALONE) {
-    console.log(`✨ 运行模式: 单机便携免登录模式 (无需账号密码，即开即用)`);
+    console.log(`✨ 运行模式: 单机便携免登录模式 (仅本机 127.0.0.1 访问，无需账号密码，即开即用)`);
   } else {
     const maskedInvite = INVITE_CODE ? `${INVITE_CODE.slice(0, 2)}****` : '未配置';
     console.log(`🔑 教研组注册邀请码: ${maskedInvite} (可登录管理员后台查看或修改)`);

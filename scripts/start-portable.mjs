@@ -80,6 +80,17 @@ function checkPortInUse(port) {
   });
 }
 
+async function waitForPortReady(port, timeoutMs = 15000) {
+  const startMs = Date.now();
+  while (Date.now() - startMs < timeoutMs) {
+    if (await checkPortInUse(port)) {
+      return true;
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return false;
+}
+
 async function start() {
   const inUse = await checkPortInUse(PORT);
   if (inUse) {
@@ -89,14 +100,14 @@ async function start() {
     return;
   }
 
-  // 延迟 1.5 秒待 Express 监听就绪后自动弹出浏览器
-  setTimeout(() => {
-    openBrowser(`http://localhost:${PORT}`);
-  }, 1500);
-
-  // 直接加载并启动 Web 服务
+  // 直接加载并启动 Web 服务，待端口真正就绪后再拉起浏览器
   const serverEntry = pathToFileURL(path.join(rootDir, 'web', 'server.js')).href;
   await import(serverEntry);
+
+  const ready = await waitForPortReady(PORT);
+  if (ready) {
+    openBrowser(`http://localhost:${PORT}`);
+  }
 }
 
 start().catch((err) => {

@@ -32,9 +32,36 @@ function extractGradeNum(gradeStr) {
 }
 
 /**
- * 通用 LLM 请求封装
+ * 根据年级学期匹配浙教版 12 册教材能力进阶与仿真器启发范式（教师未指定特定设想时的兜底支架）
  */
-async function callLlmApi({ apiBase, apiKey, model, messages, temperature = 0.3 }) {
+function getSemesterSimulationHint(gradeStr) {
+  const g = (gradeStr || '').trim();
+  const map = {
+    '三年级上册': '部件高亮解剖台、虚拟浏览器下载排雷沙箱、文件分类拖拽/点选箱（侧重感知智能与在线入门，大触控、强正向反馈）',
+    '三年级下册': '图片滤镜裁剪滑块、音频波形淡入淡出调节、AI提示词联想生成台（侧重多媒体处理与AI初体验）',
+    '四年级上册': '二进制开关灯泡阵列、条形码/编码生成器、动态统计图表调节（侧重数据表示与生活编码）',
+    '四年级下册': '像素点阵取色板、ASCII 编码对照转盘、奇偶校验排雷矩阵（侧重数字化底层与校验）',
+    '五年级上册': '流程图卡片拼图槽、红绿灯/道闸分支条件切换器、生活决策树（侧重算法思维与流程图分支结构）',
+    '五年级下册': '恒温箱/自动浇花阈值仿真沙箱、循环计数累加步进器（侧重控制系统与循环结构）',
+    '六年级上册': '单步代码追踪器（人肉CPU）、二分猜数字对战台、枚举步进观察表（侧重代码实现与经典算法）',
+    '六年级下册': '双开关串并联逻辑门电路（与/或/非）、水箱水位闭环反馈调节沙箱（侧重反馈控制与逻辑运算）',
+    '七年级上册': '局域网拓扑连线与 IP 分配器、数据包逐跳路由动画、HTML标签实时预览台（侧重网络底层与拓扑搭建）',
+    '七年级下册': '传感器折线波动监控台、迷宫 DFS/BFS 寻路步进回溯动画器（侧重物联网与图搜索算法）',
+    '八年级上册': '凯撒密码移位加密转盘、网页 DOM 树节点探针、密码散列防伪实验室（侧重DOM数据与密码安全）',
+    '八年级下册': '2D 平面 KNN 动态分类面（点击加点动态重绘边界）、图像卷积核滤波观察台、神经网络权重调节器（侧重AI原理级拆解）'
+  };
+  for (const [k, v] of Object.entries(map)) {
+    if (g.includes(k) || g.includes(k.replace('册', ''))) {
+      return v;
+    }
+  }
+  return '卡片磁吸连线配对、核心概念微型解剖台、参数调节与单步流程预演沙箱';
+}
+
+/**
+ * 通用 LLM 请求封装（支持 AbortSignal 取消与超时控制）
+ */
+async function callLlmApi({ apiBase, apiKey, model, messages, temperature = 0.3, signal }) {
   const endpoint = `${apiBase.replace(/\/+$/, '')}/chat/completions`;
 
   const response = await fetch(endpoint, {
@@ -47,7 +74,8 @@ async function callLlmApi({ apiBase, apiKey, model, messages, temperature = 0.3 
       model,
       messages,
       temperature
-    })
+    }),
+    signal
   });
 
   if (!response.ok) {
@@ -285,18 +313,25 @@ export async function generateLessonFiles({
   materialsText,
   images,
   targetDir,
-  onProgress
+  onProgress,
+  signal
 }) {
   const apiBase = dbService.getSetting('ai_api_base') || process.env.AI_API_BASE || 'https://api.deepseek.com/v1';
   const apiKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
   const model = dbService.getSetting('ai_model') || process.env.AI_MODEL || 'deepseek-chat';
 
   if (!apiKey || !apiKey.trim() || apiKey.trim() === 'sk-none') {
-    throw new Error('未配置 AI API Key！请点击右上角【⚙️ AI 设置】填入您自己的 API Key 后再开始备课。');
+    throw new Error('未配置 AI API Key！请联系管理员在【管理后台 -> AI 接口与系统设置】中填入有效的 API Key 后再开始备课。');
   }
 
   const systemPrompt = loadSystemPrompt();
   const gradeNum = extractGradeNum(grade);
+  const semesterSimHint = getSemesterSimulationHint(grade);
+
+  let requirementsPrompt = '';
+  if (requirements && requirements.trim()) {
+    requirementsPrompt = `\n【🚨 教师教学设想与特别说明（最高优先级，必须100%优先遵循）】：\n${requirements.trim()}\n(特别声明：教师输入的特色情境、专属案例或机房特别要求拥有最高优先级，所有任务关卡与微型仿真器必须以此为主导量身定制，严禁机械套用教材默认情境！)\n`;
+  }
 
   let materialsPrompt = '';
   if (materialsText && materialsText.trim()) {
@@ -314,7 +349,7 @@ export async function generateLessonFiles({
 请为以下中小学信息科技课程设计前三件套教学资料（教案、导学单、课件）：
 - 授课年级：${grade}（第 ${gradeNum} 学段）
 - 课程课题：${lessonTitle}
-- 教师补充要求 / 教学意图：${requirements || '无特殊补充，请严格紧扣浙教版 2026 最新教材体系与 2022 义务教育信息科技新课标。'}
+${requirementsPrompt || '- 教师补充要求 / 教学意图：无特殊补充，请严格紧扣浙教版 2026 最新教材体系与 2022 义务教育信息科技新课标。'}
 ${materialsPrompt}
 【输出格式强制要求】：
 必须严格按照以下三个文件标记完整输出，严禁省略，保证四位一体任务同源呼应：
@@ -364,7 +399,8 @@ ${materialsPrompt}
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessagePhase1 }
     ],
-    temperature: 0.3
+    temperature: 0.3,
+    signal
   });
 
   // 解析并落盘前三件套
@@ -407,13 +443,19 @@ ${materialsPrompt}
 【课程基本信息】：
 - 授课年级：${grade}（${gradeNum}年级）
 - 课程课题：${lessonTitle}
+${requirementsPrompt}
+- 本学期（${grade}）能力进阶与仿真器启发范式（当教师未指定特定仿真形式时优先参考）：
+  ${semesterSimHint}
 - 刚才生成的教案核心内容片段：
 ${planContent.slice(0, 1800)}
 
 【导学单任务情境】：
 ${worksheetContent.slice(0, 1000)}
 
-【🚨 课堂作业.html 工业级与自动化质检铁律（必须 100% 遵守，绝不能漏！）】：
+【🚨 课堂作业.html 核心规范与自动化质检标准（必须 100% 遵守，绝不能漏！）】：
+0. **教师个性化教学设想绝对优先**：
+   - 如果教师在上方提供了【教师教学设想与特别说明】，必须 100% 优先遵循教师设想的特色情境、生活案例或仿真需求量身设计！
+   - 绝不可机械照搬教材默认案例；只有当教师未输入特殊要求时，才结合本学期推荐仿真器启发范式（${semesterSimHint}）与课题内容设计最契合的互动沙箱。
 1. **单文件纯原生断网运行**：
    - 严禁任何外部网络资源链接（严禁引入外部 CSS、CDN 或 JS 文件，全部内嵌）；
    - 头部必须包含：
@@ -438,9 +480,10 @@ ${worksheetContent.slice(0, 1000)}
    - 必须严格使用 <section class="panel active" data-step="0"> ... </section>；
    - 第 2、3、4 关使用 <section class="panel" data-step="1">、data-step="2" 等，data-step 必须从 0 到 ${maxScreens - 1} 严格连续递增！
    - 每屏包含 <div class="panel-tag">、<h2 class="panel-title">、<div class="story-box"><p data-prose>情境介绍与操作指引</p></div>、<div class="tip-box"> 和 <div class="footer-nav">；每屏说明文字段落必须加上 data-prose 属性；
-4. **本课特色微型仿真与实操环节**：
-   - 必须根据教案中的任务设计真实的交互式微型仿真器（例如：卡片磁吸连线配对、机箱/平台微型解剖台、下载流程沙箱模拟、按键模拟等）；
-   - 允许做错重试，配对或操作成功时给予即时鼓励反馈；
+4. **本课特色微型仿真与实操环节（支撑 35~40 分钟课堂动手探究）**：
+   - 必须根据教案中的任务设计真实的交互式微型仿真器（紧扣教师意图或本学期仿真范式：${semesterSimHint}）；
+   - 杜绝要求学生输入长篇文字小作文，聚焦学科精准输入（点选、拖拽/点击配对、滑块/开关调节、单步追踪、关键参数/表达式填空）；
+   - 允许做错无限重试，配对或操作成功时给予即时鼓励反馈；
 5. **终极关卡（第 ${maxScreens} 屏）：达标测验与收尾三件套（必须严格闭环）**：
    - **随堂测验 (Quiz)**：
      - JS 必须声明：const quiz = [ ... ];
@@ -475,7 +518,8 @@ ${worksheetContent.slice(0, 1000)}
       { role: 'system', content: systemPrompt },
       { role: 'user', content: promptPhase2 }
     ],
-    temperature: 0.2
+    temperature: 0.2,
+    signal
   });
 
   const filesPhase2 = parseDelimitedFiles(rawPhase2, grade, lessonTitle);
@@ -486,6 +530,19 @@ ${worksheetContent.slice(0, 1000)}
 
   const allFiles = { ...filesPhase1, ...filesPhase2 };
   return Object.keys(allFiles);
+}
+
+/**
+ * 剥离大模型可能误套在文件内容最外层的 Markdown 代码块围栏 (```markdown ... ``` 或 ```html ... ```)
+ */
+function stripOuterCodeFence(text) {
+  let s = (text || '').trim();
+  const fenceStart = /^```(?:markdown|md|html|yaml)?\s*\r?\n/i;
+  const fenceEnd = /\r?\n```\s*$/;
+  if (fenceStart.test(s) && fenceEnd.test(s)) {
+    s = s.replace(fenceStart, '').replace(fenceEnd, '').trim();
+  }
+  return s;
 }
 
 /**
@@ -502,7 +559,7 @@ function parseDelimitedFiles(rawText, grade, lessonTitle) {
 
   while ((match = fileRegex.exec(rawText)) !== null) {
     const rawName = match[1].trim();
-    const content = match[2].trim();
+    const content = stripOuterCodeFence(match[2].trim());
 
     // 格式化标准化文件名：全部带上年级前缀
     let standardName = rawName;
@@ -521,9 +578,10 @@ function parseDelimitedFiles(rawText, grade, lessonTitle) {
 
   // 兜底检查：如果大模型没有正确遵循 ===FILE: 标记，则尝试提取 html 或抛出错误
   if (Object.keys(result).length === 0) {
-    if (rawText.includes('<!DOCTYPE html>') || rawText.includes('<html')) {
+    const cleaned = stripOuterCodeFence(rawText);
+    if (cleaned.includes('<!DOCTYPE html>') || cleaned.includes('<html')) {
       const standardName = `${prefix}_课堂作业.html`;
-      result[standardName] = rawText.trim();
+      result[standardName] = cleaned;
     } else {
       throw new Error('大模型未按规范输出资料文件标记，请重试');
     }

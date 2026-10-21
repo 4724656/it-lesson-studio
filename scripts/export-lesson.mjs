@@ -78,7 +78,7 @@ export function resolvePandocCommand() {
  * 1. 优先使用单机便携版内置的 runtime/python/python(.exe)
  * 2. 其次使用项目本地虚拟环境 .venv
  * 3. 再次尝试 uv run python
- * 4. 最后回退到系统 python3
+ * 4. 最后回退到系统 python3 / python
  */
 export function resolvePythonCommand(scriptPath, extraArgs = []) {
   const bundledPy = path.join(
@@ -105,7 +105,7 @@ export function resolvePythonCommand(scriptPath, extraArgs = []) {
     return { cmd: 'uv', args: ['run', 'python', scriptPath, ...extraArgs] };
   } catch { /* 无 uv 时使用系统 python3 */ }
 
-  return { cmd: 'python3', args: [scriptPath, ...extraArgs] };
+  return { cmd: process.platform === 'win32' ? 'python' : 'python3', args: [scriptPath, ...extraArgs] };
 }
 
 export function buildMarpArgs(mdFile, outFile) {
@@ -116,10 +116,9 @@ export function buildMarpArgs(mdFile, outFile) {
 }
 
 /**
- * 解析可用的 Chrome/Chromium 二进制。
- * 顺序：环境变量 → puppeteer 缓存（真 Chrome）→ /usr/local/bin/chrome-headless →
- * 系统 google-chrome/chromium。注意 /usr/bin/chromium-browser 在本镜像中是
- * snap 假包，绝不直接采用。
+ * 解析可用的 Chrome/Chromium/Edge 二进制。
+ * 顺序：环境变量 → puppeteer 缓存（真 Chrome）→ Windows 标准 Chrome/Edge 路径 →
+ * /usr/local/bin/chrome-headless → 系统 google-chrome/chromium。
  */
 export function resolveChromePath() {
   const candidates = [];
@@ -131,19 +130,36 @@ export function resolveChromePath() {
       const versions = fs.readdirSync(cacheDir).sort().reverse();
       for (const v of versions) {
         candidates.push(path.join(cacheDir, v, 'chrome-linux64', 'chrome'));
+        candidates.push(path.join(cacheDir, v, 'chrome-win64', 'chrome.exe'));
         candidates.push(path.join(cacheDir, v, 'chrome-mac', 'Google Chrome for Testing.app',
           'Contents', 'MacOS', 'Google Chrome for Testing'));
       }
     }
   } catch { /* 忽略 */ }
-  candidates.push('/usr/local/bin/chrome-headless');
-  for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium']) {
-    try {
-      const found = execFileSync('which', [bin], { stdio: ['ignore', 'pipe', 'pipe'], shell: false })
-        .toString().trim();
-      if (found && !found.includes('chromium-browser')) candidates.push(found);
-    } catch { /* 忽略 */ }
+
+  if (process.platform === 'win32') {
+    const pf = process.env.PROGRAMFILES || 'C:\\Program Files';
+    const pfx86 = process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)';
+    const localAppData = process.env.LOCALAPPDATA || '';
+    candidates.push(
+      path.join(pf, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      path.join(pfx86, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      localAppData ? path.join(localAppData, 'Google', 'Chrome', 'Application', 'chrome.exe') : '',
+      path.join(pfx86, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      path.join(pf, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      localAppData ? path.join(localAppData, 'Microsoft', 'Edge', 'Application', 'msedge.exe') : ''
+    );
+  } else {
+    candidates.push('/usr/local/bin/chrome-headless');
+    for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium']) {
+      try {
+        const found = execFileSync('which', [bin], { stdio: ['ignore', 'pipe', 'pipe'], shell: false })
+          .toString().trim();
+        if (found && !found.includes('chromium-browser')) candidates.push(found);
+      } catch { /* 忽略 */ }
+    }
   }
+
   for (const c of candidates) {
     try {
       if (c && fs.existsSync(c) && fs.statSync(c).isFile()) {
