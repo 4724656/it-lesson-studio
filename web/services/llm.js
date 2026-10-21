@@ -36,6 +36,13 @@ export async function callLlmApi({ apiBase, apiKey, model, messages, temperature
     return content;
   } catch (error) {
     if (signal?.aborted) metadata.status = 'cancelled';
+    if (error?.name === 'TypeError' && error?.message === 'fetch failed') {
+      const cause = error.cause?.message || error.cause?.code || (error.cause ? String(error.cause) : '');
+      const detail = cause ? ` (${cause})` : '';
+      const enhancedError = new Error(`网络连接失败 [fetch failed${detail}]，请检查 API Base URL 连通性、网络代理或网络环境`);
+      enhancedError.cause = error.cause;
+      throw enhancedError;
+    }
     throw error;
   } finally {
     metadata.elapsedMs = Math.round(performance.now() - started);
