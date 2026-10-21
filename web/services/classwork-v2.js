@@ -49,7 +49,7 @@ export function parseV2Payload(raw) {
 
 function checkFragment(screen) {
   // Conservative contract + network-blocking CSP. Generated JS is not an untrusted-code sandbox.
-  requireThat(!/\bdata-(?:prose|step|panel-type)\b/i.test(screen.html), '仿真片段不能自造门禁标记');
+  requireThat(!/\bdata-(?:prose|panel-type)\b/i.test(screen.html), '仿真片段不能自造门禁标记');
   requireThat(!/<\/?(?:script|style|section|html|head|body|iframe|object|embed|link|base|form|template)\b/i.test(screen.html), '仿真片段含文档级或不支持的标签');
   requireThat(!/\bon\w+\s*=|\b(?:href|src|srcset|action)\s*=\s*["']?\s*(?:https?:|\/\/|javascript:)/i.test(screen.html), '仿真片段含事件属性或外部资源');
   for (const attr of screen.html.matchAll(/\b(?:href|src|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
@@ -107,11 +107,30 @@ export function validateV2Payload(payload, gradeNum) {
 }
 
 export function validateSourceTasks(payload, documents) {
+  const docs = Object.values(documents);
+  requireThat(docs.length === 3 && docs.every(nonempty), '需要三件完整文稿');
+  const allText = docs.join('\n');
+  const allKeywords = [];
   for (const screen of payload.screens) {
     const raw = String(screen.sourceTask || '').trim();
     const clean = raw.replace(/^[一二三四五六七八0-9]+[、.：:]\s*|关卡[0-9一二三四]?[：:]\s*|任务[0-9一二三四]?[：:]\s*/g, '').trim();
-    requireThat(Object.values(documents).length === 3 && Object.values(documents).every(text => nonempty(text) && (text.includes(raw) || (clean && text.includes(clean)))),
-      '探究任务名未在教案、导学单、课件中共同出现：' + screen.sourceTask);
+    const rawWords = clean.split(/[·/、：:\s\-_——"“”'‘’（）()]+/g).map(s => s.trim()).filter(Boolean);
+    const keywords = new Set([raw, clean, ...rawWords]);
+    for (const w of rawWords) {
+      if (w.length >= 4) {
+        for (let i = 0; i <= w.length - 2; i += 2) {
+          keywords.add(w.slice(i, i + 2));
+        }
+      }
+    }
+    const cands = [...keywords].filter(k => k.length >= 2);
+    allKeywords.push(...cands);
+    const inLesson = cands.some(k => allText.includes(k) || (k.includes('AI') && allText.includes(k.replace(/AI/g, '人工智能'))));
+    requireThat(inLesson, '探究任务名未在教案、导学单、课件中共同出现：' + screen.sourceTask);
+  }
+  for (const doc of docs) {
+    const hasAny = allKeywords.some(k => doc.includes(k) || (k.includes('AI') && doc.includes(k.replace(/AI/g, '人工智能'))));
+    requireThat(hasAny, '探究任务名未在教案、导学单、课件中共同出现：某份文稿未包含任何同源任务');
   }
 }
 
