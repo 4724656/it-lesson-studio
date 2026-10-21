@@ -80,6 +80,19 @@ function checkPortInUse(port) {
   });
 }
 
+async function checkIsOurStudio(port) {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/system/mode`, {
+      signal: AbortSignal.timeout(1200)
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Boolean(data && typeof data.standalone === 'boolean' && typeof data.hasApiKey === 'boolean');
+  } catch {
+    return false;
+  }
+}
+
 async function waitForPortReady(port, timeoutMs = 15000) {
   const startMs = Date.now();
   while (Date.now() - startMs < timeoutMs) {
@@ -92,21 +105,33 @@ async function waitForPortReady(port, timeoutMs = 15000) {
 }
 
 async function start() {
-  const inUse = await checkPortInUse(PORT);
-  if (inUse) {
-    console.log(` 💡 检测到备课工作台已在后台运行 (端口 ${PORT})，正在为您直接打开浏览器...`);
-    openBrowser(`http://localhost:${PORT}`);
-    setTimeout(() => process.exit(0), 2000);
-    return;
+  let targetPort = PORT;
+  for (let offset = 0; offset < 10; offset++) {
+    const candidate = PORT + offset;
+    const inUse = await checkPortInUse(candidate);
+    if (!inUse) {
+      targetPort = candidate;
+      break;
+    }
+    if (await checkIsOurStudio(candidate)) {
+      console.log(` 💡 检测到备课工作台已在后台运行 (端口 ${candidate})，正在为您直接打开浏览器...`);
+      openBrowser(`http://localhost:${candidate}`);
+      setTimeout(() => process.exit(0), 2000);
+      return;
+    }
+    console.log(` ⚠️ 端口 ${candidate} 已被其他程序占用，自动顺延尝试端口 ${candidate + 1}...`);
+    targetPort = candidate + 1;
   }
+
+  process.env.PORT = String(targetPort);
 
   // 直接加载并启动 Web 服务，待端口真正就绪后再拉起浏览器
   const serverEntry = pathToFileURL(path.join(rootDir, 'web', 'server.js')).href;
   await import(serverEntry);
 
-  const ready = await waitForPortReady(PORT);
+  const ready = await waitForPortReady(targetPort);
   if (ready) {
-    openBrowser(`http://localhost:${PORT}`);
+    openBrowser(`http://localhost:${targetPort}`);
   }
 }
 
