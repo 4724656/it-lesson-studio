@@ -1,5 +1,6 @@
 services:
   it-lesson-studio:
+    image: ghcr.io/4724656/it-lesson-studio:latest
     build: .
     container_name: it-lesson-studio
     restart: unless-stopped
@@ -11,3 +12,4 @@ services:
       - ./web/.env
     volumes:
       - ./web/data:/app/web/data
+

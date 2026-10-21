@@ -38,6 +38,6 @@ web/.env.*
 web/data/
 web/node_modules/
 
-# 单机便携版打包产物与免安装绿色运行时二进制目录
+# 本地打包与免安装运行时
 dist/
 runtime/

@@ -16,7 +16,8 @@
     "test": "node --test scripts/export-lesson.test.mjs",
     "web:start": "node web/server.js",
     "web:dev": "node --watch web/server.js",
-    "build:portable": "node scripts/build-portable.mjs"
+    "docker:build": "bash scripts/build-docker.sh",
+    "docker:pull": "docker compose pull"
   },
   "keywords": [
     "information-technology",

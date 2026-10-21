@@ -29,7 +29,7 @@
 1. 访问 GitHub 仓库页面，点击顶部 **Actions** 标签；
 2. 在左侧选择 **Build Windows Portable Package** 工作流，点击右上角 **Run workflow** 按钮；
 3. GitHub 云端自动化服务器将自动完成依赖安装、运行时注入与压缩打包（约 2 分钟）；
-4. 构建完成后，在页面下方的 **Artifacts** 区域即可一键秒级下载 IT-Lesson-Studio-便携版.zip！
+4. 构建完成后，在页面下方的 **Artifacts** 区域即可一键秒级下载便携版压缩包！
 
 #### 📦 方式 B：本地一键构建便携包
 如需基于当前源码制作免安装便携版：
@@ -40,12 +40,20 @@ npm run build:portable
 
 ---
 
-### 方式 2：Docker 容器化启动（推荐学校/教研组集中部署）
+### 方式 2：Docker 容器化启动（推荐学校/教研组集中部署 · 免本地编译）
 
 ```bash
+# 1. 一键拉取云端已构建镜像（免去本地 5~10 分钟漫长编译）：
+docker compose pull
+# 或使用提供的管理脚本：
+./scripts/build-docker.sh
+
+# 2. 秒级启动服务：
 docker compose up -d
 ```
 打开浏览器访问：`http://localhost:3800`
+
+> 💡 **云端自动化构建**：主分支每次更新，GitHub Actions 均会自动构建最新镜像并推送到 `ghcr.io/4724656/it-lesson-studio:latest`。您也可以运行 `./scripts/build-docker.sh --cloud` 随时触发云端重新打包。
 
 ---
 
