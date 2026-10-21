@@ -9,7 +9,8 @@ services:
     environment:
       - APP_MODE=team
     env_file:
-      - ./web/.env
+      - path: ./web/.env
+        required: false
     volumes:
       - ./web/data:/app/web/data
 

@@ -30,9 +30,11 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 智能运行模式判定：
-// 主分支 (main) 面向 Docker/服务器多用户教研团队版，默认启用团队登录鉴权模式 (team)；
-// 若显式设置 APP_MODE=standalone，则切换为单机免登录便携模式。
-const IS_STANDALONE = process.env.APP_MODE === 'standalone';
+// 1. 若显式设置 APP_MODE，以 APP_MODE 为准 (team 或 standalone)
+// 2. 若在 Docker 容器环境且未指定，则默认为团队多用户模式 (team)
+// 3. 本地原生环境默认运行为单机免登录便携模式 (standalone)
+const isDocker = fs.existsSync('/.dockerenv') || process.env.IS_DOCKER === 'true';
+const IS_STANDALONE = process.env.APP_MODE === 'standalone' || (process.env.APP_MODE !== 'team' && !isDocker);
 const activeTaskControllers = new Map();
 
 // 单机模式下确保存在默认用户
@@ -53,7 +55,7 @@ app.get('/api/textbook-catalog', (req, res) => {
   res.status(404).send('Catalog not found');
 });
 
-// 查询系统运行模式与 AI 配置概要
+// 查询系统运行模式与 AI 配置概要（仅返回前端渲染状态胶囊所需的最小字段，不暴露端点地址）
 app.get('/api/system/mode', (req, res) => {
   const currentKey = dbService.getSetting('ai_api_key') || process.env.AI_API_KEY || '';
   res.json({
@@ -433,25 +435,17 @@ app.delete('/api/admin/users/:id', authenticate, requireAdmin, (req, res) => {
   res.json({ message: '用户已删除' });
 });
 
-// 5. 获取系统配置与 AI 接口
+// 5. 获取注册邀请码（AI 配置走独立的 /api/settings/ai 端点，此处仅返回邀请码）
 app.get('/api/admin/settings', authenticate, requireAdmin, (req, res) => {
-  const settings = dbService.getAllSettings();
-  res.json({
-    ai_api_base: settings.ai_api_base || process.env.AI_API_BASE || 'http://127.0.0.1:8317/v1',
-    ai_api_key: settings.ai_api_key || process.env.AI_API_KEY || 'sk-none',
-    ai_model: settings.ai_model || process.env.AI_MODEL || 'gemini-2.5-flash',
-    invite_code: settings.invite_code || process.env.INVITE_CODE || 'ZJ2026'
-  });
+  const inviteCode = dbService.getSetting('invite_code') || process.env.INVITE_CODE || 'ZJ2026';
+  res.json({ invite_code: inviteCode });
 });
 
-// 6. 保存系统配置与 AI 接口
+// 6. 保存注册邀请码
 app.put('/api/admin/settings', authenticate, requireAdmin, (req, res) => {
-  const { ai_api_base, ai_api_key, ai_model, invite_code } = req.body;
-  if (ai_api_base !== undefined) dbService.setSetting('ai_api_base', ai_api_base.trim());
-  if (ai_api_key !== undefined) dbService.setSetting('ai_api_key', ai_api_key.trim());
-  if (ai_model !== undefined) dbService.setSetting('ai_model', ai_model.trim());
+  const { invite_code } = req.body;
   if (invite_code !== undefined) dbService.setSetting('invite_code', invite_code.trim());
-  res.json({ message: '系统设置已更新并即时生效' });
+  res.json({ message: '注册邀请码已更新并即时生效' });
 });
 
 
@@ -748,7 +742,7 @@ app.listen(PORT, HOST, () => {
   }
   console.log(`\n🚀 IT Lesson Studio Web 服务已启动: http://localhost:${PORT}`);
   if (IS_STANDALONE) {
-    console.log(`✨ 运行模式: 单机便携免登录模式 (仅本机 127.0.0.1 访问，无需账号密码)`);
+    console.log(`✨ 运行模式: 单机便携免登录模式 (仅本机 127.0.0.1 访问，无需账号密码，即开即用)`);
   } else {
     const maskedInvite = INVITE_CODE ? `${INVITE_CODE.slice(0, 2)}****` : '未配置';
     console.log(`🔑 教研组注册邀请码: ${maskedInvite} (可登录管理员后台查看或修改)`);
