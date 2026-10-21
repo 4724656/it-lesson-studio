@@ -16,13 +16,20 @@
 
 ## 🚀 快速上手
 
-### 方式 1：Docker 容器化启动（推荐）
+### 方式 1：Docker 容器化启动（推荐 · 免本地编译构建）
 
 ```bash
-# 启动服务
+# 1. 一键拉取云端已构建镜像（免去本地 5~10 分钟漫长编译）：
+docker compose pull
+# 或使用提供的管理脚本：
+./scripts/build-docker.sh
+
+# 2. 秒级启动服务：
 docker compose up -d
 ```
 打开浏览器访问：`http://localhost:3800`
+
+> 💡 **云端自动化构建**：主分支每次更新，GitHub Actions 均会自动构建最新镜像并推送到 `ghcr.io/4724656/it-lesson-studio:latest`。您也可以运行 `./scripts/build-docker.sh --cloud` 随时触发云端重新打包。
 
 ### 方式 2：本地直接运行 (Node.js >= 20)
 
