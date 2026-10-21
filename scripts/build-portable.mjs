@@ -130,7 +130,9 @@ async function createDistributionZip(sourceDir, outZip) {
     archive.on('error', (err) => reject(err));
 
     archive.pipe(output);
-    archive.directory(sourceDir, PACK_NAME);
+    // 使用 false 将目录内容直接放置在 zip 根层级；解压软件通常会默认解压到以 zip 命名的文件夹内，
+    // 这样既避免了“解压后里面还有一个同名文件夹”的双层嵌套，又保持了纯净目录结构。
+    archive.directory(sourceDir, false);
     archive.finalize();
   });
 }
@@ -158,6 +160,13 @@ async function main() {
   } else {
     console.warn('   ⚠ 未找到根目录的 启动备课工坊.bat，将跳过');
   }
+
+  // 复制 Defender 加速脚本到便携包根目录，方便教师一键提速
+  const defenderBat = path.join(rootDir, 'scripts', '一键加速本机运行(加Defender白名单).bat');
+  if (fs.existsSync(defenderBat)) {
+    fs.copyFileSync(defenderBat, path.join(TARGET_DIR, '一键加速本机运行(加Defender白名单).bat'));
+  }
+
   fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(TARGET_DIR, 'package.json'));
 
   for (const dirName of ['references', 'resources', 'skills', 'examples']) {
@@ -300,6 +309,9 @@ async function main() {
     '【常见问题】',
     '- 问：备课期间黑窗口可以关掉吗？',
     '  答：请勿关闭黑窗口（将其最小化到任务栏即可），关闭黑窗口即代表停止本地备课服务。',
+    '- 问：杀毒软件或 Windows Defender 导致初次启动或导出较慢怎么办？',
+    '  答：双击本目录下的 【一键加速本机运行(加Defender白名单).bat】，在弹出的授权提示中',
+    '      点击【是】，即可将本工作区加入免检白名单，瞬间开启极速模式！',
     '- 问：生成的历史资料保存在哪里？',
     '  答：全部保存在本目录的 web\\data\\workspaces 文件夹下，也可随时在网页右上角',
     '      【备课历史】中一键下载。',
