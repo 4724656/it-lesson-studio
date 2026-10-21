@@ -79,11 +79,11 @@ npm run web:dev
 | `APP_MODE` | `standalone` (原生) / `team` (Docker) | 运行模式：`standalone` 单机免登录，`team` 团队多用户登录 | 便携版默认为 `standalone`，容器默认为 `team` |
 | `PORT` | `3800` | Web 界面与 API 监听端口 | 宿主机按需映射即可 |
 | `INVITE_CODE` | `ZJ2026` | 教师注册专属邀请码（仅团队模式） | 首位注册用户自动成为超管免邀请码；管理员可在后台修改 |
-| `JWT_SECRET` | 内置长密钥 | 登录 Token 鉴权签名密钥 | 开箱自带安全兜底；公网部署推荐配置任意随机字符串 |
+| `JWT_SECRET` | 首次运行自动生成 | 登录 Token 鉴权签名密钥（仅团队模式） | 每台部署首次启动自动生成 256 位安全随机密钥并持久化于 SQLite（容器重启不失效）；多机集群时可显式配置统一密钥 |
 | `AI_API_BASE` | `https://api.deepseek.com/v1` | 大模型 API 端点 (OpenAI 兼容) | 可在网页端随时修改，优先级高于环境变量 |
 | `AI_API_KEY` | *(留空)* | 大模型 API 密钥 | 可在网页端输入，持久化保存在本地 SQLite |
 | `AI_MODEL` | `deepseek-chat` | 生成四件套使用的大模型名称 | 支持任意 OpenAI 兼容模型（如 DeepSeek、通义千问等） |
-| `./web/data` | *(本地目录)* | 数据持久化存储目录 | 存放用户账号、SQLite 数据库 (`app.db`) 以及生成的全套课件与打包文件 |
+| `./web/data` | *(挂载/本地目录)* | 数据持久化存储目录 | 存放用户账号、SQLite 数据库 (`studio.db`) 以及生成的全套课件与打包文件 |
 
 ---
 
