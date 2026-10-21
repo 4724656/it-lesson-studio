@@ -679,8 +679,13 @@ export function sanitizeGeneratedClassworkHtml(rawHtml, gradeNum, grade, lessonT
   });
 
   // 5. 确保 const quiz = [...]; 带分号，且题数 <= limits.quiz、题干 q: 字数 <= limits.quizStem
+  // 并自动清理大模型容易误写的非法分号（如 options: [...];, 或 correct: 1;,）
   html = html.replace(/const\s+quiz\s*=\s*\[([\s\S]*?)\]\s*;?/m, (full, body) => {
-    const fixedBody = body.replace(/(\bq\s*:\s*)(["'])((?:\\.|(?!\2).)*)\2/g, (qm, prefix, quote, stemText) => {
+    let cleanBody = body
+      .replace(/\]\s*;\s*,/g, '],')
+      .replace(/;\s*,/g, ',')
+      .replace(/;\s*([}\]])/g, '$1');
+    const fixedBody = cleanBody.replace(/(\bq\s*:\s*)(["'])((?:\\.|(?!\2).)*)\2/g, (qm, prefix, quote, stemText) => {
       if (countVisibleWords(stemText) > limits.quizStem) {
         const trimmed = trimToVisibleWords(stemText, limits.quizStem).replace(/。$/, '？');
         return `${prefix}${quote}${trimmed}${quote}`;
@@ -690,12 +695,21 @@ export function sanitizeGeneratedClassworkHtml(rawHtml, gradeNum, grade, lessonT
     return `const quiz = [${fixedBody}];`;
   });
 
-  // 6. 确保包含“我还没完全懂”自评出口
+  // 6. 全局清理脚本中可能残留的对象字面量非法分号（如 ];, 或 };,）
+  html = html.replace(/(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi, (m, start, scriptBody, end) => {
+    const sanitizedScript = scriptBody
+      .replace(/\]\s*;\s*,/g, '],')
+      .replace(/}\s*;\s*,/g, '},')
+      .replace(/;\s*,/g, ',');
+    return `${start}${sanitizedScript}${end}`;
+  });
+
+  // 7. 确保包含“我还没完全懂”自评出口
   if (!html.includes('还没完全懂')) {
     html = html.replace(/<\/main>/i, `<div style="display:none">我还没完全懂，需要老师或同伴帮助</div>\n</main>`);
   }
 
-  // 7. 彻底消除阻塞学生的 alert(...) 弹窗（转为 console.info 非阻塞提示）
+  // 8. 彻底消除阻塞学生的 alert(...) 弹窗（转为 console.info 非阻塞提示）
   html = html.replace(/\balert\s*\(/g, 'console.info(');
 
   return html;
@@ -891,7 +905,7 @@ ${worksheetContent.slice(0, 1000)}
    - 关卡内的随堂巩固单选题必须支持**“答错温和提示可无限重选，答对后变绿锁定”**。
 5. **终极关卡（第 ${maxScreens} 屏，data-step="${maxScreens - 1}"）：达标测验与收尾五件套（100% 闭环，零 alert 弹窗！）**：
    - **① 随堂测验 (Quiz)**：
-     * JS 必须严格声明：\`const quiz = [ { q: "题干", options: ["A. ...", "B. ...", "C. ..."], correct: 0 }, ... ];\`（注意末尾分号 \`;\` 绝不可漏！）；
+     * JS 必须严格声明：\`const quiz = [ { q: "题干", options: ["A. ...", "B. ...", "C. ..."], correct: 0 }, ... ];\`（整条语句末尾必须带分号 \`;\`，但数组内部各项之间必须用逗号 \`,\` 分隔，严禁在 options 数组后误写分号！）；
      * 🚨 题数与题干字数铁律：${gradeNum}年级**严格只能有 ${maxQuiz} 道题**！每道题 \`q:\` 题干字数**必须严格 ≤ ${maxQuizStem} 字**！
      * 规则：**先选后判**！点击选项只加 \`.picked\` 高亮，绝不提前标红绿；点击【✍️ 提交测验并判分】后统一标出 \`.correct\` / \`.wrong\`、锁定列表并展示得分横幅（若未答完在页面状态栏温和提示，**严禁调用 alert()**）。
    - **② 通关徽章墙 (medal)**：

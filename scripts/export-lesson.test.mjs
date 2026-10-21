@@ -97,7 +97,7 @@ test('Phase 2 仿真蓝图匹配器: 精准识别 12 册典型课型并尊重教
 test('Phase 2 HTML 合规微调器: 自动修正超标字数/多余hands-on/alert弹窗并通过 check_lesson.py 0 FAIL 0 WARN', async () => {
   const { sanitizeGeneratedClassworkHtml } = await import('../web/services/ai.js');
 
-  // 构造一份故意带有多种门禁瑕疵的 3 年级课堂作业 HTML
+  // 构造一份故意带有多种门禁瑕疵与大模型常见误写分号的 3 年级课堂作业 HTML
   const dirtyHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -123,7 +123,7 @@ test('Phase 2 HTML 合规微调器: 自动修正超标字数/多余hands-on/aler
 <script>
 const stepLabels = ['破冰', '解剖', '实操', '评价'];
 const quiz = [
-  { q: "这是一道故意写得特别特别长超过三十个字上限的三年级随堂测验题干用来验证自动精简功能？", options: ["A", "B"], correct: 0 },
+  { q: "这是一道故意写得特别特别长超过三十个字上限的三年级随堂测验题干用来验证自动精简功能？", options: ["A", "B"];, correct: 0 },
   { q: "2. 下载文件时应该点击哪个按钮？", options: ["A. 官方下载", "B. 广告弹窗"], correct: 0 }
 ]
 function exportReport() {
@@ -139,6 +139,7 @@ function exportReport() {
   const cleanHtml = sanitizeGeneratedClassworkHtml(dirtyHtml, 3, '三年级上册', '第7课 下载平台资源');
   assert.ok(!cleanHtml.includes('alert('), '不应残留阻塞式 alert() 弹窗');
   assert.ok(cleanHtml.includes('还没完全懂'), '应自动补齐心理安全出口自评项');
+  assert.ok(!cleanHtml.includes('];,'), '应自动消除 options 后的非法分号');
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'itls-html-check-'));
   const tmpHtmlPath = path.join(tmpDir, '三年级上册_第7课_课堂作业.html');
@@ -162,3 +163,44 @@ function exportReport() {
   }
 });
 
+test('check_lesson.py: 精准拦截内联 JavaScript 语法错误，严防白屏瘫痪探究舱交付', async () => {
+  const brokenHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>测试课堂作业｜课堂作业</title><meta name="lesson-grade" content="3"></head>
+<body>
+<main>
+  <section class="panel active" data-step="0" data-panel-type="hands-on"><p data-prose>测试第一关</p></section>
+  <section class="panel" data-step="1"><p data-prose>测试第二关</p><div class="medal-wall">medal</div><div>还没完全懂</div></section>
+</main>
+<script>
+const stepLabels = ['关卡1', '关卡2'];
+const quiz = [ { q: '题干', options: ['A', 'B'];, correct: 0 } ];
+function finish() { const b = new Blob(['# 班级|姓名|标题|100|2026']); const a = document.createElement('a'); a.download = 'a.txt'; }
+</script>
+</body></html>`;
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'itls-broken-check-'));
+  const tmpHtmlPath = path.join(tmpDir, '测试_课堂作业.html');
+  fs.writeFileSync(tmpHtmlPath, brokenHtml, 'utf-8');
+
+  try {
+    let pyRunner = 'uv';
+    let runnerArgs = ['run', 'python', 'scripts/check_lesson.py', tmpHtmlPath];
+    try {
+      runCmd('uv', ['--version'], { stdio: 'ignore' });
+    } catch {
+      pyRunner = process.platform === 'win32' ? 'python' : 'python3';
+      runnerArgs = ['scripts/check_lesson.py', tmpHtmlPath];
+    }
+    let out = '';
+    try {
+      out = runCmd(pyRunner, runnerArgs, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+    } catch (err) {
+      out = (err.stdout ? err.stdout.toString() : '') + (err.stderr ? err.stderr.toString() : '');
+    }
+    assert.ok(out.includes('[FAIL]'), `存在 JS 语法错误时必须报 FAIL，实际输出:\n${out}`);
+    assert.ok(out.includes('JavaScript 语法错误'), `报错中必须明确指出 JavaScript 语法错误，实际输出:\n${out}`);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});

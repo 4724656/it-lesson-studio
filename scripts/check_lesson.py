@@ -33,6 +33,7 @@
 import os
 import re
 import sys
+import subprocess
 
 # 确保在 Windows 控制台环境下输出 UTF-8 中文字符，杜绝乱码
 if hasattr(sys.stdout, "reconfigure"):
@@ -270,6 +271,39 @@ def check_html(path):
     # 必须留"还没懂"的出口
     if "还没完全懂" not in text:
         warns.append('缺少"我还没完全懂"这一自我评价项')
+
+    # 检验内嵌 JavaScript 语法合法性（防止由于 SyntaxError 导致探究舱在机房浏览器中完全瘫痪）
+    scripts = re.findall(r'<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>', text, re.S)
+    for idx, sc in enumerate(scripts, 1):
+        sc_clean = sc.strip()
+        if not sc_clean:
+            continue
+        try:
+            proc = subprocess.run(
+                ["node", "--check"],
+                input=sc_clean,
+                text=True,
+                capture_output=True,
+                encoding="utf-8",
+                timeout=5
+            )
+            if proc.returncode != 0:
+                proc_mod = subprocess.run(
+                    ["node", "--input-type=module", "--check"],
+                    input=sc_clean,
+                    text=True,
+                    capture_output=True,
+                encoding="utf-8",
+                    timeout=5
+                )
+                if proc_mod.returncode != 0:
+                    err_lines = [ln.strip() for ln in proc.stderr.splitlines() if ln.strip()]
+                    syntax_err = next((ln for ln in err_lines if "Error" in ln), err_lines[0] if err_lines else "SyntaxError")
+                    fails.append("第 %d 个 <script> 存在 JavaScript 语法错误: %s" % (idx, syntax_err))
+        except FileNotFoundError:
+            pass
+        except Exception as ex:
+            warns.append("JS 脚本语法校验未完成: %s" % ex)
 
     for w in warns:
         print("  [WARN]", w)
