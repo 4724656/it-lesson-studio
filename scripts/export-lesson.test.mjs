@@ -145,7 +145,15 @@ function exportReport() {
   fs.writeFileSync(tmpHtmlPath, cleanHtml, 'utf-8');
 
   try {
-    const out = runCmd('uv', ['run', 'python', 'scripts/check_lesson.py', tmpHtmlPath], {
+    let pyRunner = 'uv';
+    let runnerArgs = ['run', 'python', 'scripts/check_lesson.py', tmpHtmlPath];
+    try {
+      runCmd('uv', ['--version'], { stdio: 'ignore' });
+    } catch {
+      pyRunner = process.platform === 'win32' ? 'python' : 'python3';
+      runnerArgs = ['scripts/check_lesson.py', tmpHtmlPath];
+    }
+    const out = runCmd(pyRunner, runnerArgs, {
       stdio: ['ignore', 'pipe', 'pipe']
     }).toString();
     assert.ok(out.includes('[OK] 全部检查通过'), `check_lesson.py 应全部通过，实际输出:\n${out}`);
