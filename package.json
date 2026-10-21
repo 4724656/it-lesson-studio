@@ -13,11 +13,12 @@
   "scripts": {
     "export:lesson": "node scripts/export-lesson.mjs",
     "check:lesson": "uv run python scripts/check_lesson.py",
-    "test": "node --test scripts/export-lesson.test.mjs scripts/auth.test.mjs scripts/generation-diagnostics.test.mjs",
+    "test": "node --test scripts/export-lesson.test.mjs scripts/auth.test.mjs scripts/generation-diagnostics.test.mjs scripts/classwork-v2.test.mjs",
     "web:start": "node web/server.js",
     "web:dev": "node --watch web/server.js",
     "docker:build": "bash scripts/build-docker.sh",
-    "docker:pull": "docker compose pull"
+    "docker:pull": "docker compose pull",
+    "test:classwork-browser": "node --test scripts/classwork-v2.browser.test.mjs"
   },
   "keywords": [
     "information-technology",
@@ -32,5 +33,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
   }
 }

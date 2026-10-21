@@ -34,6 +34,7 @@ import os
 import re
 import sys
 import subprocess
+import json
 from html.parser import HTMLParser
 
 # 确保在 Windows 控制台环境下输出 UTF-8 中文字符，杜绝乱码
@@ -132,6 +133,12 @@ def count_quiz_questions(text):
     m = re.search(r"const quiz\s*=\s*\[(.*?)\];", text, re.S)
     if not m:
         return None
+    try:
+        items = json.loads('[' + m.group(1) + ']')
+        if isinstance(items, list):
+            return len(items)
+    except (ValueError, TypeError):
+        pass
     return len(re.findall(r"\bq\s*:", m.group(1)))
 
 
@@ -141,6 +148,12 @@ def quiz_stems(text):
     if not m:
         return []
     body = m.group(1)
+    try:
+        items = json.loads('[' + body + ']')
+        if isinstance(items, list):
+            return [item['q'] for item in items if isinstance(item, dict) and isinstance(item.get('q'), str)]
+    except (ValueError, TypeError):
+        pass
     stems = re.findall(r'\bq\s*:\s*"([^"]*)"', body)
     stems += re.findall(r"\bq\s*:\s*'([^']*)'", body)
     return stems

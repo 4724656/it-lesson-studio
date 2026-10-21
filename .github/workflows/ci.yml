@@ -41,6 +41,18 @@ jobs:
           ! printf '%s\n' "$OUT" | grep -Fq '[FAIL]'
           printf '%s\n' "$OUT" | tail -n 1 | grep -Fqx '合计: 0 个错误, 0 个提醒'
 
+  classwork-v2-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Offline HTML V2 browser interactions
+        run: npm run test:classwork-browser
+
   export-pipeline:
     runs-on: ubuntu-latest
     steps:

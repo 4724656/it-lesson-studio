@@ -8,13 +8,17 @@ const rootDir = path.resolve(__dirname, '..', '..');
 
 import { dbService } from '../db.js';
 import { callLlmApi } from './llm.js';
+import { buildV2Prompt, parseV2Payload, assembleClassworkV2, publishClassworkV2, validateSourceTasks } from './classwork-v2.js';
 import { createDiagnostics, assertFileMarkers, assertCompleteFiles, auditClasswork } from './generation-diagnostics.js';
 
-// 加载项目 Master Skill 作为大模型核心系统提示词
-function loadSystemPrompt() {
-  const skillPath = path.join(rootDir, 'skills', 'it-lesson-studio', 'SKILL.md');
+// V1 uses its frozen baseline; V2 reads the main Skill and loads module 4 by stage.
+function loadSystemPrompt(useV2 = false) {
+  const skillPath = useV2
+    ? path.join(rootDir, 'skills', 'it-lesson-studio', 'SKILL.md')
+    : path.join(rootDir, 'resources', 'prompts', 'legacy-skill-v1.md');
   if (fs.existsSync(skillPath)) {
-    return fs.readFileSync(skillPath, 'utf-8');
+    const text = fs.readFileSync(skillPath, 'utf-8');
+    return useV2 ? text.slice(0, text.indexOf('### 模块四：')) : text;
   }
   return '你是一位中小学信息科技特级教师，擅长设计教案、导学单、课件和随堂作业。';
 }
@@ -706,7 +710,8 @@ export async function generateLessonFiles({
     throw new Error('未配置 AI API Key！请联系管理员在【管理后台 -> AI 接口与系统设置】中填入有效的 API Key 后再开始备课。');
   }
 
-  const diagnostics = process.env.AI_GENERATION_DIAGNOSTICS === '1' ? createDiagnostics(targetDir) : null;
+  const useV2 = process.env.AI_HTML_GENERATOR === 'v2';
+  const diagnostics = useV2 || process.env.AI_GENERATION_DIAGNOSTICS === '1' ? createDiagnostics(targetDir) : null;
   const validate = (files, phase) => {
     if (!diagnostics) return;
     try {
@@ -726,7 +731,7 @@ export async function generateLessonFiles({
       throw error;
     }
   };
-  const systemPrompt = loadSystemPrompt();
+  const systemPrompt = loadSystemPrompt(useV2);
   const gradeNum = extractGradeNum(grade);
   const limits = getGradeLimits(gradeNum);
   const simBlueprint = resolveSimulationBlueprint(grade, lessonTitle, requirements);
@@ -829,12 +834,37 @@ ${materialsPrompt}
   // 读取已生成的教案或导学单概要，作为阶段 2 HTML 生成的强咬合上下文
   const planContent = Object.values(filesPhase1).find((_, idx) => Object.keys(filesPhase1)[idx].includes('教案')) || '';
   const worksheetContent = Object.values(filesPhase1).find((_, idx) => Object.keys(filesPhase1)[idx].includes('导学')) || '';
+  const slidesContent = Object.values(filesPhase1).find((_, idx) => Object.keys(filesPhase1)[idx].includes('课件')) || '';
 
   // =========================================================================
   // 阶段 2：基于教案与导学单，专门深度生成“课堂作业.html”（数字化探究舱）
   // =========================================================================
   if (onProgress) {
     onProgress({ progress: 45, progressText: '正在基于教案关卡深度定制微型仿真器与单文件课堂作业...' });
+  }
+
+  if (useV2) {
+    const prompt = buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent });
+    const raw = await callLlmApi({ apiBase, apiKey, model,
+      messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
+      temperature: 0.2, signal,
+      onMetadata: metadata => diagnostics({ type: 'api', phase: 'classwork-v2', ...metadata })
+    });
+    try {
+      const payload = parseV2Payload(raw);
+      const html = assembleClassworkV2(payload, { gradeNum, grade, lessonTitle });
+      validateSourceTasks(payload, { planContent, worksheetContent, slidesContent });
+      const htmlName = Object.keys(filesPhase1).find(name => name.endsWith('_教案.md')).replace(/_教案\.md$/, '_课堂作业.html');
+      // Prepare teacher notes first; an I/O failure must not follow HTML replacement.
+      // Plain text does not enter the mature Markdown -> Word compilation path.
+      fs.writeFileSync(path.join(targetDir, 'HTML_V2_教师说明.txt'), payload.teacherNotes.join('\n') + '\n', 'utf8');
+      const audit = publishClassworkV2(html, path.join(targetDir, htmlName), { signal });
+      diagnostics({ type: 'audit', phase: 'classwork-v2', ...audit, legacySanitizerUsed: false });
+      return [...Object.keys(filesPhase1), htmlName];
+    } catch (error) {
+      diagnostics({ type: 'integrity', phase: 'classwork-v2', status: 'failed' });
+      throw error;
+    }
   }
 
   const { screens: maxScreens, handsOn: maxHandsOn, quiz: maxQuiz, prosePerScreen: maxProse, quizStem: maxQuizStem } = limits;

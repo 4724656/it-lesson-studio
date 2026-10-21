@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="lesson-grade" content="4"><meta name="lesson-engine" content="v2">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>二进制灯泡｜课堂作业</title><style>
+  :root{
+    --paper:#F7F4EC;
+    --panel:#FFFFFF;
+    --ink:#22333B;
+    --ink-soft:#5C6B73;
+    --river:#2F6C8E;
+    --river-deep:#1F4E66;
+    --grass:#6E9B5E;
+    --grass-deep:#4F7A41;
+    --sun:#E3A038;
+    --sun-deep:#C6821F;
+    --danger:#C1554D;
+    --line:#E1DACB;
+    --radius:14px;
+    --shadow:0 4px 0 rgba(34,51,59,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Heiti SC",sans-serif;
+    line-height:1.6; padding-bottom:60px;
+  }
+  .code{ font-family:"SFMono-Regular",Consolas,"Courier New",monospace; }
+
+  /* ---------- Header / Stepper ---------- */
+  header.top{
+    position:sticky; top:0; z-index:50;
+    background:linear-gradient(135deg,#2E5E3F,#4F7A41);
+    color:#fff; padding:14px 20px 10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+  }
+  .top-title{ display:flex; align-items:baseline; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
+  .top-title h1{ font-size:19px; margin:0; font-weight:700; letter-spacing:0.5px; }
+  .top-title span{ font-size:12px; color:#D8E9CE; }
+  .stepper{ display:flex; justify-content:center; gap:4px; flex-wrap:wrap; max-width:900px; margin:0 auto; }
+  .dot{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    cursor:pointer; padding:4px 6px; border-radius:8px; opacity:0.55; transition:opacity .2s;
+  }
+  .dot:hover{opacity:0.85;}
+  .dot.active{opacity:1;}
+  .dot .circle{
+    width:22px;height:22px;border-radius:50%;background:#3E6B4F;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px; font-weight:700; border:2px solid transparent;
+  }
+  .dot.active .circle{ background:var(--sun); color:#3A2C0E; border-color:#fff;}
+  .dot.done .circle{ background:var(--sun); color:#3A2C0E;}
+  .dot .label{font-size:10px; color:#E2EFD9; white-space:nowrap;}
+
+  /* ---------- Layout ---------- */
+  main{max-width:760px; margin:26px auto; padding:0 16px;}
+  .panel{
+    display:none; background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px 24px 22px; animation:fadeIn .35s ease;
+  }
+  .panel.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+  .eyebrow{ font-size:13px; color:var(--grass-deep); font-weight:700; margin-bottom:4px; }
+  h2.panel-title{ font-size:22px; margin:0 0 14px; color:var(--ink); }
+  h3.sub-title{ font-size:16px; margin:18px 0 8px; color:var(--river-deep); }
+  p{margin:0 0 12px;}
+  ul.body-list{ margin:0 0 12px; padding-left:22px; }
+  .hint{
+    background:#F1F6EE; border:1px solid #DCE9D6; color:var(--grass-deep);
+    border-radius:10px; padding:10px 14px; font-size:14px; margin:14px 0;
+  }
+  .think{
+    background:#FBF1E1; border:1px solid #F0DDB6; color:var(--sun-deep);
+    border-radius:10px; padding:10px 14px; font-size:14px; margin:14px 0;
+  }
+  .story{
+    background:#F3F7FA; border-left:4px solid var(--river);
+    border-radius:0 10px 10px 0; padding:12px 16px; font-size:15px; margin:14px 0;
+  }
+  .story b{ color:var(--river-deep); }
+
+  /* ---------- Nav / buttons ---------- */
+  .nav-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:22px; padding-top:16px; border-top:1px dashed var(--line);
+  }
+  button{
+    font-family:inherit; cursor:pointer; border:none; border-radius:10px;
+    padding:10px 18px; font-size:14px; font-weight:700;
+  }
+  .btn-primary{ background:var(--grass); color:#fff; }
+  .btn-primary:hover{ background:var(--grass-deep); }
+  .btn-secondary{ background:#EDEAE0; color:var(--ink); }
+  .btn-secondary:hover{ background:#E2DED0; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-sun{ background:var(--sun); color:#3A2C0E; }
+  .btn-sun:hover{ background:var(--sun-deep); color:#fff; }
+
+  /* ---------- Generic stage / stat ---------- */
+  .stage{
+    background:#FBF9F3; border:2px dashed var(--line); border-radius:14px;
+    min-height:150px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:8px; margin:14px 0; text-align:center; padding:16px;
+  }
+  .stat-row{ display:flex; gap:16px; align-items:center; justify-content:center; margin:16px 0; flex-wrap:wrap; }
+  .stat{
+    text-align:center; background:#FBF9F3; border:1px solid var(--line);
+    border-radius:12px; padding:14px 22px; min-width:120px;
+  }
+  .stat .num{ font-size:34px; font-weight:800; color:var(--river-deep); }
+  .stat .lbl{ font-size:13px; color:var(--ink-soft); }
+  .msg-line{ min-height:22px; font-size:14px; font-weight:700; }
+  .msg-ok{ color:var(--grass-deep); }
+  .msg-bad{ color:var(--danger); }
+  .msg-info{ color:var(--river); }
+  .log-box{
+    font-size:13px; color:var(--ink-soft); background:#FAFAF6; border:1px dashed var(--line);
+    border-radius:8px; padding:8px 12px; max-height:120px; overflow-y:auto;
+  }
+  .btn-row{ display:flex; gap:10px; justify-content:center; margin:14px 0; flex-wrap:wrap; }
+
+  /* ---------- Quiz / options ---------- */
+  .option-list{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+  .option{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:10px; cursor:pointer; background:#FCFBF7;
+    transition:border-color .15s, background .15s;
+  }
+  .option:hover{ border-color:var(--grass); }
+  .option.picked{ border-color:var(--river); background:#EAF2F6; }
+  .option.correct{ border-color:var(--grass); background:#EAF4E6; }
+  .option.wrong{ border-color:var(--danger); background:#F8EAE9; }
+  .option input{ pointer-events:none; }
+  /* 答对后锁定：其余选项淡出，鼠标不再是可点手型 */
+  .option-list.locked .option{ cursor:default; }
+  .option-list.locked .option:not(.correct){ opacity:.5; }
+  .feedback{ font-size:14px; font-weight:700; margin-top:10px; min-height:20px; }
+  .feedback.ok{ color:var(--grass-deep); }
+  .feedback.bad{ color:var(--danger); }
+
+  /* ---------- Sortable list ---------- */
+  .sort-list{ display:flex; flex-direction:column; gap:8px; margin:14px 0; }
+  .sort-item{
+    background:#FCFBF7; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    cursor:grab; display:flex; gap:10px; align-items:flex-start; font-size:14px;
+  }
+  .sort-item.dragging{ opacity:0.4; }
+  .sort-item .handle{ color:var(--ink-soft); font-size:16px; }
+  .sort-item.correct{ border-color:var(--grass); background:#EAF4E6; }
+  .sort-item.wrong{ border-color:var(--danger); background:#F8EAE9; }
+
+  /* ---------- Flowchart ---------- */
+  .flow{ display:flex; flex-direction:column; align-items:center; gap:4px; margin:16px 0; }
+  .fdrop{
+    min-width:200px; text-align:center; padding:10px 18px; border-radius:8px; font-size:14px;
+    border:2px dashed var(--river); background:#F6FAFB; color:var(--ink-soft);
+    transition:background .15s, border-color .15s;
+  }
+  .fdrop.oval{ border-radius:30px; }
+  .fdrop.decision{ border-color:var(--sun-deep); background:#FCF6EA; }
+  .fdrop.dragover{ background:#EAF2F6; border-style:solid; }
+  .fdrop.filled{ border-style:solid; color:var(--ink); background:#EEF5F8; }
+  .fdrop.decision.filled{ background:#FBF1E1; }
+  .fdrop.correct{ border-color:var(--grass); background:#EAF4E6; color:var(--ink); }
+  .fdrop.wrong{ border-color:var(--danger); background:#F8EAE9; color:var(--ink); }
+  .chip-bank{
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:16px 0;
+    padding:12px; background:#FAFAF6; border:1px dashed var(--line); border-radius:10px;
+  }
+  .fchip{
+    padding:8px 14px; border-radius:8px; background:#FCFBF7; border:1px solid var(--river);
+    color:var(--ink); font-size:13px; cursor:grab; user-select:none;
+  }
+  .fchip:hover{ border-color:var(--river-deep); background:#EAF2F6; }
+  .fchip.used{ opacity:0.3; pointer-events:none; cursor:default; }
+  .fchip.dragging{ opacity:0.4; }
+  .fnode{
+    padding:9px 16px; font-size:13px; text-align:center; cursor:pointer; max-width:280px;
+    border:2px solid var(--river); background:#EEF5F8; transition:transform .15s, background .15s;
+  }
+  .fnode:hover{ transform:scale(1.03); }
+  .fnode.active{ background:var(--sun); border-color:var(--sun-deep); color:#3A2C0E; }
+  .fnode.oval{ border-radius:30px; }
+  .fnode.decision{ background:#FBF1E1; border-color:var(--sun-deep); }
+  .fnode.decision.active{ background:var(--sun-deep); color:#fff; }
+  .arrow{ font-size:16px; color:var(--ink-soft); }
+  .fexplain{
+    min-height:50px; background:#FAFAF6; border:1px solid var(--line); border-radius:10px;
+    padding:10px 14px; font-size:13px; margin-top:6px; color:var(--ink-soft); text-align:center;
+  }
+
+  /* ---------- Code stepper ---------- */
+  pre.codeblock{
+    background:#22333B; color:#DCEFE0; padding:14px 10px; border-radius:10px;
+    font-size:13px; overflow-x:auto; line-height:1.6; margin:12px 0;
+    font-family:"SFMono-Regular",Consolas,"Courier New",monospace;
+  }
+  pre.codeblock .cm{ color:#8AA6AE; }
+  pre.codeblock .kw{ color:#E3A038; }
+  pre.codeblock .st{ color:#9AD0C2; }
+  .codeline{ display:flex; gap:10px; padding:1px 8px; border-radius:6px; white-space:pre; }
+  .codeline .ln{ color:#7E99A1; width:16px; text-align:right; flex:none; user-select:none; }
+  .codeline.hl{ background:rgba(227,160,56,0.28); }
+  .run-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+  .run-note{
+    background:#FBF1E1; border:1px solid #F0DDB6; color:var(--sun-deep);
+    border-radius:10px; padding:10px 14px; font-size:14px; margin:10px 0; min-height:44px;
+  }
+  .vars-row{ display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
+  .var-card{
+    background:#FBF9F3; border:1px solid var(--line); border-radius:10px;
+    padding:8px 16px; text-align:center; min-width:88px;
+  }
+  .var-card .vn{ font-size:12px; color:var(--ink-soft); }
+  .var-card .vv{ font-size:20px; font-weight:800; color:var(--river-deep); font-family:Consolas,monospace; }
+
+  /* ---------- Forms ---------- */
+  textarea{
+    width:100%; min-height:90px; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-family:inherit; font-size:14px; resize:vertical;
+  }
+  input[type=text]{
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:14px;
+  }
+  .check-row{ display:flex; align-items:flex-start; gap:10px; padding:8px 0; }
+  .check-row input{ margin-top:4px; }
+  .score-box{
+    text-align:center; margin:16px 0; padding:16px; border-radius:12px;
+    background:#EEF5F8; border:1px solid var(--line);
+  }
+  .score-box .big{ font-size:30px; font-weight:800; color:var(--river-deep); }
+
+  /* ---------- Medals ---------- */
+  .medals{ display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; }
+  .medal{
+    display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:20px;
+    padding:8px 14px; font-size:13px; background:#FCFBF7; color:var(--ink-soft);
+  }
+  .medal.got{ border-color:var(--grass); background:#EAF4E6; color:var(--grass-deep); font-weight:700; }
+
+  /* ---------- Interactive Match (SVG Connecting Lines) ---------- */
+  .match-box{
+    position:relative; background:#FCFBF7; border:1px solid var(--line);
+    border-radius:var(--radius); padding:24px 20px; margin:16px 0; user-select:none;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .match-svg{
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    pointer-events:none; z-index:2; overflow:visible;
+  }
+  .match-svg path.match-line{
+    fill:none; stroke:var(--river); stroke-width:3; stroke-linecap:round;
+    transition:stroke .2s, stroke-width .2s; pointer-events:stroke; cursor:pointer;
+  }
+  .match-svg path.match-line:hover{ stroke:var(--danger); stroke-width:4.5; }
+  .match-svg path.match-line.drag{
+    fill:none; stroke:var(--sun); stroke-width:3; stroke-dasharray:6,4;
+    pointer-events:none;
+  }
+  .match-svg path.match-line.correct{ stroke:var(--grass-deep); stroke-width:3.5; }
+  .match-svg path.match-line.wrong{ stroke:var(--danger); stroke-width:3.5; stroke-dasharray:6,4; }
+
+  .match-cols{
+    display:grid; grid-template-columns:1fr 1fr; gap:48px; position:relative; z-index:3;
+  }
+  .match-col{ display:flex; flex-direction:column; gap:14px; }
+  .match-card{
+    background:#FFFFFF; border:1.5px solid var(--line); border-radius:10px;
+    padding:10px 14px; display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; transition:border-color .15s, background .15s, transform .15s;
+    min-height:50px; box-shadow:0 2px 4px rgba(34,51,59,0.04);
+  }
+  .match-card:hover{ border-color:var(--river); background:#F4F8FA; }
+  .match-card.active{
+    border-color:var(--sun-deep); background:#FCF6EA;
+    box-shadow:0 0 0 2px rgba(227,160,56,0.25);
+  }
+  .match-card.connected{ border-color:var(--river); background:#F0F6F9; }
+  .match-card.correct{ border-color:var(--grass-deep); background:#EAF4E6; }
+  .match-card.wrong{ border-color:var(--danger); background:#FBEFEF; animation:shake .3s ease; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+
+  .match-card .card-text{ font-size:14px; font-weight:600; color:var(--ink); flex:1; }
+  .match-dot{
+    width:14px; height:14px; border-radius:50%; background:#FFF; border:2.5px solid var(--ink-soft);
+    flex-shrink:0; transition:all .2s; box-sizing:border-box;
+  }
+  .match-card:hover .match-dot{ border-color:var(--river); transform:scale(1.15); }
+  .match-card.active .match-dot{ background:var(--sun); border-color:var(--sun-deep); transform:scale(1.25); }
+  .match-card.connected .match-dot{ background:var(--river); border-color:var(--river-deep); }
+  .match-card.correct .match-dot{ background:var(--grass); border-color:var(--grass-deep); }
+  .match-card.wrong .match-dot{ background:var(--danger); border-color:#992222; }
+
+  .match-col.left .match-card{ flex-direction:row; }
+  .match-col.left .match-dot{ margin-left:12px; }
+  .match-col.right .match-card{ flex-direction:row-reverse; }
+  .match-col.right .match-dot{ margin-right:12px; }
+
+  @media (max-width:560px){
+    h2.panel-title{ font-size:19px; }
+    .panel{ padding:20px 16px 18px; }
+    .dot .label{ display:none; }
+    .match-cols{ gap:20px; }
+    .match-card{ padding:8px 10px; min-height:42px; }
+    .match-card .card-text{ font-size:12px; }
+    .match-dot{ width:12px; height:12px; }
+  }
+
+/* V2 reuses the base-template visual vocabulary; behavior is maintained separately. */
+body{font-size:18px}main{max-width:980px}.top-title h1{font-size:22px}.stepper button{min-height:44px;font-size:15px}.stepper button[aria-current="step"]{background:#e3a038;color:#22333b}.panel[hidden]{display:none}.panel h2:focus{outline:none}button,input,select{min-height:48px;font-size:18px}input,textarea{max-width:100%;font:inherit}textarea{width:100%;padding:12px}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #c6821f;outline-offset:3px}.simulation{margin:18px 0;padding:16px;background:#fbf9f3;border:1px solid #e1dacb;border-radius:14px}.task-tools{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.nav-row{position:sticky;bottom:0;gap:12px;background:#f7f4ec;padding:12px;z-index:40}.nav-row p{font-size:14px;margin:0;flex:1}.medal-wall{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.medal{border:1px solid #e1dacb;padding:12px;border-radius:10px}.medal.got{background:#fff1c8;border-color:#c6821f}.quiz-option{display:block;text-align:left;margin:8px 0;width:100%;border:2px solid #ddd}.quiz-option.picked{border-color:#2f6c8e;background:#e4f1f8}.quiz-option.correct{border-color:#4f7a41;background:#eff5eb}.quiz-option.wrong{border-color:#c1554d;background:#fff0ed}.quiz-block{margin-bottom:20px}label{display:block;margin:8px 0}label input[type="checkbox"]{min-height:24px;width:24px;vertical-align:middle}#helpBanner{background:#fff1c8;color:#22333b;padding:12px}#progressCapsule{margin:8px 0;font-size:14px;text-align:center}.cert-modal{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;z-index:100}.cert-modal[hidden]{display:none}.certificate{background:#fff9e8;border:8px double #c6821f;border-radius:18px;max-width:580px;padding:28px;text-align:center}.certificate p{white-space:pre-line}#restartLesson{margin-top:20px;font-size:14px}#restartConfirm{padding:16px;background:#fff1c8}#receiptPanel{margin:14px 0}#selfMessage{color:#1f4e66}@media(max-width:600px){main{padding:0 10px}.panel{padding:18px 14px}.medal-wall{grid-template-columns:1fr}.nav-row{flex-wrap:wrap}.nav-row p{flex-basis:100%;order:3}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style></head><body>
+<header class="top"><div class="top-title"><h1>二进制灯泡</h1><button id="helpFlag" aria-pressed="false">🚩 我需要帮助</button></div><nav id="stepper" class="stepper" aria-label="任务导航"></nav><p id="progressCapsule" role="status"></p><p id="helpBanner" hidden>我需要帮助，请老师或同伴过来看看。</p></header>
+<main><section class="panel active" data-step="0" data-panel-type="hands-on">
+<h2 tabindex="-1">灯泡权值探究</h2><div data-prose><p>同样多的亮灯，总数会一样吗？先猜，再比较。</p>
+<p class="goal">目标：比较位置与权值。</p><p>基础：记录同亮灯数、不同总数的一对，再记录5并解释。</p><p>⭐ 挑战：基础后记录10，再尝试迁移。</p></div>
+<div id="sim-binary" class="simulation"></div><template id="template-binary"><style>:host{display:block;color:#22333b;font:inherit}*{box-sizing:border-box}button,input,select,textarea{font:inherit}button,input,select{min-height:48px}button{padding:8px 14px;border:1px solid #719175;border-radius:10px;background:#eff5eb;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #be7712;outline-offset:3px}button:disabled{opacity:.6}output{display:block;margin:12px 0;font-weight:bold}label{display:inline-block;margin:8px}svg{max-width:100%}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+#bits{display:flex;flex-wrap:wrap;gap:12px}#bits button[aria-pressed=true]{background:#fff1c8;border:2px solid #c6821f}#value{font-size:26px}</style><p>我预测：相同数量的亮灯，数值会一样吗？</p><label><select id=prediction><option value=unknown>请选择预测</option><option value=same>一样</option><option value=different>不一样</option></select></label><div id=bits><button data-bit=0>8：关</button><button data-bit=1>4：关</button><button data-bit=2>2：关</button><button data-bit=3>1：关</button></div><output id=value>0000 = 0</output><button id=record>记录本次结果</button><p id=records>尚未比较</p><label>比较后，我认为<select id=explanation><option value=unknown>请选择解释</option><option value=count>亮灯越多，数值就越大</option><option value=weight>每个位置有不同权值，总数由权值相加</option></select></label><fieldset><legend>迁移预测：权值 8 和 1 亮时，数值是多少？</legend><input id=transferAnswer type=number min=0 max=15 aria-label="迁移预测数值"><button id=transferCheck>验证迁移预测</button><output id=transferResult></output></fieldset></template>
+<p id="feedback-binary" role="status" aria-live="polite"></p><p id="task-state-binary"></p>
+<div class="task-tools"><button data-hint="binary">需要一点提示</button><button data-reset="binary">重置实验</button></div><p id="hint-binary" class="hint" hidden></p>
+</section>
+<section class="panel" data-step="1"><h2 tabindex="-1">评价与学习记录</h2><p data-prose>回顾探究，再记录自己的收获。</p><div id="quizArea"></div><button id="quizSubmit">提交测验并判分</button><p id="quizMessage" role="status"></p><p id="scoreBox" hidden></p>
+<h3>我的成长徽章</h3><div id="medalArea" class="medal-wall"></div><h3>自我评价</h3><div id="selfList"></div><p id="selfMessage" role="status"></p>
+<label>班级（选填）<input id="inputClass" maxlength="60" autocomplete="off"></label><label>姓名（选填）<input id="inputName" maxlength="60" autocomplete="off"></label><div class="task-tools"><button id="saveReceipt" disabled>保存学习凭单 (.txt)</button><button id="viewReceipt" disabled>查看／复制凭单</button><button id="openCert">生成电子通关奖状</button></div>
+<div id="receiptPanel" hidden><label>学习凭单<textarea id="receiptText" readonly rows="4"></textarea></label><button id="copyReceipt">复制凭单</button><p id="receiptMessage" role="status"></p></div></section>
+<footer class="nav-row"><button id="prevStep">上一屏</button><p id="navMessage" role="status"></p><button id="nextStep">下一屏／稍后再来</button></footer>
+<button id="restartLesson">重新开始整节课</button><div id="restartConfirm" hidden><p>这会清除本轮任务成就与首次测验成绩，确定重新开始吗？</p><button id="restartYes">确定重新开始</button><button id="restartNo">继续本轮学习</button></div>
+</main>
+<div id="certModal" class="cert-modal" role="dialog" aria-modal="true" aria-labelledby="certHeading" hidden><div class="certificate"><h2 id="certHeading">🏆 探究成长奖状</h2><p id="certContent"></p><p id="certMedals"></p><button id="closeCert">关闭奖状</button></div></div>
+<script>
+"use strict";
+const stepLabels = ["灯泡权值探究","评价与学习记录"];
+const quiz = [{"q":"只亮权值 8 的灯，数值是多少？","options":["1","8","亮灯数量"],"correct":1,"why":"权值 8 的灯贡献数值 8，与亮灯总数不同。"},{"q":"权值 4 和 1 同时亮，总数是多少？","options":["2","41","5"],"correct":2,"why":"总数按权值相加：4+1=5。"}];
+const lessonConfig = {"title":"二进制灯泡","grade":"四年级上册","screens":[{"id":"binary","title":"灯泡权值探究","prose":"同样多的亮灯，总数会一样吗？先猜，再比较。","kind":"hands-on","goal":"比较位置与权值。","basicCriterion":"记录同亮灯数、不同总数的一对，再记录5并解释。","starCriterion":"基础后记录10，再尝试迁移。","hints":["试试只点亮一个灯泡，观察总数。","从左到右权值是 8、4、2、1，相加得到总数。","组成 5 的示范：点亮权值 4 和 1，编码为 0101；5=4+1。"],"sourceTask":"灯泡权值探究"}],"medals":[{"event":"basic","label":"权值发现者"},{"event":"star","label":"编码挑战者"},{"event":"transfer","label":"误区修正者"},{"event":"reflection","label":"认真学习者"}]};
+const medalDefs = [{"event":"basic","label":"权值发现者"},{"event":"star","label":"编码挑战者"},{"event":"transfer","label":"误区修正者"},{"event":"reflection","label":"认真学习者"}];
+const simulationMounts = {"binary": function(root, api) { "use strict";
+const weights = [8,4,2,1];
+let bits = [0,0,0,0];
+let records = new Map();
+let basisEstablished = false;
+let advancedRecorded = false;
+let transferCorrect = false;
+const sum = () => bits.reduce((n,b,i) => n+b*weights[i],0);
+const sameCountDifferentValue = () => {
+  const all = [...records.values()];
+  return all.some((a,i) => all.some((b,j) => i!==j && a.lit===b.lit && a.value!==b.value));
+};
+const basicNow = () => sameCountDifferentValue() && records.has('0101') && sum()===5 && root.querySelector('#explanation').value==='weight';
+const render = () => {
+  root.querySelector('#value').textContent = bits.join('')+' = '+sum();
+  root.querySelectorAll('[data-bit]').forEach((b,i) => {
+    b.textContent=weights[i]+'：'+(bits[i]?'开':'关');
+    b.setAttribute('aria-pressed',String(Boolean(bits[i])));
+  });
+};
+root.querySelectorAll('[data-bit]').forEach((b,i) => b.addEventListener('click', () => {
+  bits[i]=1-bits[i];render();
+  api.feedback('切换权值 '+weights[i]+'，总数现在是 '+sum()+'。');api.changed();
+}));
+root.querySelector('#record').addEventListener('click', () => {
+  if(root.querySelector('#prediction').value==='unknown') {api.feedback('先作一个预测，再记录实验。');return;}
+  records.set(bits.join(''),{value:sum(),lit:bits.reduce((a,b)=>a+b,0)});
+  if(basisEstablished && sum()===10) advancedRecorded=true;
+  if(basicNow()) basisEstablished=true;
+  root.querySelector('#records').textContent='已记录：'+[...records].map(([code,r])=>code+'='+r.value+'（亮'+r.lit+'盏）').join('；');
+  api.changed();
+});
+root.querySelector('#explanation').addEventListener('change', () => {if(basicNow()) basisEstablished=true;api.changed();});
+root.querySelector('#transferCheck').addEventListener('click', () => {
+  const raw=root.querySelector('#transferAnswer').value.trim();
+  const target=weights[0]+weights[3];
+  transferCorrect=raw!=='' && Number(raw)===target && basisEstablished && advancedRecorded;
+  root.querySelector('#transferResult').textContent=!basisEstablished||!advancedRecorded?'先完成基础比较，再组成并记录 10。':transferCorrect?'正确：8+1=9，位置的权值决定数值。':'这里亮的是权值 8 和 1，并不是数亮灯数量；请把两个权值相加，再验证。';
+  api.changed();
+});
+render();
+return {
+  evaluate() {return {basic:basisEstablished,star:basisEstablished&&advancedRecorded,transfer:transferCorrect};},
+  reset() {
+    bits=[0,0,0,0];records=new Map();basisEstablished=false;advancedRecorded=false;transferCorrect=false;
+    root.querySelector('#prediction').value='unknown';root.querySelector('#explanation').value='unknown';
+    root.querySelector('#transferAnswer').value='';root.querySelector('#transferResult').textContent='';
+    root.querySelector('#records').textContent='尚未比较';render();
+  }
+};
+}};
+(() => {
+  const $ = id => document.getElementById(id);
+  const panels = [...document.querySelectorAll('section.panel')];
+  const tasks = Object.fromEntries(lessonConfig.screens.map(s => [s.id, {
+    basicEver: false, independentEver: false, assistedEver: false, starEver: false,
+    transferEver: false, hints: 0, phase: '未开始', current: null, controller: null
+  }]));
+  let currentStep = 0;
+  let formalScore = null;
+  const picked = quiz.map(() => null);
+  let reflectionEver = false;
+  let needsHelp = false;
+  let certReturnFocus = null;
+  let receiptSnapshot = '';
+  const errors = [];
+  // Runtime diagnostics contain module IDs only, no identity or behavior trace.
+  window.__itlsV2 = { ready: false, errors };
+  const status = (id, text) => { $(id).textContent = text; };
+  const fail = id => {
+    if (!errors.includes(id)) errors.push(id);
+    tasks[id].controller = null;
+    status(`feedback-${id}`, '这个实验暂时遇到问题，可以求助或先到其他任务。');
+  };
+
+  function renderProgress() {
+    const all = Object.values(tasks);
+    status('progressCapsule', `第 ${currentStep + 1}/${panels.length} 屏 · 基础 ${all.filter(t => t.basicEver).length}/${all.length} · ⭐ ${all.filter(t => t.starEver).length}/${all.length}`);
+    for (const [id, t] of Object.entries(tasks)) {
+      const achieved = t.independentEver ? '曾独立通关' : t.assistedEver ? '曾带提示通关' : '';
+      status(`task-state-${id}`, `${t.phase}${achieved ? ' · ' + achieved : ''}${t.starEver ? ' · ⭐ 已达成' : ''}`);
+    }
+    [...$('stepper').children].forEach((button, i) => {
+      if (i === currentStep) button.setAttribute('aria-current', 'step');
+      else button.removeAttribute('aria-current');
+    });
+    const achieved = {
+      basic: all.some(t => t.basicEver), star: all.some(t => t.starEver),
+      transfer: all.some(t => t.transferEver), reflection: reflectionEver || needsHelp
+    };
+    $('medalArea').replaceChildren(...medalDefs.map(m => {
+      const el = document.createElement('div');
+      el.className = 'medal' + (achieved[m.event] ? ' got' : '');
+      el.textContent = `${achieved[m.event] ? '★ 已获得' : '☆ 待探索'} ${m.label}`;
+      return el;
+    }));
+  }
+
+  function update(id) {
+    const t = tasks[id];
+    if (!t.controller) return;
+    try {
+      const result = t.controller.evaluate();
+      if (!result || ['basic', 'star', 'transfer'].some(k => typeof result[k] !== 'boolean')) throw new Error('invalid predicate');
+      if ((result.star || result.transfer) && !result.basic) throw new Error('missing basic');
+      t.current = result;
+      if (result.basic) {
+        t.basicEver = true;
+        if (t.hints >= 3) t.assistedEver = true;
+        else t.independentEver = true;
+        t.starEver ||= result.star;
+        t.transferEver ||= result.transfer;
+        t.phase = t.hints >= 3 ? '带提示通关' : '独立通关';
+      } else t.phase = '探索中';
+      renderProgress();
+    } catch { fail(id); }
+  }
+
+  for (const screen of lessonConfig.screens) {
+    const host = $(`sim-${screen.id}`);
+    const root = host.attachShadow({ mode: 'open' });
+    root.appendChild($(`template-${screen.id}`).content.cloneNode(true));
+    const api = Object.freeze({
+      changed: () => update(screen.id),
+      feedback: text => status(`feedback-${screen.id}`, String(text))
+    });
+    try {
+      const controller = simulationMounts[screen.id](root, api);
+      if (!controller || typeof controller.evaluate !== 'function' || typeof controller.reset !== 'function') throw new Error('missing lifecycle');
+      tasks[screen.id].controller = controller;
+      // Initial state must not grant completion without student work.
+      const initial = controller.evaluate();
+      if (!initial || ['basic', 'star', 'transfer'].some(k => initial[k] !== false)) throw new Error('pre-awarded');
+    } catch { fail(screen.id); }
+  }
+
+  function navigate(index, focus = true) {
+    const previous = lessonConfig.screens[currentStep];
+    if (previous) {
+      const t = tasks[previous.id];
+      if (!t.basicEver) t.phase = '暂时跳过';
+      try { t.controller?.onLeave?.(); } catch { fail(previous.id); }
+    }
+    currentStep = Math.max(0, Math.min(index, panels.length - 1));
+    panels.forEach((panel, i) => { panel.classList.toggle('active', i === currentStep); panel.hidden = i !== currentStep; });
+    const screen = lessonConfig.screens[currentStep];
+    if (screen) {
+      const t = tasks[screen.id];
+      if (t.phase === '未开始' || t.phase === '暂时跳过') t.phase = '探索中';
+      try { t.controller?.onEnter?.(); } catch { fail(screen.id); }
+    }
+    $('prevStep').disabled = currentStep === 0;
+    $('nextStep').disabled = currentStep === panels.length - 1;
+    status('navMessage', previous && !tasks[previous.id].basicEver ? '基础任务尚未完成，你可以继续试试或稍后回来。' : '可以随时回看与继续探索。');
+    renderProgress();
+    if (focus) panels[currentStep].querySelector('h2').focus();
+  }
+  stepLabels.forEach((label, index) => {
+    const button = document.createElement('button');
+    button.textContent = `${index + 1}. ${label}`;
+    button.addEventListener('click', () => navigate(index));
+    $('stepper').appendChild(button);
+  });
+  $('prevStep').addEventListener('click', () => navigate(currentStep - 1));
+  $('nextStep').addEventListener('click', () => navigate(currentStep + 1));
+  document.querySelectorAll('[data-hint]').forEach(button => button.addEventListener('click', () => {
+    const id = button.dataset.hint;
+    const t = tasks[id];
+    t.hints = Math.min(3, t.hints + 1);
+    const screen = lessonConfig.screens.find(s => s.id === id);
+    const box = $(`hint-${id}`);
+    box.hidden = false;
+    box.textContent = `${['观察方向', '关键变量', '完整示范'][t.hints - 1]}：${screen.hints[t.hints - 1]}`;
+    button.textContent = t.hints < 3 ? '再给我一点提示' : '回看完整示范';
+    // Reading a hint never grants completion; only evaluate() after real changes does.
+  }));
+  document.querySelectorAll('[data-reset]').forEach(button => button.addEventListener('click', () => {
+    const id = button.dataset.reset;
+    const t = tasks[id];
+    try {
+      t.controller?.reset();
+      t.current = null;
+      t.phase = '探索中';
+      status(`feedback-${id}`, '实验已重置，曾取得的成就仍保留。');
+      renderProgress();
+    } catch { fail(id); }
+  }));
+  $('helpFlag').addEventListener('click', () => {
+    needsHelp = !needsHelp;
+    $('helpFlag').setAttribute('aria-pressed', String(needsHelp));
+    $('helpBanner').hidden = !needsHelp;
+    if (needsHelp) reflectionEver = true;
+    renderProgress();
+  });
+
+  quiz.forEach((item, qi) => {
+    const block = document.createElement('div');
+    block.className = 'quiz-block';
+    const question = document.createElement('h3');
+    question.textContent = `${qi + 1}. ${item.q}`;
+    block.appendChild(question);
+    const options = document.createElement('div');
+    options.setAttribute('role', 'group');
+    options.setAttribute('aria-label', item.q);
+    [...item.options, '我暂时不会'].forEach((text, oi) => {
+      const value = oi < item.options.length ? oi : -1;
+      const button = document.createElement('button');
+      button.className = 'quiz-option';
+      button.dataset.choice = String(value);
+      button.setAttribute('aria-pressed', 'false');
+      button.textContent = text;
+      button.addEventListener('click', () => {
+        if (formalScore !== null) return;
+        picked[qi] = value;
+        [...options.children].forEach(other => {
+          const selected = other === button;
+          other.classList.toggle('picked', selected);
+          other.setAttribute('aria-pressed', String(selected));
+        });
+      });
+      options.appendChild(button);
+    });
+    block.appendChild(options);
+    const why = document.createElement('p');
+    why.className = 'quiz-explanation';
+    why.hidden = true;
+    why.textContent = item.why;
+    block.appendChild(why);
+    $('quizArea').appendChild(block);
+  });
+  $('quizSubmit').addEventListener('click', () => {
+    if (formalScore !== null) return;
+    const missing = picked.filter(v => v === null).length;
+    if (missing) { status('quizMessage', `还有 ${missing} 题未选择，也可以选择“我暂时不会”。`); return; }
+    formalScore = Math.round(picked.filter((v, i) => v === quiz[i].correct).length / quiz.length * 100);
+    [...$('quizArea').children].forEach((block, qi) => {
+      block.querySelectorAll('button').forEach(button => {
+        const value = Number(button.dataset.choice);
+        button.classList.remove('picked');
+        if (value === quiz[qi].correct) { button.classList.add('correct'); button.textContent += ' ✔ 正确答案'; }
+        else if (value === picked[qi]) { button.classList.add('wrong'); button.textContent += value < 0 ? ' · 本题未答' : ' ✘ 可以再想一想'; }
+        button.disabled = true;
+      });
+      block.querySelector('.quiz-explanation').hidden = false;
+    });
+    $('quizSubmit').disabled = true;
+    $('scoreBox').hidden = false;
+    status('scoreBox', `本轮首次正式得分：${formalScore} / 100。可以继续探索与回看。`);
+    status('quizMessage', '已记录首次正式成绩，回看和重置实验不会改写它。');
+    $('saveReceipt').disabled = false;
+    $('viewReceipt').disabled = false;
+  });
+  const selfLabels = ['我能解释今天一个关键现象', '我尝试过调整方案或修复问题', '我完成了 ⭐ 挑战或愿意继续试试', '我还没完全懂，需要老师或同伴帮助'];
+  selfLabels.forEach((text, i) => {
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) reflectionEver = true;
+      status('selfMessage', i === 3 && checkbox.checked ? '谢谢你告诉我们。可以点击顶部求助旗，请老师或同伴一起看看。' : '每一次认真回顾都值得肯定。');
+      renderProgress();
+    });
+    label.append(checkbox, document.createTextNode(' ' + text));
+    $('selfList').appendChild(label);
+  });
+
+  const cleanField = (text, fallback) => String(text).normalize('NFKC').replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60) || fallback;
+  const receiptFields = () => ({ cls: cleanField($('inputClass').value, '本班'), name: cleanField($('inputName').value, '小极客'), title: cleanField(lessonConfig.title, '本课') });
+  function showReceipt() {
+    if (formalScore === null) return null;
+    const fields = receiptFields();
+    const pad = n => String(n).padStart(2, '0');
+    const now = new Date();
+    const time = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    receiptSnapshot = `# 班级|姓名|课题|得分|时间\n${fields.cls}|${fields.name}|${fields.title}|${formalScore}|${time}\n`;
+    $('receiptText').value = receiptSnapshot;
+    $('receiptPanel').hidden = false;
+    return fields;
+  }
+  $('viewReceipt').addEventListener('click', showReceipt);
+  $('saveReceipt').addEventListener('click', () => {
+    const fields = showReceipt();
+    if (!fields) return;
+    let url;
+    try {
+      const blob = new Blob([receiptSnapshot], { type: 'text/plain;charset=utf-8' });
+      url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${fields.cls}_${fields.name}_${fields.title}_${formalScore}.txt`;
+      document.body.appendChild(link);
+      try { link.click(); } finally { link.remove(); }
+      status('receiptMessage', '已请求下载。若未收到文件，可复制下方同一份凭单；请按课堂安排自行提交。');
+    } catch { status('receiptMessage', '这里暂时无法下载，请复制下方同一份凭单。'); }
+    finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
+  });
+  $('copyReceipt').addEventListener('click', async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+      await navigator.clipboard.writeText($('receiptText').value);
+      status('receiptMessage', '已复制凭单，请按课堂安排提交。');
+    } catch {
+      $('receiptText').focus();
+      $('receiptText').select();
+      status('receiptMessage', '已选中文本，请按 Ctrl+C 或使用设备的复制操作。');
+    }
+  });
+
+  $('openCert').addEventListener('click', () => {
+    certReturnFocus = document.activeElement;
+    const fields = receiptFields();
+    const allBasic = Object.values(tasks).every(t => t.basicEver);
+    const title = allBasic ? '持续成长者' : '勇敢探索者';
+    status('certContent', `${fields.cls} · ${fields.name}\n${lessonConfig.title}\n${title}\n${new Date().toLocaleDateString('zh-CN')}`);
+    status('certMedals', [...$('medalArea').children].filter(el => el.classList.contains('got')).map(el => el.textContent).join(' · ') || '感谢你参与今天的探索。');
+    $('certModal').hidden = false;
+    $('closeCert').focus();
+  });
+  function closeCertificate() {
+    $('certModal').hidden = true;
+    certReturnFocus?.focus();
+  }
+  $('closeCert').addEventListener('click', closeCertificate);
+  $('certModal').addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); closeCertificate(); }
+    if (event.key === 'Tab') { event.preventDefault(); $('closeCert').focus(); }
+  });
+  $('certModal').addEventListener('click', event => { if (event.target === $('certModal')) closeCertificate(); });
+  $('restartLesson').addEventListener('click', () => { $('restartConfirm').hidden = false; $('restartYes').focus(); });
+  $('restartNo').addEventListener('click', () => { $('restartConfirm').hidden = true; $('restartLesson').focus(); });
+  $('restartYes').addEventListener('click', () => location.reload());
+  // Memory-only progress: private browsing, denied storage and file:// all work.
+  document.addEventListener('visibilitychange', () => {
+    const screen = lessonConfig.screens[currentStep];
+    if (!screen) return;
+    try { tasks[screen.id].controller?.[document.hidden ? 'onLeave' : 'onEnter']?.(); } catch { fail(screen.id); }
+  });
+  navigate(0, false);
+  window.__itlsV2.ready = true;
+})();
+
+</script></body></html>
