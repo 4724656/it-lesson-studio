@@ -63,6 +63,51 @@ export function resolveMarpCommand() {
   return { cmd: 'npx', args: ['@marp-team', 'marp-cli'] };
 }
 
+/**
+ * 解析 Pandoc 执行路径：优先检测单机便携版内置的 runtime/pandoc/pandoc(.exe)，
+ * 其次回退到系统 PATH 中的 pandoc。
+ */
+export function resolvePandocCommand() {
+  const bundled = path.join(rootDir, 'runtime', 'pandoc', process.platform === 'win32' ? 'pandoc.exe' : 'pandoc');
+  if (fs.existsSync(bundled)) return bundled;
+  return 'pandoc';
+}
+
+/**
+ * 解析 Python 执行方式：
+ * 1. 优先使用单机便携版内置的 runtime/python/python(.exe)
+ * 2. 其次使用项目本地虚拟环境 .venv
+ * 3. 再次尝试 uv run python
+ * 4. 最后回退到系统 python3 / python
+ */
+export function resolvePythonCommand(scriptPath, extraArgs = []) {
+  const bundledPy = path.join(
+    rootDir,
+    'runtime',
+    'python',
+    process.platform === 'win32' ? 'python.exe' : path.join('bin', 'python3')
+  );
+  if (fs.existsSync(bundledPy)) {
+    return { cmd: bundledPy, args: [scriptPath, ...extraArgs] };
+  }
+
+  const venvPy = path.join(
+    rootDir,
+    '.venv',
+    process.platform === 'win32' ? path.join('Scripts', 'python.exe') : path.join('bin', 'python')
+  );
+  if (fs.existsSync(venvPy)) {
+    return { cmd: venvPy, args: [scriptPath, ...extraArgs] };
+  }
+
+  try {
+    execFileSync(process.platform === 'win32' ? 'where' : 'which', ['uv'], { stdio: 'ignore' });
+    return { cmd: 'uv', args: ['run', 'python', scriptPath, ...extraArgs] };
+  } catch { /* 无 uv 时使用系统 python3 */ }
+
+  return { cmd: process.platform === 'win32' ? 'python' : 'python3', args: [scriptPath, ...extraArgs] };
+}
+
 export function buildMarpArgs(mdFile, outFile) {
   const args = [mdFile, '--allow-local-files', '--theme-set', marpTheme, '-o', outFile];
   const chrome = resolveChromePath();
@@ -71,10 +116,9 @@ export function buildMarpArgs(mdFile, outFile) {
 }
 
 /**
- * 解析可用的 Chrome/Chromium 二进制。
- * 顺序：环境变量 → puppeteer 缓存（真 Chrome）→ /usr/local/bin/chrome-headless →
- * 系统 google-chrome/chromium。注意 /usr/bin/chromium-browser 在本镜像中是
- * snap 假包，绝不直接采用。
+ * 解析可用的 Chrome/Chromium/Edge 二进制。
+ * 顺序：环境变量 → puppeteer 缓存（真 Chrome）→ Windows 标准 Chrome/Edge 路径 →
+ * /usr/local/bin/chrome-headless → 系统 google-chrome/chromium。
  */
 export function resolveChromePath() {
   const candidates = [];
@@ -86,19 +130,36 @@ export function resolveChromePath() {
       const versions = fs.readdirSync(cacheDir).sort().reverse();
       for (const v of versions) {
         candidates.push(path.join(cacheDir, v, 'chrome-linux64', 'chrome'));
+        candidates.push(path.join(cacheDir, v, 'chrome-win64', 'chrome.exe'));
         candidates.push(path.join(cacheDir, v, 'chrome-mac', 'Google Chrome for Testing.app',
           'Contents', 'MacOS', 'Google Chrome for Testing'));
       }
     }
   } catch { /* 忽略 */ }
-  candidates.push('/usr/local/bin/chrome-headless');
-  for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium']) {
-    try {
-      const found = execFileSync('which', [bin], { stdio: ['ignore', 'pipe', 'pipe'], shell: false })
-        .toString().trim();
-      if (found && !found.includes('chromium-browser')) candidates.push(found);
-    } catch { /* 忽略 */ }
+
+  if (process.platform === 'win32') {
+    const pf = process.env.PROGRAMFILES || 'C:\\Program Files';
+    const pfx86 = process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)';
+    const localAppData = process.env.LOCALAPPDATA || '';
+    candidates.push(
+      path.join(pf, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      path.join(pfx86, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      localAppData ? path.join(localAppData, 'Google', 'Chrome', 'Application', 'chrome.exe') : '',
+      path.join(pfx86, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      path.join(pf, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      localAppData ? path.join(localAppData, 'Microsoft', 'Edge', 'Application', 'msedge.exe') : ''
+    );
+  } else {
+    candidates.push('/usr/local/bin/chrome-headless');
+    for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium']) {
+      try {
+        const found = execFileSync('which', [bin], { stdio: ['ignore', 'pipe', 'pipe'], shell: false })
+          .toString().trim();
+        if (found && !found.includes('chromium-browser')) candidates.push(found);
+      } catch { /* 忽略 */ }
+    }
   }
+
   for (const c of candidates) {
     try {
       if (c && fs.existsSync(c) && fs.statSync(c).isFile()) {
@@ -282,6 +343,7 @@ async function main() {
   }
 
   const marp = resolveMarpCommand();
+  const pandocCmd = resolvePandocCommand();
   let succeeded = 0;
   const failed = [];
 
@@ -296,21 +358,13 @@ async function main() {
       } else {
         console.log(`📝 [Pandoc] 正在导出 Word: ${relIn} ➔ ${relOut}`);
         const imagesDir = path.join(rootDir, 'examples', 'images');
-        runCmd('pandoc', buildPandocArgs(task.mdFile, task.out, [task.dir, imagesDir]), { cwd: rootDir });
+        runCmd(pandocCmd, buildPandocArgs(task.mdFile, task.out, [task.dir, imagesDir]), { cwd: rootDir });
 
         // 中文专业排版后处理（首行缩进两格、黑体标题、宋体正文、表格防断裂）
         if (fs.existsSync(beautifyScript)) {
           try {
-            // 自适应 Python 运行环境：优先 uv，容器或原生 Linux 回退 python3
-            let pyCmd = 'python3';
-            let pyArgs = [beautifyScript, task.out];
-            try {
-              execFileSync(process.platform === 'win32' ? 'where' : 'which', ['uv'], { stdio: 'ignore' });
-              pyCmd = 'uv';
-              pyArgs = ['run', 'python', beautifyScript, task.out];
-            } catch { /* 无 uv 时使用系统 python3 */ }
-
-            runCmd(pyCmd, pyArgs, { stdio: ['ignore', 'ignore', 'inherit'], cwd: rootDir });
+            const py = resolvePythonCommand(beautifyScript, [task.out]);
+            runCmd(py.cmd, py.args, { stdio: ['ignore', 'ignore', 'inherit'], cwd: rootDir });
             console.log(`   ✨ 已自动应用中文公文级排版 (首行缩进2格·黑体大纲·宋体正文·表格美化)`);
           } catch (postErr) {
             console.warn(`   ⚠️ 后处理排版优化跳过: ${postErr.message}`);
@@ -344,17 +398,12 @@ async function main() {
       path.join(path.dirname(targetPath), 'lesson.yaml'),
     ];
     const manifestPath = manifestCandidates.find((p) => fs.existsSync(p));
-    let verifyCmd = 'python3';
-    let verifyArgs = [verifyScript, '--strict'];
+    const extraVerifyArgs = ['--strict'];
+    if (manifestPath) extraVerifyArgs.push('--manifest', manifestPath);
+    extraVerifyArgs.push(verifyTarget);
+    const verifyPy = resolvePythonCommand(verifyScript, extraVerifyArgs);
     try {
-      execFileSync(process.platform === 'win32' ? 'where' : 'which', ['uv'], { stdio: 'ignore' });
-      verifyCmd = 'uv';
-      verifyArgs = ['run', 'python', verifyScript, '--strict'];
-    } catch { /* 无 uv 时使用系统 python3 */ }
-    if (manifestPath) verifyArgs.push('--manifest', manifestPath);
-    verifyArgs.push(verifyTarget);
-    try {
-      runCmd(verifyCmd, verifyArgs, { cwd: rootDir });
+      runCmd(verifyPy.cmd, verifyPy.args, { cwd: rootDir });
     } catch (err) {
       console.error(`\n❌ 版式校验未通过，退出码 1。`);
       process.exit(1);

@@ -6,6 +6,17 @@ let pollTimer = null;
 let uploadedImages = []; // 存储上传的图片列表: { id, name, size, type, data }
 window.uploadedImages = uploadedImages;
 
+// HTML 转义辅助函数，防止存储型 XSS 与属性注入
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // 页面加载就绪
 document.addEventListener('DOMContentLoaded', () => {
   initUser();
@@ -827,14 +838,15 @@ async function loadAdminUsers() {
         ? `<button onclick="toggleUserRole(${u.id}, 'teacher')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition">降为教师</button>`
         : `<button onclick="toggleUserRole(${u.id}, 'admin')" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[11px] transition font-bold">提权为管理员</button>`);
 
-      const resetBtn = `<button onclick="resetUserPassword(${u.id}, '${u.username}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition">重置密码</button>`;
-      const deleteBtn = isSelf ? '' : `<button onclick="deleteUser(${u.id}, '${u.username}')" class="px-2 py-1 rounded bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-500/30 text-[11px] transition">删除</button>`;
+      const safeUsernameJs = escapeHtml(JSON.stringify(String(u.username || '')).slice(1, -1));
+      const resetBtn = `<button onclick="resetUserPassword(${Number(u.id)}, '${safeUsernameJs}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition">重置密码</button>`;
+      const deleteBtn = isSelf ? '' : `<button onclick="deleteUser(${Number(u.id)}, '${safeUsernameJs}')" class="px-2 py-1 rounded bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-500/30 text-[11px] transition">删除</button>`;
 
       tr.innerHTML = `
-        <td class="p-3 font-mono font-bold text-slate-200">${u.username}</td>
-        <td class="p-3 text-slate-200">${u.real_name || '<span class="text-slate-500">未填写</span>'}</td>
-        <td class="p-3 text-slate-300">${u.school || '<span class="text-slate-500">未填写</span>'}</td>
-        <td class="p-3 font-mono text-slate-400">${u.phone || '<span class="text-slate-500">-</span>'}</td>
+        <td class="p-3 font-mono font-bold text-slate-200">${escapeHtml(u.username)}</td>
+        <td class="p-3 text-slate-200">${u.real_name ? escapeHtml(u.real_name) : '<span class="text-slate-500">未填写</span>'}</td>
+        <td class="p-3 text-slate-300">${u.school ? escapeHtml(u.school) : '<span class="text-slate-500">未填写</span>'}</td>
+        <td class="p-3 font-mono text-slate-400">${u.phone ? escapeHtml(u.phone) : '<span class="text-slate-500">-</span>'}</td>
         <td class="p-3">${roleBadge}</td>
         <td class="p-3 text-right">
           <div class="flex items-center justify-end gap-1.5">
@@ -847,7 +859,7 @@ async function loadAdminUsers() {
       tbody.appendChild(tr);
     });
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-400">${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-400">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -1935,9 +1947,9 @@ async function loadHistoryList() {
         `;
       } else if (t.status === 'failed') {
         actionHtml = `
-          <div class="text-[11px] text-rose-400/90 truncate">${t.error_msg || '任务已中断'}</div>
+          <div class="text-[11px] text-rose-400/90 truncate">${escapeHtml(t.error_msg || '任务已中断')}</div>
           <div class="flex items-center gap-2 pt-1">
-            <button onclick="retryHistoryTask('${t.id}')" class="px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-sm shadow-brand-500/20">
+            <button onclick="retryHistoryTask('${escapeHtml(t.id)}')" class="px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-sm shadow-brand-500/20">
               <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
               <span>重新生成</span>
             </button>
@@ -1948,10 +1960,10 @@ async function loadHistoryList() {
         actionHtml = `
           <div class="text-[11px] text-amber-400/90 flex items-center gap-1.5">
             <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-            <span>${t.progress_text || '正在生成中...'}</span>
+            <span>${escapeHtml(t.progress_text || '正在生成中...')}</span>
           </div>
           <div class="flex items-center gap-2 pt-1">
-            <button onclick="cancelHistoryTask('${t.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1 transition cursor-pointer">
+            <button onclick="cancelHistoryTask('${escapeHtml(t.id)}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1 transition cursor-pointer">
               <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
               <span>取消生成</span>
             </button>
@@ -1961,10 +1973,10 @@ async function loadHistoryList() {
 
       item.innerHTML = `
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-brand-300 font-mono">${t.grade}</span>
+          <span class="text-[11px] font-semibold text-brand-300 font-mono">${escapeHtml(t.grade)}</span>
           ${statusBadge}
         </div>
-        <div class="text-xs font-bold text-slate-100 truncate">${t.lesson_title}</div>
+        <div class="text-xs font-bold text-slate-100 truncate">${escapeHtml(t.lesson_title)}</div>
         <div class="text-[10px] text-slate-500 font-mono">${new Date(t.created_at).toLocaleString()}</div>
         ${actionHtml}
       `;
@@ -1972,7 +1984,7 @@ async function loadHistoryList() {
     });
     refreshIcons();
   } catch (err) {
-    list.innerHTML = `<div class="text-xs text-red-400 text-center py-8">加载失败: ${err.message}</div>`;
+    list.innerHTML = `<div class="text-xs text-red-400 text-center py-8">加载失败: ${escapeHtml(err.message)}</div>`;
   }
 }
 
