@@ -197,8 +197,10 @@ async function main() {
   // 复制 web/ 目录（排除真实 .env 与历史数据库 web/data）
   const webDest = path.join(TARGET_DIR, 'web');
   fs.mkdirSync(webDest, { recursive: true });
-  for (const f of ['server.js', 'db.js', 'package.json']) {
-    fs.copyFileSync(path.join(rootDir, 'web', f), path.join(webDest, f));
+  for (const entry of fs.readdirSync(path.join(rootDir, 'web'), { withFileTypes: true })) {
+    if (entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.mjs') || entry.name === 'package.json')) {
+      fs.copyFileSync(path.join(rootDir, 'web', entry.name), path.join(webDest, entry.name));
+    }
   }
   copyDirFiltered(path.join(rootDir, 'web', 'public'), path.join(webDest, 'public'));
   copyDirFiltered(path.join(rootDir, 'web', 'services'), path.join(webDest, 'services'));
