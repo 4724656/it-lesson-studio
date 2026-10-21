@@ -1,329 +1,1029 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="lesson-grade" content="4"><meta name="lesson-engine" content="v2">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>二进制灯泡｜课堂作业</title><style>
-  :root{
-    --paper:#F7F4EC;
-    --panel:#FFFFFF;
-    --ink:#22333B;
-    --ink-soft:#5C6B73;
-    --river:#2F6C8E;
-    --river-deep:#1F4E66;
-    --grass:#6E9B5E;
-    --grass-deep:#4F7A41;
-    --sun:#E3A038;
-    --sun-deep:#C6821F;
-    --danger:#C1554D;
-    --line:#E1DACB;
-    --radius:14px;
-    --shadow:0 4px 0 rgba(34,51,59,0.08);
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--paper); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Heiti SC",sans-serif;
-    line-height:1.6; padding-bottom:60px;
-  }
-  .code{ font-family:"SFMono-Regular",Consolas,"Courier New",monospace; }
+<title>二进制灯泡｜课堂作业</title><style>:root {
+  --bg-page: #F3F7F4;
+  --panel-bg: #FFFFFF;
+  --primary: #1E5128;
+  --primary-mid: #2D6A4F;
+  --primary-soft: #EBF5EE;
+  --accent: #40916C;
+  --gold: #F39C12;
+  --gold-deep: #C8790A;
+  --gold-soft: #FFF8E7;
+  --blue: #2980B9;
+  --blue-soft: #EDF5FB;
+  --danger: #D64541;
+  --danger-soft: #FDEDEC;
+  --ink: #1E293B;
+  --ink-sub: #475569;
+  --line: #CBD5E1;
+  --line-soft: #E2E8F0;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --shadow: 0 10px 28px rgba(30, 81, 40, 0.08);
+}
 
-  /* ---------- Header / Stepper ---------- */
-  header.top{
-    position:sticky; top:0; z-index:50;
-    background:linear-gradient(135deg,#2E5E3F,#4F7A41);
-    color:#fff; padding:14px 20px 10px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.15);
-  }
-  .top-title{ display:flex; align-items:baseline; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
-  .top-title h1{ font-size:19px; margin:0; font-weight:700; letter-spacing:0.5px; }
-  .top-title span{ font-size:12px; color:#D8E9CE; }
-  .stepper{ display:flex; justify-content:center; gap:4px; flex-wrap:wrap; max-width:900px; margin:0 auto; }
-  .dot{
-    display:flex; flex-direction:column; align-items:center; gap:4px;
-    cursor:pointer; padding:4px 6px; border-radius:8px; opacity:0.55; transition:opacity .2s;
-  }
-  .dot:hover{opacity:0.85;}
-  .dot.active{opacity:1;}
-  .dot .circle{
-    width:22px;height:22px;border-radius:50%;background:#3E6B4F;
-    display:flex;align-items:center;justify-content:center;
-    font-size:11px; font-weight:700; border:2px solid transparent;
-  }
-  .dot.active .circle{ background:var(--sun); color:#3A2C0E; border-color:#fff;}
-  .dot.done .circle{ background:var(--sun); color:#3A2C0E;}
-  .dot .label{font-size:10px; color:#E2EFD9; white-space:nowrap;}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
 
-  /* ---------- Layout ---------- */
-  main{max-width:760px; margin:26px auto; padding:0 16px;}
-  .panel{
-    display:none; background:var(--panel); border:1px solid var(--line);
-    border-radius:var(--radius); box-shadow:var(--shadow);
-    padding:26px 24px 22px; animation:fadeIn .35s ease;
-  }
-  .panel.active{display:block;}
-  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+[hidden] {
+  display: none !important;
+}
 
-  .eyebrow{ font-size:13px; color:var(--grass-deep); font-weight:700; margin-bottom:4px; }
-  h2.panel-title{ font-size:22px; margin:0 0 14px; color:var(--ink); }
-  h3.sub-title{ font-size:16px; margin:18px 0 8px; color:var(--river-deep); }
-  p{margin:0 0 12px;}
-  ul.body-list{ margin:0 0 12px; padding-left:22px; }
-  .hint{
-    background:#F1F6EE; border:1px solid #DCE9D6; color:var(--grass-deep);
-    border-radius:10px; padding:10px 14px; font-size:14px; margin:14px 0;
-  }
-  .think{
-    background:#FBF1E1; border:1px solid #F0DDB6; color:var(--sun-deep);
-    border-radius:10px; padding:10px 14px; font-size:14px; margin:14px 0;
-  }
-  .story{
-    background:#F3F7FA; border-left:4px solid var(--river);
-    border-radius:0 10px 10px 0; padding:12px 16px; font-size:15px; margin:14px 0;
-  }
-  .story b{ color:var(--river-deep); }
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
 
-  /* ---------- Nav / buttons ---------- */
-  .nav-row{
-    display:flex; justify-content:space-between; align-items:center;
-    margin-top:22px; padding-top:16px; border-top:1px dashed var(--line);
-  }
-  button{
-    font-family:inherit; cursor:pointer; border:none; border-radius:10px;
-    padding:10px 18px; font-size:14px; font-weight:700;
-  }
-  .btn-primary{ background:var(--grass); color:#fff; }
-  .btn-primary:hover{ background:var(--grass-deep); }
-  .btn-secondary{ background:#EDEAE0; color:var(--ink); }
-  .btn-secondary:hover{ background:#E2DED0; }
-  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
-  button:disabled{ opacity:0.4; cursor:not-allowed; }
-  .btn-sun{ background:var(--sun); color:#3A2C0E; }
-  .btn-sun:hover{ background:var(--sun-deep); color:#fff; }
+body {
+  background: var(--bg-page);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Heiti SC", sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  padding-bottom: 48px;
+}
 
-  /* ---------- Generic stage / stat ---------- */
-  .stage{
-    background:#FBF9F3; border:2px dashed var(--line); border-radius:14px;
-    min-height:150px; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:8px; margin:14px 0; text-align:center; padding:16px;
-  }
-  .stat-row{ display:flex; gap:16px; align-items:center; justify-content:center; margin:16px 0; flex-wrap:wrap; }
-  .stat{
-    text-align:center; background:#FBF9F3; border:1px solid var(--line);
-    border-radius:12px; padding:14px 22px; min-width:120px;
-  }
-  .stat .num{ font-size:34px; font-weight:800; color:var(--river-deep); }
-  .stat .lbl{ font-size:13px; color:var(--ink-soft); }
-  .msg-line{ min-height:22px; font-size:14px; font-weight:700; }
-  .msg-ok{ color:var(--grass-deep); }
-  .msg-bad{ color:var(--danger); }
-  .msg-info{ color:var(--river); }
-  .log-box{
-    font-size:13px; color:var(--ink-soft); background:#FAFAF6; border:1px dashed var(--line);
-    border-radius:8px; padding:8px 12px; max-height:120px; overflow-y:auto;
-  }
-  .btn-row{ display:flex; gap:10px; justify-content:center; margin:14px 0; flex-wrap:wrap; }
+/* ---------- Top Header & Navigation ---------- */
+header.top {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(135deg, #1E5128 0%, #2D6A4F 100%);
+  color: #FFFFFF;
+  padding: 14px 20px 12px;
+  box-shadow: 0 4px 18px rgba(15, 45, 25, 0.18);
+}
 
-  /* ---------- Quiz / options ---------- */
-  .option-list{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
-  .option{
-    display:flex; align-items:center; gap:10px; padding:10px 12px;
-    border:1px solid var(--line); border-radius:10px; cursor:pointer; background:#FCFBF7;
-    transition:border-color .15s, background .15s;
-  }
-  .option:hover{ border-color:var(--grass); }
-  .option.picked{ border-color:var(--river); background:#EAF2F6; }
-  .option.correct{ border-color:var(--grass); background:#EAF4E6; }
-  .option.wrong{ border-color:var(--danger); background:#F8EAE9; }
-  .option input{ pointer-events:none; }
-  /* 答对后锁定：其余选项淡出，鼠标不再是可点手型 */
-  .option-list.locked .option{ cursor:default; }
-  .option-list.locked .option:not(.correct){ opacity:.5; }
-  .feedback{ font-size:14px; font-weight:700; margin-top:10px; min-height:20px; }
-  .feedback.ok{ color:var(--grass-deep); }
-  .feedback.bad{ color:var(--danger); }
+.top-title {
+  max-width: 960px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-  /* ---------- Sortable list ---------- */
-  .sort-list{ display:flex; flex-direction:column; gap:8px; margin:14px 0; }
-  .sort-item{
-    background:#FCFBF7; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
-    cursor:grab; display:flex; gap:10px; align-items:flex-start; font-size:14px;
-  }
-  .sort-item.dragging{ opacity:0.4; }
-  .sort-item .handle{ color:var(--ink-soft); font-size:16px; }
-  .sort-item.correct{ border-color:var(--grass); background:#EAF4E6; }
-  .sort-item.wrong{ border-color:var(--danger); background:#F8EAE9; }
+.top-title h1 {
+  font-size: 21px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  /* ---------- Flowchart ---------- */
-  .flow{ display:flex; flex-direction:column; align-items:center; gap:4px; margin:16px 0; }
-  .fdrop{
-    min-width:200px; text-align:center; padding:10px 18px; border-radius:8px; font-size:14px;
-    border:2px dashed var(--river); background:#F6FAFB; color:var(--ink-soft);
-    transition:background .15s, border-color .15s;
-  }
-  .fdrop.oval{ border-radius:30px; }
-  .fdrop.decision{ border-color:var(--sun-deep); background:#FCF6EA; }
-  .fdrop.dragover{ background:#EAF2F6; border-style:solid; }
-  .fdrop.filled{ border-style:solid; color:var(--ink); background:#EEF5F8; }
-  .fdrop.decision.filled{ background:#FBF1E1; }
-  .fdrop.correct{ border-color:var(--grass); background:#EAF4E6; color:var(--ink); }
-  .fdrop.wrong{ border-color:var(--danger); background:#F8EAE9; color:var(--ink); }
-  .chip-bank{
-    display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:16px 0;
-    padding:12px; background:#FAFAF6; border:1px dashed var(--line); border-radius:10px;
-  }
-  .fchip{
-    padding:8px 14px; border-radius:8px; background:#FCFBF7; border:1px solid var(--river);
-    color:var(--ink); font-size:13px; cursor:grab; user-select:none;
-  }
-  .fchip:hover{ border-color:var(--river-deep); background:#EAF2F6; }
-  .fchip.used{ opacity:0.3; pointer-events:none; cursor:default; }
-  .fchip.dragging{ opacity:0.4; }
-  .fnode{
-    padding:9px 16px; font-size:13px; text-align:center; cursor:pointer; max-width:280px;
-    border:2px solid var(--river); background:#EEF5F8; transition:transform .15s, background .15s;
-  }
-  .fnode:hover{ transform:scale(1.03); }
-  .fnode.active{ background:var(--sun); border-color:var(--sun-deep); color:#3A2C0E; }
-  .fnode.oval{ border-radius:30px; }
-  .fnode.decision{ background:#FBF1E1; border-color:var(--sun-deep); }
-  .fnode.decision.active{ background:var(--sun-deep); color:#fff; }
-  .arrow{ font-size:16px; color:var(--ink-soft); }
-  .fexplain{
-    min-height:50px; background:#FAFAF6; border:1px solid var(--line); border-radius:10px;
-    padding:10px 14px; font-size:13px; margin-top:6px; color:var(--ink-soft); text-align:center;
-  }
+.top-title h1::before {
+  content: "🧪";
+  font-size: 22px;
+}
 
-  /* ---------- Code stepper ---------- */
-  pre.codeblock{
-    background:#22333B; color:#DCEFE0; padding:14px 10px; border-radius:10px;
-    font-size:13px; overflow-x:auto; line-height:1.6; margin:12px 0;
-    font-family:"SFMono-Regular",Consolas,"Courier New",monospace;
-  }
-  pre.codeblock .cm{ color:#8AA6AE; }
-  pre.codeblock .kw{ color:#E3A038; }
-  pre.codeblock .st{ color:#9AD0C2; }
-  .codeline{ display:flex; gap:10px; padding:1px 8px; border-radius:6px; white-space:pre; }
-  .codeline .ln{ color:#7E99A1; width:16px; text-align:right; flex:none; user-select:none; }
-  .codeline.hl{ background:rgba(227,160,56,0.28); }
-  .run-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
-  .run-note{
-    background:#FBF1E1; border:1px solid #F0DDB6; color:var(--sun-deep);
-    border-radius:10px; padding:10px 14px; font-size:14px; margin:10px 0; min-height:44px;
-  }
-  .vars-row{ display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
-  .var-card{
-    background:#FBF9F3; border:1px solid var(--line); border-radius:10px;
-    padding:8px 16px; text-align:center; min-width:88px;
-  }
-  .var-card .vn{ font-size:12px; color:var(--ink-soft); }
-  .var-card .vv{ font-size:20px; font-weight:800; color:var(--river-deep); font-family:Consolas,monospace; }
+#helpFlag {
+  min-height: 40px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  transition: all 0.2s ease;
+}
 
-  /* ---------- Forms ---------- */
-  textarea{
-    width:100%; min-height:90px; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
-    font-family:inherit; font-size:14px; resize:vertical;
-  }
-  input[type=text]{
-    border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:14px;
-  }
-  .check-row{ display:flex; align-items:flex-start; gap:10px; padding:8px 0; }
-  .check-row input{ margin-top:4px; }
-  .score-box{
-    text-align:center; margin:16px 0; padding:16px; border-radius:12px;
-    background:#EEF5F8; border:1px solid var(--line);
-  }
-  .score-box .big{ font-size:30px; font-weight:800; color:var(--river-deep); }
+#helpFlag:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
 
-  /* ---------- Medals ---------- */
-  .medals{ display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; }
-  .medal{
-    display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:20px;
-    padding:8px 14px; font-size:13px; background:#FCFBF7; color:var(--ink-soft);
-  }
-  .medal.got{ border-color:var(--grass); background:#EAF4E6; color:var(--grass-deep); font-weight:700; }
+#helpFlag[aria-pressed="true"] {
+  background: var(--gold);
+  color: #1E293B;
+  border-color: #FFFFFF;
+  box-shadow: 0 0 14px rgba(243, 156, 18, 0.55);
+}
 
-  /* ---------- Interactive Match (SVG Connecting Lines) ---------- */
-  .match-box{
-    position:relative; background:#FCFBF7; border:1px solid var(--line);
-    border-radius:var(--radius); padding:24px 20px; margin:16px 0; user-select:none;
-    box-shadow:inset 0 1px 3px rgba(0,0,0,0.02);
-  }
-  .match-svg{
-    position:absolute; top:0; left:0; width:100%; height:100%;
-    pointer-events:none; z-index:2; overflow:visible;
-  }
-  .match-svg path.match-line{
-    fill:none; stroke:var(--river); stroke-width:3; stroke-linecap:round;
-    transition:stroke .2s, stroke-width .2s; pointer-events:stroke; cursor:pointer;
-  }
-  .match-svg path.match-line:hover{ stroke:var(--danger); stroke-width:4.5; }
-  .match-svg path.match-line.drag{
-    fill:none; stroke:var(--sun); stroke-width:3; stroke-dasharray:6,4;
-    pointer-events:none;
-  }
-  .match-svg path.match-line.correct{ stroke:var(--grass-deep); stroke-width:3.5; }
-  .match-svg path.match-line.wrong{ stroke:var(--danger); stroke-width:3.5; stroke-dasharray:6,4; }
+.stepper {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
 
-  .match-cols{
-    display:grid; grid-template-columns:1fr 1fr; gap:48px; position:relative; z-index:3;
-  }
-  .match-col{ display:flex; flex-direction:column; gap:14px; }
-  .match-card{
-    background:#FFFFFF; border:1.5px solid var(--line); border-radius:10px;
-    padding:10px 14px; display:flex; align-items:center; justify-content:space-between;
-    cursor:pointer; transition:border-color .15s, background .15s, transform .15s;
-    min-height:50px; box-shadow:0 2px 4px rgba(34,51,59,0.04);
-  }
-  .match-card:hover{ border-color:var(--river); background:#F4F8FA; }
-  .match-card.active{
-    border-color:var(--sun-deep); background:#FCF6EA;
-    box-shadow:0 0 0 2px rgba(227,160,56,0.25);
-  }
-  .match-card.connected{ border-color:var(--river); background:#F0F6F9; }
-  .match-card.correct{ border-color:var(--grass-deep); background:#EAF4E6; }
-  .match-card.wrong{ border-color:var(--danger); background:#FBEFEF; animation:shake .3s ease; }
-  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+.stepper button {
+  min-height: 42px;
+  padding: 6px 15px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
 
-  .match-card .card-text{ font-size:14px; font-weight:600; color:var(--ink); flex:1; }
-  .match-dot{
-    width:14px; height:14px; border-radius:50%; background:#FFF; border:2.5px solid var(--ink-soft);
-    flex-shrink:0; transition:all .2s; box-sizing:border-box;
+.stepper button:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+}
+
+.stepper button[aria-current="step"] {
+  background: var(--gold);
+  color: #1E293B;
+  border-color: #FFFFFF;
+  box-shadow: 0 3px 12px rgba(243, 156, 18, 0.4);
+}
+
+#progressCapsule {
+  max-width: 960px;
+  margin: 10px auto 0;
+  padding: 5px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  color: #E2F2E8;
+  text-align: center;
+}
+
+#helpBanner {
+  max-width: 960px;
+  margin: 10px auto 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--gold-soft);
+  color: #7D4E00;
+  border: 2px solid var(--gold);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ---------- Main Container & Panels ---------- */
+main {
+  max-width: 960px;
+  margin: 22px auto;
+  padding: 0 16px;
+}
+
+.panel {
+  display: none;
+  background: var(--panel-bg);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 26px 28px;
+  margin-bottom: 18px;
+}
+
+.panel.active {
+  display: block;
+}
+
+.panel h2 {
+  font-size: 23px;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary-soft);
+}
+
+.panel h2:focus {
+  outline: none;
+}
+
+.panel h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-mid);
+  margin: 22px 0 10px;
+}
+
+/* ---------- Mission Briefing ([data-prose]) ---------- */
+div[data-prose] {
+  background: #F8FBF9;
+  border: 1px solid #D5E8DC;
+  border-left: 5px solid var(--primary-mid);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+
+div[data-prose] > p:first-child {
+  grid-column: 1 / -1;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+div[data-prose] > p.goal {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+div[data-prose] > p:nth-child(3),
+div[data-prose] > p:nth-child(4) {
+  margin: 0;
+  font-size: 14.5px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--line-soft);
+}
+
+div[data-prose] > p:nth-child(4) {
+  background: var(--gold-soft);
+  border-color: #F5D69B;
+  color: #7D4E00;
+  font-weight: 600;
+}
+
+p[data-prose] {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin: 0 0 16px;
+}
+
+/* ---------- Simulation Container & Feedback ---------- */
+.simulation {
+  margin: 16px 0;
+  padding: 20px;
+  background: #F9FBF9;
+  border: 2px solid #DCE8DF;
+  border-radius: 16px;
+  box-shadow: inset 0 2px 6px rgba(30, 81, 40, 0.03);
+}
+
+p[id^="feedback-"] {
+  min-height: 28px;
+  margin: 12px 0 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--blue-soft);
+  color: #1B4F72;
+  font-weight: 700;
+  font-size: 15.5px;
+  border-left: 4px solid var(--blue);
+}
+
+p[id^="feedback-"]:empty {
+  display: none;
+}
+
+p[id^="task-state-"] {
+  margin: 6px 0 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--primary-mid);
+}
+
+.hint {
+  background: var(--gold-soft);
+  border: 1.5px solid var(--gold);
+  color: #784700;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 12px 0;
+}
+
+/* ---------- Controls & Buttons ---------- */
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: 16px;
+}
+
+button {
+  min-height: 46px;
+  padding: 9px 18px;
+  border-radius: 11px;
+  border: 1.5px solid var(--line);
+  background: #FFFFFF;
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--primary-mid);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--gold-deep);
+  outline-offset: 2px;
+}
+
+.task-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+
+button[data-hint] {
+  background: var(--gold-soft);
+  border-color: #F0C27B;
+  color: #8A5300;
+}
+
+button[data-hint]:hover:not(:disabled) {
+  background: #FCEBC8;
+  border-color: var(--gold-deep);
+}
+
+/* ---------- Final Screen: Quiz, Medals, Self-Eval, Receipt ---------- */
+.quiz-block {
+  background: #F8FAFC;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.quiz-block h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 8px 0;
+  padding: 11px 16px;
+  border: 2px solid var(--line-soft);
+  border-radius: 10px;
+  background: #FFFFFF;
+  font-weight: 600;
+}
+
+.quiz-option.picked {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: #154360;
+  font-weight: 800;
+}
+
+.quiz-option.correct {
+  border-color: var(--primary-mid);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.quiz-option.wrong {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: #922B21;
+}
+
+.quiz-explanation {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #EEF6F0;
+  color: var(--primary);
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+#quizSubmit, #saveReceipt {
+  background: var(--primary-mid);
+  color: #FFFFFF;
+  border-color: var(--primary);
+}
+
+#quizSubmit:hover:not(:disabled),
+#saveReceipt:hover:not(:disabled) {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
+#openCert {
+  background: var(--gold);
+  color: #1E293B;
+  border-color: var(--gold-deep);
+}
+
+#openCert:hover:not(:disabled) {
+  background: #E08E0B;
+}
+
+#scoreBox {
+  margin: 14px 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #EBF5EE 0%, #D8F3DC 100%);
+  border: 2px solid var(--accent);
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.medal-wall {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0 18px;
+}
+
+.medal {
+  border: 2px dashed var(--line);
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #F8FAFC;
+  color: var(--ink-sub);
+  font-weight: 700;
+  transition: all 0.25s ease;
+}
+
+.medal.got {
+  border-style: solid;
+  border-color: var(--gold);
+  background: linear-gradient(135deg, #FFFDF5 0%, #FFF3CD 100%);
+  color: #7D4E00;
+  box-shadow: 0 4px 14px rgba(243, 156, 18, 0.18);
+}
+
+#selfList label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 6px 0;
+  border-radius: 10px;
+  background: #F8FAFC;
+  border: 1px solid var(--line-soft);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#selfList label:hover {
+  background: var(--primary-soft);
+}
+
+#selfList input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin: 0;
+  accent-color: var(--primary-mid);
+}
+
+label {
+  display: block;
+  margin: 10px 0;
+  font-weight: 600;
+}
+
+input:not([type="checkbox"]), textarea {
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  margin-left: 8px;
+}
+
+textarea {
+  width: 100%;
+  margin: 8px 0 0;
+  font-family: Consolas, Monaco, monospace;
+}
+
+#receiptPanel {
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: 12px;
+  background: #F8FAFC;
+  border: 1px solid var(--line);
+}
+
+/* ---------- Footer Navigation & Restart ---------- */
+.nav-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line-soft);
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.nav-row p {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink-sub);
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+#nextStep {
+  background: var(--primary-mid);
+  color: #FFFFFF;
+  border-color: var(--primary);
+}
+
+#nextStep:hover:not(:disabled) {
+  background: var(--primary);
+}
+
+#restartLesson {
+  margin-top: 16px;
+  font-size: 14px;
+  min-height: 38px;
+  padding: 6px 14px;
+  color: var(--ink-sub);
+  background: transparent;
+}
+
+#restartConfirm {
+  margin-top: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--gold-soft);
+  border: 2px solid var(--gold);
+}
+
+/* ---------- Certificate Modal ---------- */
+.cert-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 100;
+}
+
+.certificate {
+  background: linear-gradient(180deg, #FFFDF7 0%, #FFF7E0 100%);
+  border: 8px double var(--gold-deep);
+  border-radius: 20px;
+  max-width: 540px;
+  width: 100%;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+.certificate h2 {
+  color: #9A5B00;
+  margin: 0 0 14px;
+  font-size: 26px;
+}
+
+.certificate p {
+  white-space: pre-line;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 12px 0;
+}
+
+#certMedals {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.75);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+@media (max-width: 680px) {
+  main { padding: 0 10px; }
+  .panel { padding: 18px 14px; }
+  div[data-prose] { grid-template-columns: 1fr; }
+  .medal-wall { grid-template-columns: 1fr; }
+  .nav-row { flex-wrap: wrap; }
+  .nav-row p { flex-basis: 100%; order: 3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
   }
-  .match-card:hover .match-dot{ border-color:var(--river); transform:scale(1.15); }
-  .match-card.active .match-dot{ background:var(--sun); border-color:var(--sun-deep); transform:scale(1.25); }
-  .match-card.connected .match-dot{ background:var(--river); border-color:var(--river-deep); }
-  .match-card.correct .match-dot{ background:var(--grass); border-color:var(--grass-deep); }
-  .match-card.wrong .match-dot{ background:var(--danger); border-color:#992222; }
-
-  .match-col.left .match-card{ flex-direction:row; }
-  .match-col.left .match-dot{ margin-left:12px; }
-  .match-col.right .match-card{ flex-direction:row-reverse; }
-  .match-col.right .match-dot{ margin-right:12px; }
-
-  @media (max-width:560px){
-    h2.panel-title{ font-size:19px; }
-    .panel{ padding:20px 16px 18px; }
-    .dot .label{ display:none; }
-    .match-cols{ gap:20px; }
-    .match-card{ padding:8px 10px; min-height:42px; }
-    .match-card .card-text{ font-size:12px; }
-    .match-dot{ width:12px; height:12px; }
-  }
-
-/* V2 reuses the base-template visual vocabulary; behavior is maintained separately. */
-body{font-size:18px}main{max-width:980px}.top-title h1{font-size:22px}.stepper button{min-height:44px;font-size:15px}.stepper button[aria-current="step"]{background:#e3a038;color:#22333b}.panel[hidden]{display:none}.panel h2:focus{outline:none}button,input,select{min-height:48px;font-size:18px}input,textarea{max-width:100%;font:inherit}textarea{width:100%;padding:12px}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #c6821f;outline-offset:3px}.simulation{margin:18px 0;padding:16px;background:#fbf9f3;border:1px solid #e1dacb;border-radius:14px}.task-tools{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.nav-row{position:sticky;bottom:0;gap:12px;background:#f7f4ec;padding:12px;z-index:40}.nav-row p{font-size:14px;margin:0;flex:1}.medal-wall{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.medal{border:1px solid #e1dacb;padding:12px;border-radius:10px}.medal.got{background:#fff1c8;border-color:#c6821f}.quiz-option{display:block;text-align:left;margin:8px 0;width:100%;border:2px solid #ddd}.quiz-option.picked{border-color:#2f6c8e;background:#e4f1f8}.quiz-option.correct{border-color:#4f7a41;background:#eff5eb}.quiz-option.wrong{border-color:#c1554d;background:#fff0ed}.quiz-block{margin-bottom:20px}label{display:block;margin:8px 0}label input[type="checkbox"]{min-height:24px;width:24px;vertical-align:middle}#helpBanner{background:#fff1c8;color:#22333b;padding:12px}#progressCapsule{margin:8px 0;font-size:14px;text-align:center}.cert-modal{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;z-index:100}.cert-modal[hidden]{display:none}.certificate{background:#fff9e8;border:8px double #c6821f;border-radius:18px;max-width:580px;padding:28px;text-align:center}.certificate p{white-space:pre-line}#restartLesson{margin-top:20px;font-size:14px}#restartConfirm{padding:16px;background:#fff1c8}#receiptPanel{margin:14px 0}#selfMessage{color:#1f4e66}@media(max-width:600px){main{padding:0 10px}.panel{padding:18px 14px}.medal-wall{grid-template-columns:1fr}.nav-row{flex-wrap:wrap}.nav-row p{flex-basis:100%;order:3}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+}
 </style></head><body>
 <header class="top"><div class="top-title"><h1>二进制灯泡</h1><button id="helpFlag" aria-pressed="false">🚩 我需要帮助</button></div><nav id="stepper" class="stepper" aria-label="任务导航"></nav><p id="progressCapsule" role="status"></p><p id="helpBanner" hidden>我需要帮助，请老师或同伴过来看看。</p></header>
 <main><section class="panel active" data-step="0" data-panel-type="hands-on">
 <h2 tabindex="-1">灯泡权值探究</h2><div data-prose><p>同样多的亮灯，总数会一样吗？先猜，再比较。</p>
 <p class="goal">目标：比较位置与权值。</p><p>基础：记录同亮灯数、不同总数的一对，再记录5并解释。</p><p>⭐ 挑战：基础后记录10，再尝试迁移。</p></div>
-<div id="sim-binary" class="simulation"></div><template id="template-binary"><style>:host{display:block;color:#22333b;font:inherit}*{box-sizing:border-box}button,input,select,textarea{font:inherit}button,input,select{min-height:48px}button{padding:8px 14px;border:1px solid #719175;border-radius:10px;background:#eff5eb;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #be7712;outline-offset:3px}button:disabled{opacity:.6}output{display:block;margin:12px 0;font-weight:bold}label{display:inline-block;margin:8px}svg{max-width:100%}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+<div id="sim-binary" class="simulation"></div><template id="template-binary"><style>:host {
+  display: block;
+  color: #1E293B;
+  font: inherit;
+}
 
-#bits{display:flex;flex-wrap:wrap;gap:12px}#bits button[aria-pressed=true]{background:#fff1c8;border:2px solid #c6821f}#value{font-size:26px}</style><p>我预测：相同数量的亮灯，数值会一样吗？</p><label><select id=prediction><option value=unknown>请选择预测</option><option value=same>一样</option><option value=different>不一样</option></select></label><div id=bits><button data-bit=0>8：关</button><button data-bit=1>4：关</button><button data-bit=2>2：关</button><button data-bit=3>1：关</button></div><output id=value>0000 = 0</output><button id=record>记录本次结果</button><p id=records>尚未比较</p><label>比较后，我认为<select id=explanation><option value=unknown>请选择解释</option><option value=count>亮灯越多，数值就越大</option><option value=weight>每个位置有不同权值，总数由权值相加</option></select></label><fieldset><legend>迁移预测：权值 8 和 1 亮时，数值是多少？</legend><input id=transferAnswer type=number min=0 max=15 aria-label="迁移预测数值"><button id=transferCheck>验证迁移预测</button><output id=transferResult></output></fieldset></template>
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button, input, select {
+  min-height: 46px;
+}
+
+button {
+  padding: 9px 16px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #1E293B;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+
+button:hover:not(:disabled) {
+  border-color: #2D6A4F;
+  background: #EBF5EE;
+  color: #1E5128;
+}
+
+button[aria-pressed="true"] {
+  background: #FFF3CD;
+  border: 2px solid #D97706;
+  color: #92400E;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #D97706;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input, select {
+  padding: 6px 12px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+output {
+  display: inline-block;
+  margin: 10px 0;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: #0F172A;
+  color: #38BDF8;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-weight: 800;
+}
+
+output:empty {
+  display: none;
+}
+
+fieldset {
+  margin: 14px 0 4px;
+  padding: 14px 16px;
+  border: 2px dashed #D97706;
+  border-radius: 12px;
+  background: #FFFDF7;
+}
+
+legend {
+  padding: 0 8px;
+  font-weight: 800;
+  color: #B45309;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 10px 6px 0;
+  font-weight: 600;
+}
+
+svg {
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+#bits{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}#bits button{min-width:110px;font-size:17px}#bits button[aria-pressed=true]{background:#fff1c8;border:2px solid #c6821f}#value{font-size:26px;display:block;margin:12px 0}#records{background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600}</style><p>我预测：相同数量的亮灯，数值会一样吗？</p><label><select id=prediction><option value=unknown>请选择预测</option><option value=same>一样</option><option value=different>不一样</option></select></label><div id=bits><button data-bit=0>💡 8：关</button><button data-bit=1>💡 4：关</button><button data-bit=2>💡 2：关</button><button data-bit=3>💡 1：关</button></div><output id=value>0000 = 0</output><button id=record>📝 记录本次结果</button><p id=records>尚未比较</p><label>比较后，我认为<select id=explanation><option value=unknown>请选择解释</option><option value=count>亮灯越多，数值就越大</option><option value=weight>每个位置有不同权值，总数由权值相加</option></select></label><fieldset><legend>⭐ 迁移预测：权值 8 和 1 亮时，数值是多少？</legend><input id=transferAnswer type=number min=0 max=15 aria-label="迁移预测数值"><button id=transferCheck>验证迁移预测</button><output id=transferResult></output></fieldset></template>
 <p id="feedback-binary" role="status" aria-live="polite"></p><p id="task-state-binary"></p>
 <div class="task-tools"><button data-hint="binary">需要一点提示</button><button data-reset="binary">重置实验</button></div><p id="hint-binary" class="hint" hidden></p>
 </section>
-<section class="panel" data-step="1"><h2 tabindex="-1">评价与学习记录</h2><p data-prose>回顾探究，再记录自己的收获。</p><div id="quizArea"></div><button id="quizSubmit">提交测验并判分</button><p id="quizMessage" role="status"></p><p id="scoreBox" hidden></p>
+<section class="panel" data-step="1" data-panel-type="hands-on">
+<h2 tabindex="-1">储物柜编码破译</h2><div data-prose><p>智能储物柜用四位二进制给格口编号，来破译格口编码吧。</p>
+<p class="goal">目标：拼出目标格口并发现奇偶位规律。</p><p>基础：拨出6号格口并选出末位奇偶规律。</p><p>⭐ 挑战：拨出最大格口15，再修正错误格口。</p></div>
+<div id="sim-decoder" class="simulation"></div><template id="template-decoder"><style>:host {
+  display: block;
+  color: #1E293B;
+  font: inherit;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button, input, select {
+  min-height: 46px;
+}
+
+button {
+  padding: 9px 16px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #1E293B;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+
+button:hover:not(:disabled) {
+  border-color: #2D6A4F;
+  background: #EBF5EE;
+  color: #1E5128;
+}
+
+button[aria-pressed="true"] {
+  background: #FFF3CD;
+  border: 2px solid #D97706;
+  color: #92400E;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #D97706;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input, select {
+  padding: 6px 12px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+output {
+  display: inline-block;
+  margin: 10px 0;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: #0F172A;
+  color: #38BDF8;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-weight: 800;
+}
+
+output:empty {
+  display: none;
+}
+
+fieldset {
+  margin: 14px 0 4px;
+  padding: 14px 16px;
+  border: 2px dashed #D97706;
+  border-radius: 12px;
+  background: #FFFDF7;
+}
+
+legend {
+  padding: 0 8px;
+  font-weight: 800;
+  color: #B45309;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 10px 6px 0;
+  font-weight: 600;
+}
+
+svg {
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+#switches{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}#switches button{min-width:110px}#boxReadout{font-size:22px;display:block}#unlockedList{background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600}</style><p>当前目标：请拨动储物柜地址开关，拼出 <strong>6 号格口</strong> 的编码，再挑战 <strong>最大格口号</strong>。</p><div id=switches><button data-sw=0>权值8：0</button><button data-sw=1>权值4：0</button><button data-sw=2>权值2：0</button><button data-sw=3>权值1：0</button></div><output id=boxReadout>当前编码：0000 ➔ 0 号格口</output><button id=lockBox>🔓 确认打开当前格口</button><p id=unlockedList>已验证格口：暂无</p><label>观察规律：为什么最低位（权值1）能决定奇偶？<select id=parityRule><option value=unknown>请选择规律</option><option value=first>因为最高位权值 8 最大</option><option value=last>因为 8、4、2 都是偶数，只有末位权值 1 是奇数</option></select></label><fieldset><legend>⭐ 排障迁移：某格口编码是 0011，却被贴错了“6号”标签，它真实是几号？</legend><input id=fixBox type=number min=0 max=15 aria-label="修正后的格口号"><button id=fixBtn>验证排障结果</button><output id=fixOut></output></fieldset></template>
+<p id="feedback-decoder" role="status" aria-live="polite"></p><p id="task-state-decoder"></p>
+<div class="task-tools"><button data-hint="decoder">需要一点提示</button><button data-reset="decoder">重置实验</button></div><p id="hint-decoder" class="hint" hidden></p>
+</section>
+<section class="panel" data-step="2">
+<h2 tabindex="-1">编码容量对比</h2><div data-prose><p>同样4盏灯，只数亮灯盏数和按位置赋权，容量差多少？</p>
+<p class="goal">目标：比较两种方案可表示的状态总数。</p><p>基础：切换对比两种方案并选出4位状态数。</p><p>⭐ 挑战：推算增加到5盏灯时的最大状态总数。</p></div>
+<div id="sim-capacity" class="simulation"></div><template id="template-capacity"><style>:host {
+  display: block;
+  color: #1E293B;
+  font: inherit;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button, input, select {
+  min-height: 46px;
+}
+
+button {
+  padding: 9px 16px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #1E293B;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+
+button:hover:not(:disabled) {
+  border-color: #2D6A4F;
+  background: #EBF5EE;
+  color: #1E5128;
+}
+
+button[aria-pressed="true"] {
+  background: #FFF3CD;
+  border: 2px solid #D97706;
+  color: #92400E;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #D97706;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input, select {
+  padding: 6px 12px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+output {
+  display: inline-block;
+  margin: 10px 0;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: #0F172A;
+  color: #38BDF8;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-weight: 800;
+}
+
+output:empty {
+  display: none;
+}
+
+fieldset {
+  margin: 14px 0 4px;
+  padding: 14px 16px;
+  border: 2px dashed #D97706;
+  border-radius: 12px;
+  background: #FFFDF7;
+}
+
+legend {
+  padding: 0 8px;
+  font-weight: 800;
+  color: #B45309;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 10px 6px 0;
+  font-weight: 600;
+}
+
+svg {
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+#modeBtns{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}#modeSummary{display:block;font-size:17px}</style><div id=modeBtns><button id=modeCount data-mode=count>方案A：只数亮灯盏数</button><button id=modeWeight data-mode=weight>方案B：按 8-4-2-1 位置赋权</button></div><output id=modeSummary>请点击上方两个方案按钮对比容量差异</output><label>4 位二进制编码一共能表示多少种不同状态（0000 到 1111）？<select id=capSelect><option value=unknown>请选择状态总数</option><option value=5>5 种（0 到 4）</option><option value=15>15 种（忽略了 0000）</option><option value=16>16 种（0 到 15，每多一位翻一倍）</option></select></label><fieldset><legend>⭐ 进阶推算：如果在左边再加第 5 盏灯（权值 16），一共能表示多少种状态？</legend><select id=bit5Select><option value=unknown>请选择 5 位状态总数</option><option value=20>20 种</option><option value=32>32 种（16 × 2 = 32）</option></select></fieldset></template>
+<p id="feedback-capacity" role="status" aria-live="polite"></p><p id="task-state-capacity"></p>
+<div class="task-tools"><button data-hint="capacity">需要一点提示</button><button data-reset="capacity">重置实验</button></div><p id="hint-capacity" class="hint" hidden></p>
+</section>
+<section class="panel" data-step="3"><h2 tabindex="-1">评价与学习记录</h2><p data-prose>回顾探究，再记录自己的收获。</p><div id="quizArea"></div><button id="quizSubmit">提交测验并判分</button><p id="quizMessage" role="status"></p><p id="scoreBox" hidden></p>
 <h3>我的成长徽章</h3><div id="medalArea" class="medal-wall"></div><h3>自我评价</h3><div id="selfList"></div><p id="selfMessage" role="status"></p>
 <label>班级（选填）<input id="inputClass" maxlength="60" autocomplete="off"></label><label>姓名（选填）<input id="inputName" maxlength="60" autocomplete="off"></label><div class="task-tools"><button id="saveReceipt" disabled>保存学习凭单 (.txt)</button><button id="viewReceipt" disabled>查看／复制凭单</button><button id="openCert">生成电子通关奖状</button></div>
 <div id="receiptPanel" hidden><label>学习凭单<textarea id="receiptText" readonly rows="4"></textarea></label><button id="copyReceipt">复制凭单</button><p id="receiptMessage" role="status"></p></div></section>
@@ -333,9 +1033,9 @@ body{font-size:18px}main{max-width:980px}.top-title h1{font-size:22px}.stepper b
 <div id="certModal" class="cert-modal" role="dialog" aria-modal="true" aria-labelledby="certHeading" hidden><div class="certificate"><h2 id="certHeading">🏆 探究成长奖状</h2><p id="certContent"></p><p id="certMedals"></p><button id="closeCert">关闭奖状</button></div></div>
 <script>
 "use strict";
-const stepLabels = ["灯泡权值探究","评价与学习记录"];
+const stepLabels = ["灯泡权值探究","储物柜编码破译","编码容量对比","评价与学习记录"];
 const quiz = [{"q":"只亮权值 8 的灯，数值是多少？","options":["1","8","亮灯数量"],"correct":1,"why":"权值 8 的灯贡献数值 8，与亮灯总数不同。"},{"q":"权值 4 和 1 同时亮，总数是多少？","options":["2","41","5"],"correct":2,"why":"总数按权值相加：4+1=5。"}];
-const lessonConfig = {"title":"二进制灯泡","grade":"四年级上册","screens":[{"id":"binary","title":"灯泡权值探究","prose":"同样多的亮灯，总数会一样吗？先猜，再比较。","kind":"hands-on","goal":"比较位置与权值。","basicCriterion":"记录同亮灯数、不同总数的一对，再记录5并解释。","starCriterion":"基础后记录10，再尝试迁移。","hints":["试试只点亮一个灯泡，观察总数。","从左到右权值是 8、4、2、1，相加得到总数。","组成 5 的示范：点亮权值 4 和 1，编码为 0101；5=4+1。"],"sourceTask":"灯泡权值探究"}],"medals":[{"event":"basic","label":"权值发现者"},{"event":"star","label":"编码挑战者"},{"event":"transfer","label":"误区修正者"},{"event":"reflection","label":"认真学习者"}]};
+const lessonConfig = {"title":"二进制灯泡","grade":"四年级上册","screens":[{"id":"binary","title":"灯泡权值探究","prose":"同样多的亮灯，总数会一样吗？先猜，再比较。","kind":"hands-on","goal":"比较位置与权值。","basicCriterion":"记录同亮灯数、不同总数的一对，再记录5并解释。","starCriterion":"基础后记录10，再尝试迁移。","hints":["试试只点亮一个灯泡，观察总数。","从左到右权值是 8、4、2、1，相加得到总数。","组成 5 的示范：点亮权值 4 和 1，编码为 0101；5=4+1。"],"sourceTask":"灯泡权值探究"},{"id":"decoder","title":"储物柜编码破译","prose":"智能储物柜用四位二进制给格口编号，来破译格口编码吧。","kind":"hands-on","goal":"拼出目标格口并发现奇偶位规律。","basicCriterion":"拨出6号格口并选出末位奇偶规律。","starCriterion":"拨出最大格口15，再修正错误格口。","hints":["6 可以拆成哪两个权值相加？试试 4 和 2。","观察权值 8、4、2 都是偶数，只有最右边的权值 1 是奇数。","示范：0110 对应 4+2=6（偶数末位为0）；四盏全亮 1111 对应 8+4+2+1=15；0011 对应 2+1=3。"],"sourceTask":"储物柜编码破译"},{"id":"capacity","title":"编码容量对比","prose":"同样4盏灯，只数亮灯盏数和按位置赋权，容量差多少？","kind":"explore","goal":"比较两种方案可表示的状态总数。","basicCriterion":"切换对比两种方案并选出4位状态数。","starCriterion":"推算增加到5盏灯时的最大状态总数。","hints":["只数亮灯盏数时，4 盏灯只有 0、1、2、3、4 共 5 种结果。","按位置赋权时，每盏灯都有开/关 2 种可能，4 盏灯是 2×2×2×2=16 种。","示范：分别点击两种方案对比按钮，选择 16 种；增加 1 盏灯后容量翻倍为 32 种。"],"sourceTask":"编码容量对比"}],"medals":[{"event":"basic","label":"权值发现者"},{"event":"star","label":"编码挑战者"},{"event":"transfer","label":"误区修正者"},{"event":"reflection","label":"认真学习者"}]};
 const medalDefs = [{"event":"basic","label":"权值发现者"},{"event":"star","label":"编码挑战者"},{"event":"transfer","label":"误区修正者"},{"event":"reflection","label":"认真学习者"}];
 const simulationMounts = {"binary": function(root, api) { "use strict";
 const weights = [8,4,2,1];
@@ -353,7 +1053,7 @@ const basicNow = () => sameCountDifferentValue() && records.has('0101') && sum()
 const render = () => {
   root.querySelector('#value').textContent = bits.join('')+' = '+sum();
   root.querySelectorAll('[data-bit]').forEach((b,i) => {
-    b.textContent=weights[i]+'：'+(bits[i]?'开':'关');
+    b.textContent='💡 '+weights[i]+'：'+(bits[i]?'开':'关');
     b.setAttribute('aria-pressed',String(Boolean(bits[i])));
   });
 };
@@ -385,6 +1085,88 @@ return {
     root.querySelector('#prediction').value='unknown';root.querySelector('#explanation').value='unknown';
     root.querySelector('#transferAnswer').value='';root.querySelector('#transferResult').textContent='';
     root.querySelector('#records').textContent='尚未比较';render();
+  }
+};
+},
+"decoder": function(root, api) { "use strict";
+const w=[8,4,2,1];
+let sw=[0,0,0,0];
+let opened=new Set();
+let basicDone=false;
+let starDone=false;
+let fixDone=false;
+const total=()=>sw.reduce((acc,v,i)=>acc+v*w[i],0);
+const checkBasic=()=>opened.has(6)&&root.querySelector('#parityRule').value==='last';
+const paint=()=>{
+  root.querySelector('#boxReadout').textContent='当前编码：'+sw.join('')+' ➔ '+total()+' 号格口';
+  root.querySelectorAll('[data-sw]').forEach((btn,i)=>{
+    btn.textContent='权值'+w[i]+'：'+sw[i];
+    btn.setAttribute('aria-pressed',String(Boolean(sw[i])));
+  });
+};
+root.querySelectorAll('[data-sw]').forEach((btn,i)=>btn.addEventListener('click',()=>{
+  sw[i]=1-sw[i];paint();
+  api.feedback('地址位 '+w[i]+' 切换为 '+sw[i]+'，指向 '+total()+' 号格口。');api.changed();
+}));
+root.querySelector('#lockBox').addEventListener('click',()=>{
+  const num=total();
+  opened.add(num);
+  if(checkBasic()) basicDone=true;
+  if(basicDone && opened.has(15)) starDone=true;
+  root.querySelector('#unlockedList').textContent='已验证格口：'+[...opened].map(n=>n+'号').join('、');
+  api.feedback('已验证 '+num+' 号格口（编码 '+sw.join('')+'）。');api.changed();
+});
+root.querySelector('#parityRule').addEventListener('change',()=>{
+  if(checkBasic()) basicDone=true;
+  if(basicDone && opened.has(15)) starDone=true;
+  api.changed();
+});
+root.querySelector('#fixBtn').addEventListener('click',()=>{
+  const val=Number(root.querySelector('#fixBox').value.trim());
+  fixDone=basicDone&&starDone&&val===3;
+  root.querySelector('#fixOut').textContent=!basicDone||!starDone?'请先完成 6 号格口基础验证与 15 号最大格口挑战。':fixDone?'排障成功：0011 = 2+1 = 3 号格口！':'再算算：编码 0011 点亮的是权值 2 和 1。';
+  api.changed();
+});
+paint();
+return {
+  evaluate(){return {basic:basicDone,star:basicDone&&starDone,transfer:fixDone};},
+  reset(){
+    sw=[0,0,0,0];opened=new Set();basicDone=false;starDone=false;fixDone=false;
+    root.querySelector('#parityRule').value='unknown';
+    root.querySelector('#fixBox').value='';root.querySelector('#fixOut').textContent='';
+    root.querySelector('#unlockedList').textContent='已验证格口：暂无';paint();
+  }
+};
+},
+"capacity": function(root, api) { "use strict";
+let seenA=false,seenB=false,basicOk=false,starOk=false;
+const refresh=()=>{
+  basicOk=seenA&&seenB&&root.querySelector('#capSelect').value==='16';
+  starOk=basicOk&&root.querySelector('#bit5Select').value==='32';
+};
+root.querySelector('#modeCount').addEventListener('click',()=>{
+  seenA=true;
+  root.querySelector('#modeCount').setAttribute('aria-pressed','true');
+  root.querySelector('#modeSummary').textContent='方案A（只数盏数）：只能区分 0、1、2、3、4 盏亮灯，共 5 种状态（0001 与 1000 被当成同一种）。';
+  refresh();api.feedback('已观察方案A：只数亮灯个数会丢失位置信息。');api.changed();
+});
+root.querySelector('#modeWeight').addEventListener('click',()=>{
+  seenB=true;
+  root.querySelector('#modeWeight').setAttribute('aria-pressed','true');
+  root.querySelector('#modeSummary').textContent='方案B（位置权值）：从 0000（0）到 1111（15），每个编码数值唯一，共 2×2×2×2 = 16 种状态！';
+  refresh();api.feedback('已观察方案B：位置权值让 4 盏灯拥有 16 种唯一状态。');api.changed();
+});
+root.querySelector('#capSelect').addEventListener('change',()=>{refresh();api.changed();});
+root.querySelector('#bit5Select').addEventListener('change',()=>{refresh();api.changed();});
+return {
+  evaluate(){return {basic:basicOk,star:starOk,transfer:starOk};},
+  reset(){
+    seenA=false;seenB=false;basicOk=false;starOk=false;
+    root.querySelector('#modeCount').setAttribute('aria-pressed','false');
+    root.querySelector('#modeWeight').setAttribute('aria-pressed','false');
+    root.querySelector('#modeSummary').textContent='请点击上方两个方案按钮对比容量差异';
+    root.querySelector('#capSelect').value='unknown';
+    root.querySelector('#bit5Select').value='unknown';
   }
 };
 }};

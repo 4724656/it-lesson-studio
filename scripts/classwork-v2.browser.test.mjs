@@ -12,7 +12,8 @@ const options = { gradeNum: 4, grade: '四年级上册', lessonTitle: '二进制
 let browser;
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'itls-v2-browser-'));
 test.before(async () => {
-  browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || undefined, args: ['--no-sandbox', '--disable-gpu'] });
+  const sysChrome = ['C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'].find(p => fs.existsSync(p));
+  browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || sysChrome || undefined, args: ['--no-sandbox', '--disable-gpu'] });
 });
 test.after(async () => { await browser?.close(); fs.rmSync(directory, { recursive: true, force: true }); });
 
@@ -49,7 +50,8 @@ async function passBasic(page) {
   await record(page, '0101');
   await sim(page).locator('#explanation').selectOption('weight');
 }
-async function goFinal(page) { await page.locator('#nextStep').click(); }
+async function goFinal(page) { await page.locator('#stepper button').last().click(); }
+async function goBinary(page) { await page.locator('#stepper button').first().click(); }
 async function submit(page, choices) {
   const blocks = page.locator('.quiz-block');
   for (let i = 0; i < choices.length; i++) await blocks.nth(i).locator(`[data-choice="${choices[i]}"]`).click();
@@ -63,7 +65,7 @@ test('offline navigation, honest basic/star/transfer, repeated reset and first s
     assert.equal(await page.locator('.medal.got').count(), 0);
     await goFinal(page); // incomplete tasks do not lock evaluation
     assert.ok((await page.locator('#navMessage').textContent()).includes('尚未完成'));
-    await page.locator('#prevStep').click();
+    await goBinary(page);
     // Wrong comparison: different counts does not prove the stated misconception.
     await sim(page).locator('#prediction').selectOption('same');
     await record(page, '0000'); await record(page, '0001'); await record(page, '0101');
@@ -92,7 +94,7 @@ test('offline navigation, honest basic/star/transfer, repeated reset and first s
     assert.ok((await page.locator('#scoreBox').textContent()).includes('50 / 100'));
     await page.locator('#selfList input').last().check();
     assert.equal(await page.locator('.medal.got').count(), 4);
-    await page.locator('#prevStep').click();
+    await goBinary(page);
     await page.locator('[data-reset="binary"]').click();
     await goFinal(page);
     assert.ok((await page.locator('#scoreBox').textContent()).includes('50 / 100'));
@@ -161,7 +163,7 @@ test('certificate remains truthful and keyboard accessible at 1024x768 with deni
     assert.ok(await page.locator('#certModal').isHidden());
     assert.equal(await page.evaluate(() => document.activeElement.id), 'openCert');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-    await page.locator('#prevStep').click();
+    await goBinary(page);
     await sim(page).locator('[data-bit="0"]').focus();
     await page.keyboard.press('Enter');
     assert.equal(await sim(page).locator('#value').textContent(), '1000 = 8');
@@ -183,5 +185,40 @@ test('broken or pre-awarded module is visible to runtime validation while naviga
     await goFinal(page);
     await page.locator('#openCert').click();
     assert.ok(await page.locator('#certModal').isVisible());
+  } finally { await context.close(); }
+});
+
+test('multi-screen classroom progression: completing all 3 inquiry screens unlocks full progress and 持续成长者 title', async () => {
+  const { context, page, errors } = await open();
+  try {
+    assert.equal(await page.locator('section.panel').count(), 4);
+    await passBasic(page);
+    await record(page, '1010');
+    await page.locator('#nextStep').click();
+
+    const decoder = page.locator('#sim-decoder');
+    await decoder.locator('[data-sw="1"]').click();
+    await decoder.locator('[data-sw="2"]').click();
+    await decoder.locator('#lockBox').click();
+    await decoder.locator('#parityRule').selectOption('last');
+    assert.ok((await page.locator('#task-state-decoder').textContent()).includes('独立通关'));
+    await decoder.locator('[data-sw="0"]').click();
+    await decoder.locator('[data-sw="3"]').click();
+    await decoder.locator('#lockBox').click();
+    await decoder.locator('#fixBox').fill('3');
+    await decoder.locator('#fixBtn').click();
+
+    await page.locator('#nextStep').click();
+    const cap = page.locator('#sim-capacity');
+    await cap.locator('#modeCount').click();
+    await cap.locator('#modeWeight').click();
+    await cap.locator('#capSelect').selectOption('16');
+    await cap.locator('#bit5Select').selectOption('32');
+    assert.ok((await page.locator('#progressCapsule').textContent()).includes('基础 3/3 · ⭐ 3/3'));
+
+    await page.locator('#nextStep').click();
+    await page.locator('#openCert').click();
+    assert.ok((await page.locator('#certContent').textContent()).includes('持续成长者'));
+    assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });

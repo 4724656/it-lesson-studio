@@ -1,1 +1,118 @@
-:host{display:block;color:#22333b;font:inherit}*{box-sizing:border-box}button,input,select,textarea{font:inherit}button,input,select{min-height:48px}button{padding:8px 14px;border:1px solid #719175;border-radius:10px;background:#eff5eb;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #be7712;outline-offset:3px}button:disabled{opacity:.6}output{display:block;margin:12px 0;font-weight:bold}label{display:inline-block;margin:8px}svg{max-width:100%}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+:host {
+  display: block;
+  color: #1E293B;
+  font: inherit;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button, input, select {
+  min-height: 46px;
+}
+
+button {
+  padding: 9px 16px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #1E293B;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+
+button:hover:not(:disabled) {
+  border-color: #2D6A4F;
+  background: #EBF5EE;
+  color: #1E5128;
+}
+
+button[aria-pressed="true"] {
+  background: #FFF3CD;
+  border: 2px solid #D97706;
+  color: #92400E;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #D97706;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input, select {
+  padding: 6px 12px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+output {
+  display: inline-block;
+  margin: 10px 0;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: #0F172A;
+  color: #38BDF8;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-weight: 800;
+}
+
+output:empty {
+  display: none;
+}
+
+fieldset {
+  margin: 14px 0 4px;
+  padding: 14px 16px;
+  border: 2px dashed #D97706;
+  border-radius: 12px;
+  background: #FFFDF7;
+}
+
+legend {
+  padding: 0 8px;
+  font-weight: 800;
+  color: #B45309;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 10px 6px 0;
+  font-weight: 600;
+}
+
+svg {
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

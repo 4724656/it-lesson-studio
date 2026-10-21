@@ -10,12 +10,13 @@ const rejectMutation = (change, expected) => { const data = fixture(); change(da
 
 test('V2 reads actual spec instead of a numerical copy and treats limits as maxima', () => {
   const spec = fs.readFileSync(new URL('../references/output-spec.md', import.meta.url), 'utf8');
-  assert.equal(readHtmlLimits(4).screens, 4);
-  assert.equal(readHtmlLimits(4, spec.replace('4: { screens: 4', '4: { screens: 3')).screens, 3);
+  assert.equal(readHtmlLimits(4).screens, 5);
+  assert.equal(readHtmlLimits(4, spec.replace('4: { screens: 5', '4: { screens: 3')).screens, 3);
   assert.throws(() => readHtmlLimits(4, 'broken'), /无法读取/);
   assert.throws(() => readHtmlLimits(9), /无法读取/);
   assert.doesNotThrow(() => validateV2Payload(fixture(), 4));
-  rejectMutation(d => { d.screens = Array.from({ length: 4 }, (_, i) => ({ ...d.screens[0], id: `task-${i}` })); }, /屏数/);
+  rejectMutation(d => { d.screens = Array.from({ length: 5 }, (_, i) => ({ ...d.screens[0], id: `task-${i}` })); }, /屏数/);
+  rejectMutation(d => { d.screens = [d.screens[0]]; }, /屏数/);
   rejectMutation(d => { d.screens[0].prose = '字'.repeat(81); }, /导语/);
   rejectMutation(d => { d.screens[0].goal = '字'.repeat(81); }, /合计正文/);
   rejectMutation(d => { d.quiz[0].q = '字'.repeat(35); }, /题干/);
@@ -37,7 +38,7 @@ test('V2 prompt loads only module 4 plus selected semester, preserving full docu
 test('V2 rejects missing teaching predicates, invalid quiz, duplicated IDs and fabricated schema', () => {
   rejectMutation(d => { d.screens[0].basicCriterion = ''; }, /判据/);
   rejectMutation(d => { d.screens[0].kind = 'read'; }, /类型/);
-  rejectMutation(d => { d.screens[0].kind = 'explore'; }, /动手/);
+  rejectMutation(d => { d.screens.forEach(s => { s.kind = 'explore'; }); }, /动手/);
   rejectMutation(d => { d.screens.push({ ...d.screens[0] }); }, /重复/);
   rejectMutation(d => { d.quiz[0].correct = 10; }, /答案索引/);
   rejectMutation(d => { d.medals[0].event = 'reflection'; }, /徽章/);
@@ -107,7 +108,7 @@ test('V1 retains its exact frozen system prompt; V2 integration changes only the
           assert.ok(!body.messages[0].content.includes('grid-2'));
           assert.ok(body.messages[1].content.includes('plan-full-context'));
         }
-        const content = calls === 1 ? '===FILE: 教案.md===\nplan-full-context 灯泡权值探究\n===FILE: 导学案.md===\nworksheet 灯泡权值探究\n===FILE: 课件.md===\nslides 灯泡权值探究'
+        const content = calls === 1 ? '===FILE: 教案.md===\nplan-full-context 灯泡权值探究 储物柜编码破译 编码容量对比\n===FILE: 导学案.md===\nworksheet 灯泡权值探究 储物柜编码破译 编码容量对比\n===FILE: 课件.md===\nslides 灯泡权值探究 储物柜编码破译 编码容量对比'
           : mode === 'v2' ? JSON.stringify(fixture()) : '<!DOCTYPE html><html><head></head><body></body></html>';
         return new Response(JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }));
       };
@@ -133,6 +134,6 @@ test('V1 retains its exact frozen system prompt; V2 integration changes only the
 
 test('V2 task names must be shared by all three existing documents', () => {
   const payload = fixture();
-  assert.doesNotThrow(() => validateSourceTasks(payload, { plan:'灯泡权值探究',worksheet:'任务：灯泡权值探究',slides:'灯泡权值探究' }));
+  assert.doesNotThrow(() => validateSourceTasks(payload, { plan:'灯泡权值探究 储物柜编码破译 编码容量对比',worksheet:'任务：灯泡权值探究 储物柜编码破译 编码容量对比',slides:'灯泡权值探究 储物柜编码破译 编码容量对比' }));
   assert.throws(() => validateSourceTasks(payload, { plan:'灯泡权值探究',worksheet:'另一个任务',slides:'灯泡权值探究' }), /共同出现/);
 });

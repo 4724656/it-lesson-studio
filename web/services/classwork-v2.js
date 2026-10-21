@@ -27,16 +27,18 @@ export function readHtmlLimits(grade, specText = read('references/output-spec.md
   return limits;
 }
 
-export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent }) {
+export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent, simBlueprint }) {
   const skill = read('skills/it-lesson-studio/SKILL.md');
   const globalRules = skill.slice(skill.indexOf('## 🎯'), skill.indexOf('## ⚙️'));
   const patterns = read('references/classwork-v2-patterns.md');
   const cn = { 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八' }[gradeNum];
   const term = /上/.test(grade) && !/下/.test(grade) ? '上' : /下/.test(grade) && !/上/.test(grade) ? '下' : '';
   const selected = term ? patterns.split('\n').find(line => line.startsWith(`| **${cn}${term}**`)) : null;
+  const limits = readHtmlLimits(gradeNum);
+  const blueprintBlock = simBlueprint ? `\n推荐仿真原型与关卡拆解（若教师未指定冲突设想则优先以此构建多屏探究主线）：\n- 原型：${simBlueprint.archetypeName}\n${simBlueprint.interactiveDesign}` : '';
   return {
     system: [globalRules, read('skills/it-lesson-studio/modules/classwork.md'), read('references/classwork-v2-contract.md')].join('\n\n'),
-    user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。\n年级：${grade}；课题：${lessonTitle}\n实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(readHtmlLimits(gradeNum))}\n教师设想（在硬性契约内优先）：${requirements || '未指定'}\n已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}\n以下文稿是任务同源依据，使用完整文本，不另造任务名称：\n<lesson-plan>\n${planContent}\n</lesson-plan>\n<worksheet>\n${worksheetContent}\n</worksheet>\n<slides>\n${slidesContent || ''}\n</slides>\n仅输出接口契约要求的 JSON 对象。`
+    user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。\n定位：支撑 35—40 分钟机房主课堂的完整数字化探究舱（非课后小练习），请设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“痛点体验 ➔ 原理建模 ➔ 核心动手仿真沙箱（基础+⭐进阶） ➔ 调试或迁移应用”。\n年级：${grade}；课题：${lessonTitle}\n实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}\n教师设想（在硬性契约内优先）：${requirements || '未指定'}\n已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}${blueprintBlock}\n以下文稿是任务同源依据，使用完整文本，不另造任务名称：\n<lesson-plan>\n${planContent}\n</lesson-plan>\n<worksheet>\n${worksheetContent}\n</worksheet>\n<slides>\n${slidesContent || ''}\n</slides>\n仅输出接口契约要求的 JSON 对象。`
   };
 }
 
@@ -65,7 +67,7 @@ export function validateV2Payload(payload, gradeNum) {
   const limits = readHtmlLimits(gradeNum);
   requireThat(payload?.schemaVersion === 2 && nonempty(payload.concept) && nonempty(payload.misconception), '缺少核心概念或典型误区');
   requireThat(Array.isArray(payload.teacherNotes) && payload.teacherNotes.length >= 3 && payload.teacherNotes.length <= 5 && payload.teacherNotes.every(nonempty), '需要 3—5 行教师说明');
-  requireThat(Array.isArray(payload.screens) && payload.screens.length >= 1 && payload.screens.length + 1 <= limits.screens, '屏数超标或没有探究任务');
+  requireThat(Array.isArray(payload.screens) && payload.screens.length >= 2 && payload.screens.length + 1 <= limits.screens, '屏数超标或没有足够探究任务');
   const ids = new Set();
   let handsOn = 0;
   payload.screens.forEach(screen => {

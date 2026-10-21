@@ -65,12 +65,12 @@ _DEFAULT_SPEC = {
                        "fail_max": 1200, "layout": "single_preferred"},
     },
     "html_grades": {
-        3: {"screens": 4, "hands_on": 1, "quiz": 2, "prose_per_screen": 60, "quiz_stem": 30},
-        4: {"screens": 4, "hands_on": 1, "quiz": 2, "prose_per_screen": 80, "quiz_stem": 34},
-        5: {"screens": 5, "hands_on": 2, "quiz": 3, "prose_per_screen": 100, "quiz_stem": 40},
-        6: {"screens": 5, "hands_on": 2, "quiz": 3, "prose_per_screen": 120, "quiz_stem": 44},
-        7: {"screens": 6, "hands_on": 2, "quiz": 3, "prose_per_screen": 140, "quiz_stem": 50},
-        8: {"screens": 6, "hands_on": 2, "quiz": 3, "prose_per_screen": 160, "quiz_stem": 54},
+        3: {"screens": 5, "hands_on": 2, "quiz": 2, "prose_per_screen": 60, "quiz_stem": 30},
+        4: {"screens": 5, "hands_on": 2, "quiz": 2, "prose_per_screen": 80, "quiz_stem": 34},
+        5: {"screens": 6, "hands_on": 3, "quiz": 3, "prose_per_screen": 100, "quiz_stem": 40},
+        6: {"screens": 6, "hands_on": 3, "quiz": 3, "prose_per_screen": 120, "quiz_stem": 44},
+        7: {"screens": 7, "hands_on": 3, "quiz": 3, "prose_per_screen": 140, "quiz_stem": 50},
+        8: {"screens": 7, "hands_on": 3, "quiz": 3, "prose_per_screen": 160, "quiz_stem": 54},
     },
 }
 

@@ -42,12 +42,12 @@ export function extractGradeNum(gradeStr) {
  */
 export function getGradeLimits(gradeNum) {
   const specMap = {
-    3: { screens: 4, handsOn: 1, quiz: 2, prosePerScreen: 60, quizStem: 30 },
-    4: { screens: 4, handsOn: 1, quiz: 2, prosePerScreen: 80, quizStem: 34 },
-    5: { screens: 5, handsOn: 2, quiz: 3, prosePerScreen: 100, quizStem: 40 },
-    6: { screens: 5, handsOn: 2, quiz: 3, prosePerScreen: 120, quizStem: 44 },
-    7: { screens: 6, handsOn: 2, quiz: 3, prosePerScreen: 140, quizStem: 50 },
-    8: { screens: 6, handsOn: 2, quiz: 3, prosePerScreen: 160, quizStem: 54 }
+    3: { screens: 5, handsOn: 2, quiz: 2, prosePerScreen: 60, quizStem: 30 },
+    4: { screens: 5, handsOn: 2, quiz: 2, prosePerScreen: 80, quizStem: 34 },
+    5: { screens: 6, handsOn: 3, quiz: 3, prosePerScreen: 100, quizStem: 40 },
+    6: { screens: 6, handsOn: 3, quiz: 3, prosePerScreen: 120, quizStem: 44 },
+    7: { screens: 7, handsOn: 3, quiz: 3, prosePerScreen: 140, quizStem: 50 },
+    8: { screens: 7, handsOn: 3, quiz: 3, prosePerScreen: 160, quizStem: 54 }
   };
   return specMap[gradeNum] || specMap[3];
 }
@@ -844,7 +844,7 @@ ${materialsPrompt}
   }
 
   if (useV2) {
-    const prompt = buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent });
+    const prompt = buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent, simBlueprint });
     const raw = await callLlmApi({ apiBase, apiKey, model,
       messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
       temperature: 0.2, signal,
