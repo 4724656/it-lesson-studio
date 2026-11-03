@@ -4,676 +4,165 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="lesson-grade" content="6">
-<title>第5课 算法的执行 - 随堂互动作业</title>
+<meta name="lesson-book" content="浙教版2026版六年级上册·第05课 算法的执行">
+<title>第05课 算法的执行｜课堂作业</title>
 <style>
-:root {
-  --primary: #2563eb;
-  --primary-light: #eff6ff;
-  --primary-hover: #1d4ed8;
-  --success: #10b981;
-  --success-light: #ecfdf5;
-  --danger: #ef4444;
-  --danger-light: #fef2f2;
-  --warning: #f59e0b;
-  --warning-light: #fffbeb;
-  --bg: #f8fafc;
-  --card-bg: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --radius: 12px;
-  --shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.06);
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background-color: var(--bg);
-  color: var(--text-main);
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-header {
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 24px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-.header-wrap {
-  max-width: 900px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.title-area h1 {
-  font-size: 1.25rem;
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.title-area p {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-.student-bar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.student-bar input {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  outline: none;
-  width: 110px;
-}
-.student-bar input:focus { border-color: var(--primary); }
-
-.step-nav {
-  max-width: 900px;
-  margin: 16px auto 0;
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-.step-item {
-  flex: 1;
-  text-align: center;
-  padding: 8px 4px;
-  background: #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.step-item.active {
-  background: var(--primary);
-  color: #fff;
-}
-.step-item.completed {
-  background: #dbeafe;
-  color: var(--primary);
-}
-
-main {
-  flex: 1;
-  max-width: 900px;
-  width: 100%;
-  margin: 20px auto;
-  padding: 0 16px;
-}
-
-.panel {
-  display: none;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 24px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-  animation: fadeIn 0.3s ease;
-}
-.panel.active { display: block; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.panel-tag {
-  display: inline-block;
-  padding: 4px 10px;
-  background: var(--primary-light);
-  color: var(--primary);
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.panel-title {
-  font-size: 1.25rem;
-  margin-bottom: 12px;
-  color: var(--text-main);
-}
-.story-box {
-  background: #f1f5f9;
-  border-left: 4px solid var(--primary);
-  padding: 12px 16px;
-  border-radius: 0 8px 8px 0;
-  font-size: 0.95rem;
-  margin-bottom: 18px;
-}
-
-/* 仿真控制台 */
-.console-box {
-  background: #0f172a;
-  color: #38bdf8;
-  border-radius: 8px;
-  padding: 16px;
-  font-family: Consolas, Monaco, "Courier New", monospace;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  min-height: 130px;
-  margin-bottom: 16px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-  overflow-x: auto;
-}
-.console-header {
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid #334155;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-  color: #94a3b8;
-  font-size: 0.8rem;
-}
-.console-content { white-space: pre-wrap; word-break: break-all; }
-.text-green { color: #4ade80; }
-.text-red { color: #f87171; }
-.text-yellow { color: #fde047; }
-
-/* 交互卡片 */
-.bug-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.bug-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.bug-title {
-  font-weight: bold;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.bug-code {
-  background: #ffffff;
-  border: 1px dashed var(--border);
-  padding: 6px 10px;
-  font-family: monospace;
-  border-radius: 4px;
-  font-size: 0.88rem;
-}
-.bug-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-.opt-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  background: #ffffff;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.opt-btn:hover { border-color: var(--primary); background: var(--primary-light); }
-.opt-btn.correct { background: var(--success-light); border-color: var(--success); color: #065f46; font-weight: bold; }
-.opt-btn.wrong { background: var(--danger-light); border-color: var(--danger); color: #991b1b; }
-
-/* 按钮与底部栏 */
-.btn-row {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-}
-button.action-btn {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-button.action-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
-button.secondary-btn {
-  background: #e2e8f0;
-  color: var(--text-main);
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* 测验 */
-.quiz-item {
-  margin-bottom: 18px;
-  padding-bottom: 14px;
-  border-bottom: 1px dashed var(--border);
-}
-.quiz-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.quiz-opts {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.quiz-opt {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-.quiz-opt:hover { background: #f8fafc; }
-.quiz-opt.selected { border-color: var(--primary); background: var(--primary-light); }
-.quiz-opt.is-correct { background: var(--success-light); border-color: var(--success); }
-.quiz-opt.is-wrong { background: var(--danger-light); border-color: var(--danger); }
-
-/* 证书奖状 */
-.certificate {
-  display: none;
-  border: 4px double #d97706;
-  background: #fffbeb;
-  border-radius: 12px;
-  padding: 24px;
-  text-align: center;
-  margin-top: 20px;
-  box-shadow: 0 8px 16px rgba(217, 119, 6, 0.15);
-}
-.cert-title {
-  color: #b45309;
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-.badge-wall {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin: 16px 0;
-  flex-wrap: wrap;
-}
-.badge-chip {
-  padding: 8px 14px;
-  background: #ffffff;
-  border: 1px solid #fde68a;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #92400e;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+:root{--bg-page:#F4F7F4;--card-bg:#fff;--primary:#1E5128;--primary-light:#EBF4EC;--accent:#4E9F3D;--gold:#F39C12;--blue:#2980B9;--text:#2C3E50;--sub:#576574;--danger:#E74C3C;--border:#DCDDE1;--radius:16px;--shadow:0 8px 24px rgba(30,81,40,.08)}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg-page);color:var(--text);font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:50px}
+header.top-bar{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#1E5128,#2D6A4F);color:white;padding:14px 20px;box-shadow:0 4px 16px #0002}
+.top-inner{max-width:900px;margin:auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.brand{display:flex;align-items:center;gap:10px}.brand-badge{background:var(--gold);padding:2px 8px;border-radius:6px;font-size:12px;font-weight:800}.brand h1{font-size:20px}
+.stepper{display:flex;gap:6px;flex-wrap:wrap}.step-node{cursor:pointer;opacity:.65;padding:4px 9px;border-radius:20px;background:#ffffff15}.step-node.active{opacity:1;background:#ffffff38}.step-num{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#204B35;font-size:13px;font-weight:bold}.step-node.active .step-num,.step-node.done .step-num{background:var(--gold)}
+main{max-width:880px;margin:24px auto;padding:0 16px}.panel{display:none;background:white;border-radius:var(--radius);padding:26px 30px;box-shadow:var(--shadow);border:1px solid #dcdee199}.panel.active{display:block}.panel-tag{display:inline-block;color:var(--accent);background:var(--primary-light);font-size:13px;font-weight:800;padding:3px 10px;border-radius:6px;margin-bottom:8px}h2{font-size:23px;color:var(--primary);margin-bottom:12px}h3{color:var(--primary);margin:17px 0 8px}p[data-prose]{margin-bottom:16px}
+.story-box,.tip-box{padding:12px 16px;border-radius:10px;margin:12px 0;background:#F4F8FA;border-left:4px solid var(--blue)}.tip-box{background:#FFF9E6;border:1px solid #FDE3A7;color:#765500}
+.challenge-card{background:#FFF9EA;border:2px dashed var(--gold);border-radius:12px;padding:14px 18px;margin:16px 0}.challenge-card h4{color:#B65D00}
+button,.btn{font:inherit;font-weight:800;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;margin:4px 3px;background:var(--accent);color:white}button:hover{filter:brightness(.94)}button:disabled{opacity:.5;cursor:not-allowed}.btn-gray{background:#64748b}.btn-gold{background:var(--gold)}.btn-blue{background:var(--blue)}
+.console-box{background:#0F172A;color:#38BDF8;border-radius:12px;padding:14px;margin:12px 0;font:15px/1.8 Consolas,monospace;overflow:auto}.code-line{padding:2px 8px;border-radius:5px}.code-line.hl{background:#f39c1266;color:white;font-weight:bold}
+.var-grid{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.var-card{background:#F8FAFC;border:2px solid var(--border);border-radius:10px;padding:8px 18px;text-align:center;min-width:95px}.var-name{font-size:12px;color:var(--sub);font-weight:bold}.var-val{font-size:22px;font-weight:900;color:var(--blue);font-family:Consolas,monospace}.var-card.changed{border-color:var(--gold);background:#fff8dd}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}.status{min-height:28px;color:var(--primary);font-weight:700;margin:8px 0}.codebox{padding:14px;background:#f2f5f7;border-radius:10px;font:15px/1.9 Consolas,monospace}.codebox .bug{color:var(--danger);font-weight:bold}.codebox .fix{color:var(--accent);font-weight:bold}
+input[type=range]{accent-color:var(--accent);width:min(360px,80%)}select,input[type=text]{font:inherit;border:1px solid var(--border);border-radius:8px;padding:8px}
+.route{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0}.route span{padding:10px 14px;border-radius:9px;background:var(--primary-light);font-weight:700}.route span.current{background:var(--gold);color:#fff}
+table{border-collapse:collapse;margin:12px 0;width:100%}th,td{border:1px solid var(--border);padding:8px;text-align:center}th{background:var(--primary-light)}
+.option-list{display:grid;gap:8px;margin:10px 0 18px}.option-item{border:2px solid var(--border);border-radius:10px;padding:10px 14px;background:#fafafa;cursor:pointer}.option-item.picked{border-color:var(--blue);background:#edf4f9}.option-item.correct{border-color:var(--accent);background:#edf7ec}.option-item.wrong{border-color:var(--danger);background:#fdecec}.option-list.locked .option-item{pointer-events:none}
+.score-banner{display:none;background:#edf7ec;border:2px solid var(--accent);border-radius:12px;padding:14px;text-align:center;margin:16px 0}.score-val{font-size:30px;font-weight:900;color:var(--primary)}.check-item{display:flex;gap:9px;align-items:center;padding:6px}.footer-nav{display:flex;justify-content:space-between;gap:10px;margin-top:22px;padding-top:15px;border-top:2px dashed #eee}
+@media(max-width:600px){.panel{padding:20px 16px}.brand h1{font-size:17px}.footer-nav{flex-wrap:wrap}}
 </style>
 </head>
 <body>
-
-<header>
-  <div class="header-wrap">
-    <div class="title-area">
-      <h1>⚡ 第5课 算法的执行 · 课堂作业</h1>
-      <p>浙教版2026信息科技六年级上册 · 算力实测与代码排雷</p>
-    </div>
-    <div class="student-bar">
-      <input type="text" id="stuClass" placeholder="班级(如601)">
-      <input type="text" id="stuName" placeholder="学生姓名">
-    </div>
-  </div>
-  <div class="step-nav" id="stepNav">
-    <div class="step-item active" onclick="goStep(0)">1. 算力初探</div>
-    <div class="step-item" onclick="goStep(1)">2. 代码排雷</div>
-    <div class="step-item" onclick="goStep(2)">3. 逻辑升级</div>
-    <div class="step-item" onclick="goStep(3)">4. 随堂微测</div>
-  </div>
-</header>
-
+<header class="top-bar"><div class="top-inner"><div class="brand"><span class="brand-badge">六年级</span><h1>第05课 算法的执行</h1></div><div class="stepper" id="stepper"></div></div></header>
 <main>
-  <!-- 关卡一：算力引擎初探 -->
-  <section class="panel active" data-step="0">
-    <div class="panel-tag">⭐ 关卡一 · 算力引擎初探</div>
-    <h2 class="panel-title">运行 Python 代码，秒级破解鸡兔同笼</h2>
-    <div class="story-box" data-prose>
-      <b>任务情境：</b>《孙子算经》鸡兔同笼名题（35头，94足）。在 IDLE 中按下 <code>F5</code> 启动算力引擎，体验计算机自动化执行算法的高速与精准。
-    </div>
+<section class="panel active" data-step="0">
+<span class="panel-tag">破冰 · 认识执行</span><h2>生活与算力：计算机怎样做事？</h2>
+<p data-prose>算法像菜谱，CPU像照步骤做事的厨师；每执行一步，变量这张“记事卡”都可能改变。</p>
+<div class="story-box">小任务：从 <b>x=2、y=5、count=0</b> 出发，按程序一步一步执行。先预测，再验证。</div>
+<h3>流程图要素识别</h3><p>点击左侧符号，再点击右侧对应含义，完成配对。</p>
+<div class="row" id="matchArea">
+<button class="btn-blue match" data-pair="start">椭圆：起止框</button><button class="btn-blue match" data-pair="process">矩形：处理框</button><button class="btn-blue match" data-pair="decision">菱形：判断框</button>
+</div><div class="row">
+<button class="match" data-pair="decision">根据条件选择路径</button><button class="match" data-pair="start">算法开始或结束</button><button class="match" data-pair="process">变量赋值或计算</button>
+</div><div class="status" id="matchStatus">配对进度：0/3</div>
+<div class="tip-box">想一想：执行赋值语句时，右边先计算，结果再写入左边的变量。</div>
+<div class="footer-nav"><span></span><button onclick="go(1)">进入任务一：算力引擎 →</button></div>
+</section>
 
-    <div class="console-box">
-      <div class="console-header">
-        <span>Python 3.11.1 Shell (IDLE 仿真机)</span>
-        <span id="idleStatus">状态: 就绪待命</span>
-      </div>
-      <div class="console-content" id="console1">&gt;&gt;&gt; # 提示：点击下方按钮仿真按下 F5 键运行程序...</div>
-    </div>
+<section class="panel" data-step="1" data-panel-type="hands-on">
+<span class="panel-tag">任务一：算力引擎</span><h2>人肉 CPU · 单步执行追踪器</h2>
+<p data-prose>先预测当前指令执行后的变量变化，再单步执行。观察指针下移，并核对 x、y、count 记事卡。</p>
+<div class="tip-box">规则：每次只执行一行。赋值先算右侧；变量更新后再继续。初始值与导学单一致。</div>
+<div class="console-box" id="traceCode"></div>
+<div class="var-grid"><div class="var-card" id="card-x"><div class="var-name">x</div><div class="var-val" id="vx">2</div></div><div class="var-card" id="card-y"><div class="var-name">y</div><div class="var-val" id="vy">5</div></div><div class="var-card" id="card-count"><div class="var-name">count</div><div class="var-val" id="vc">0</div></div></div>
+<div class="row"><button onclick="traceStep()">▶ 单步执行</button><button class="btn-gray" onclick="traceReset()">↺ 重新开始</button><button class="btn-blue" onclick="traceRun()">⏩ 执行到结束</button></div><div class="status" id="traceStatus">准备就绪：预测第1行执行后哪个变量改变。</div>
+<table><thead><tr><th>记录</th><th>x</th><th>y</th><th>count</th></tr></thead><tbody id="traceLog"><tr><td>初始值</td><td>2</td><td>5</td><td>0</td></tr></tbody></table>
+<div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>执行到结束后，解释为什么第二次更新 y 时使用的是已经改变的 x。</p><button class="btn-gold" onclick="showChallenge()">查看变量更新提示</button><div class="status" id="challengeHint"></div></div>
+<div class="footer-nav"><button class="btn-gray" onclick="go(0)">← 上一屏</button><button onclick="go(2)">进入任务二：代码排雷 →</button></div>
+</section>
 
-    <div style="text-align: center; margin: 16px 0;">
-      <button class="action-btn" id="btnRun1" onclick="runEngine()">
-        ▶️ 按 F5 运行模块 (Run Module)
-      </button>
-    </div>
+<section class="panel" data-step="2" data-panel-type="hands-on">
+<span class="panel-tag">任务二：代码排雷</span><h2>找出循环中的“卡住点”</h2>
+<p data-prose>循环执行不完，常见原因是控制变量没有更新；边界判断也要用临界值测试，不能只靠猜。</p>
+<div class="story-box">侦查目标：循环本想从 1 数到 3，却一直重复。检查每一行，找出问题并修复。</div>
+<div class="codebox">1. count = 0<br>2. <span id="bugLine" class="bug">while count &lt; 3:</span><br>3. &nbsp;&nbsp;&nbsp;显示 count<br>4. &nbsp;&nbsp;&nbsp;<span id="updateLine" class="bug">count = count</span></div>
+<div class="row"><button onclick="runBug()">▶ 试运行</button><button class="btn-green" onclick="fixBug()">🛠 修复：让 count 增加 1</button><button class="btn-gray" onclick="resetBug()">重置</button></div><div class="status" id="bugStatus">请选择操作，观察循环是否能够结束。</div>
+<div class="tip-box">排雷口诀：循环条件能否变假？循环里的控制变量有没有更新？</div>
+<h3>临界值排雷</h3><p>规则：count 达到 3 时应当停止。选择更合适的循环条件，再测试 2、3、4。</p>
+<div class="row"><label>条件 <select id="boundary"><option value="lt">count &lt; 3</option><option value="le">count &lt;= 3</option></select></label><button onclick="testBoundary()">测试 2、3、4</button></div>
+<div class="status" id="boundaryStatus"></div>
+<div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>如果任务改成“count 达到 3 时也要执行一次”，判断条件需要怎样调整？用临界值 3 验证。</p></div>
+<div class="footer-nav"><button class="btn-gray" onclick="go(1)">← 上一屏</button><button onclick="go(3)">进入任务三：逻辑再造 →</button></div>
+</section>
 
-    <div class="btn-row">
-      <button class="action-btn" onclick="nextStep(1)">进入下一关 ➔</button>
-    </div>
-  </section>
+<section class="panel" data-step="3" data-panel-type="hands-on">
+<span class="panel-tag">任务三：逻辑再造</span><h2>拼装分支，让算法按条件行动</h2>
+<p data-prose>点击词块重构判断流程，再拖动数值测试“是(Y)”和“否(N)”两条路径；试试阈值边界。</p>
+<div class="story-box">情境：电量达到 30 时开启节能提示；不足 30 时继续运行。选择条件、处理方式并验证路径。</div>
+<h3>流程图词块拼图槽</h3>
+<div class="row"><label>判断条件 <select id="condition"><option value="ge">电量 &gt;= 30</option><option value="gt">电量 &gt; 30</option></select></label><label>是(Y)处理 <select id="yesAction"><option>开启节能提示</option><option>继续运行</option></select></label><label>否(N)处理 <select id="noAction"><option>继续运行</option><option>开启节能提示</option></select></label><button onclick="buildFlow()">拼装流程</button></div>
+<div class="route" id="flowRoute"><span>开始</span><span>读取电量</span><span>判断：电量 ≥ 30？</span><span>是：开启节能提示</span><span>否：继续运行</span><span>结束</span></div>
+<h3>分支条件仿真沙箱</h3><div class="row"><label for="battery">电量：<b id="batteryVal">30</b></label><input id="battery" type="range" min="0" max="60" value="30" oninput="branchTest()"><button onclick="branchTest()">测试当前值</button></div>
+<div class="status" id="branchStatus">拖动滑块，覆盖两条分支路径。</div>
+<div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>电量正好为 30 时应该开启提示。比较 &gt; 与 &gt;=，选择正确条件并测试临界值。</p><button class="btn-gold" onclick="edgeChallenge()">测试边界值 30</button><div class="status" id="edgeStatus"></div></div>
+<div class="footer-nav"><button class="btn-gray" onclick="go(2)">← 上一屏</button><button onclick="go(4)">比较执行效率 →</button></div>
+</section>
 
-  <!-- 关卡二：代码排雷大侦探 -->
-  <section class="panel" data-step="1" data-panel-type="hands-on">
-    <div class="panel-tag">⭐ 关卡二 · 代码小侦探</div>
-    <h2 class="panel-title">排查并修复三大常见卡点</h2>
-    <div class="story-box" data-prose>
-      <b>侦探情境：</b>程序报错别慌张，报错是计算机发来的求救信号！请根据故障现场，选择正确的修复秘籍。
-    </div>
+<section class="panel" data-step="4">
+<span class="panel-tag">对比分析 · 执行路径</span><h2>算法执行效率：步数会一样吗？</h2>
+<p data-prose>同一个目标可能有不同执行路径。比较实际执行步数，理解判断与循环如何影响算法运行过程。</p>
+<div class="story-box">任务：在 1、2、3、4、5 中找到目标数 4。顺序查找从头逐个检查；二分查找每次排除一半。</div>
+<div class="row"><label>目标数 <select id="target"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></label><button onclick="comparePaths()">▶ 比较两条执行路径</button></div>
+<table><thead><tr><th>方法</th><th>执行记录</th><th>检查步数</th></tr></thead><tbody><tr><td>顺序查找</td><td id="linearLog">等待运行</td><td id="linearSteps">—</td></tr><tr><td>二分查找</td><td id="binaryLog">等待运行</td><td id="binarySteps">—</td></tr></tbody></table>
+<div class="status" id="effStatus">观察：哪条路径更快？目标位置改变后，步数是否也会改变？</div>
+<div class="tip-box">执行步数是比较算法效率的一种方法。本例数据量较小，不代表所有情形下的速度差异。</div>
+<div class="footer-nav"><button class="btn-gray" onclick="go(3)">← 上一屏</button><button onclick="go(5)">进入终极关卡 →</button></div>
+</section>
 
-    <div class="bug-list">
-      <div class="bug-card">
-        <div class="bug-title">🚨 故障一：Traceback (line 3) NameError: name 'Tu' is not defined</div>
-        <div class="bug-code">while Tu &lt; 36:</div>
-        <div class="bug-options" data-qid="bug1">
-          <button class="opt-btn" onclick="checkBug(this, 'bug1', false)">A. 将 36 改为 100</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug1', true)">B. 将大写 Tu 改为小写 tu（Python严格区分大小写）</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug1', false)">C. 删掉 while 关键字</button>
-        </div>
-      </div>
-
-      <div class="bug-card">
-        <div class="bug-title">🚨 故障二：SyntaxError: invalid character '：' (U+FF1A)</div>
-        <div class="bug-code">while tu &lt; 36：</div>
-        <div class="bug-options" data-qid="bug2">
-          <button class="opt-btn" onclick="checkBug(this, 'bug2', false)">A. 在末尾加分号 ;</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug2', true)">B. 切换英文输入法，将全角冒号改为半角英文冒号 :</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug2', false)">C. 去掉冒号直接换行</button>
-        </div>
-      </div>
-
-      <div class="bug-card">
-        <div class="bug-title">🚨 故障三：IndentationError: expected an indented block</div>
-        <div class="bug-code">while tu &lt; 36:<br>ji = 35 - tu</div>
-        <div class="bug-options" data-qid="bug3">
-          <button class="opt-btn" onclick="checkBug(this, 'bug3', true)">A. 在 ji 前按 Tab 键（缩进4个空格）建立从属层级</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug3', false)">B. 将两行代码合并成一行</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug3', false)">C. 把 ji 变量删除</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(0)">⬅️ 上一关</button>
-      <button class="action-btn" onclick="nextStep(2)">进入下一关 ➔</button>
-    </div>
-  </section>
-
-  <!-- 关卡三：逻辑再造与无解分支 -->
-  <section class="panel" data-step="2" data-panel-type="hands-on">
-    <div class="panel-tag">⭐ 关卡三 · 逻辑再造</div>
-    <h2 class="panel-title">引入状态变量 jie，打造健壮算法</h2>
-    <div class="story-box" data-prose>
-      <b>深度挑战：</b>农夫把参数改为 35 头、93 脚。算法执行后没有任何输出！算法必须有明确输出。请选择状态变量 <code>jie</code> 的赋值，完善无解处理分支。
-    </div>
-
-    <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px;">
-      <pre style="font-family:monospace; line-height:1.8; font-size:0.92rem;">
-<span style="color:#0284c7;">jie = </span><select id="slot1" style="padding:4px 8px; font-weight:bold; border-radius:4px;" onchange="updateLogicSim()">
-  <option value="none">--请选择初始值--</option>
-  <option value="0">0 (代表初始还没找到解)</option>
-  <option value="1">1 (代表已有解)</option>
-</select>
-while tu &lt; 36:
-    if ji * 2 + tu * 4 == 93:
-        <span style="color:#0284c7;">jie = </span><select id="slot2" style="padding:4px 8px; font-weight:bold; border-radius:4px;" onchange="updateLogicSim()">
-          <option value="none">--请选择解标记--</option>
-          <option value="0">0 (熄灭信号灯)</option>
-          <option value="1">1 (点亮信号灯，有解)</option>
-        </select>
-        print(ji, "只鸡，", tu, "只兔。")
-    tu = tu + 1
-<span style="color:#0284c7;">if jie == </span><select id="slot3" style="padding:4px 8px; font-weight:bold; border-radius:4px;" onchange="updateLogicSim()">
-  <option value="none">--请选择终局判定--</option>
-  <option value="0">0: print("此题无解")</option>
-  <option value="1">1: print("此题无解")</option>
-</select></pre>
-    </div>
-
-    <div class="console-box" style="min-height:90px;">
-      <div class="console-header">
-        <span>健壮性测试控制台 (输入 35头 / 93脚)</span>
-      </div>
-      <div class="console-content" id="console3">&gt;&gt;&gt; 请在上方拼装完整的状态变量代码以进行验证...</div>
-    </div>
-
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(1)">⬅️ 上一关</button>
-      <button class="action-btn" onclick="nextStep(3)">进入测验与评价 ➔</button>
-    </div>
-  </section>
-
-  <!-- 关卡四：随堂测验与自评 -->
-  <section class="panel" data-step="3">
-    <div class="panel-tag">⭐ 关卡四 · 测验与自评</div>
-    <h2 class="panel-title">随堂知识达标与学习凭单</h2>
-
-    <div id="quizContainer">
-      <div class="quiz-item">
-        <div class="quiz-title">1. 在 Python IDLE 编辑器中，能直接运行当前代码模块的快捷键是？</div>
-        <div class="quiz-opts">
-          <div class="quiz-opt" onclick="pickQuiz(0, 0, this)">A. F5</div>
-          <div class="quiz-opt" onclick="pickQuiz(0, 1, this)">B. F1</div>
-          <div class="quiz-opt" onclick="pickQuiz(0, 2, this)">C. Ctrl + C</div>
-        </div>
-      </div>
-      <div class="quiz-item">
-        <div class="quiz-title">2. 运行提示 NameError: name 'Tu' is not defined，主要原因是什么？</div>
-        <div class="quiz-opts">
-          <div class="quiz-opt" onclick="pickQuiz(1, 0, this)">A. 电脑卡死或按键损坏</div>
-          <div class="quiz-opt" onclick="pickQuiz(1, 1, this)">B. Python严格区分字母大小写</div>
-          <div class="quiz-opt" onclick="pickQuiz(1, 2, this)">C. 没有连接互联网</div>
-        </div>
-      </div>
-      <div class="quiz-item">
-        <div class="quiz-title">3. 鸡兔同笼程序中引入状态变量 jie 的核心目的是什么？</div>
-        <div class="quiz-opts">
-          <div class="quiz-opt" onclick="pickQuiz(2, 0, this)">A. 计算兔子的腿数</div>
-          <div class="quiz-opt" onclick="pickQuiz(2, 1, this)">B. 跟踪记录是否有解，以便无解时输出提示</div>
-          <div class="quiz-opt" onclick="pickQuiz(2, 2, this)">C. 让计算机运行变慢</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin: 20px 0; padding: 14px; background: #f8fafc; border-radius: 8px;">
-      <div style="font-weight:bold; margin-bottom:8px;">🎯 学习体验与自我评价：</div>
-      <label style="margin-right:16px; cursor:pointer;"><input type="radio" name="selfEval" value="完全掌握" checked> ⭐⭐⭐ 熟练通关（掌握运行、排障与状态变量）</label><br>
-      <label style="margin-right:16px; cursor:pointer;"><input type="radio" name="selfEval" value="基本掌握"> ⭐⭐ 基本掌握（能看懂报错并在提示下修复）</label><br>
-      <label style="cursor:pointer;"><input type="radio" name="selfEval" value="还没完全懂"> 💡 还没完全懂（需要老师进一步点拨指导）</label>
-    </div>
-
-    <div style="text-align: center; margin-top: 20px;">
-      <button class="action-btn" onclick="submitLesson()">🎯 提交测评并生成通关凭单</button>
-    </div>
-
-    <div class="certificate" id="certBox">
-      <div class="cert-title">🎖️ 算法执行小工程师荣誉证书</div>
-      <p id="certDesc" style="font-size: 1.05rem; margin-bottom: 12px;"></p>
-      <div class="badge-wall medal-wall">
-        <span class="badge-chip medal-chip">⚡ 算力实测先锋勋章 (Medal)</span>
-        <span class="badge-chip medal-chip">🔍 代码排雷神探勋章 (Medal)</span>
-        <span class="badge-chip medal-chip">🛡️ 健壮逻辑大师勋章 (Medal)</span>
-      </div>
-      <p data-prose style="font-size:14px; color:var(--text-sub); margin-bottom:12px;">填写班级姓名，点击下载保存你的学习凭单，交给老师即完成本课闯关。</p>
-      <div style="margin-top: 16px;">
-        <button class="action-btn" style="background:#b45309;" onclick="exportVoucher()">
-          📥 一键下载学习凭单 (.txt)
-        </button>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(2)">⬅️ 上一关</button>
-    </div>
-  </section>
+<section class="panel" data-step="5">
+<span class="panel-tag">终极关卡 · 达标测验</span><h2>测一测：我懂算法执行了吗？</h2>
+<p data-prose>先独立选择三题，再统一提交判分；完成自我评价后，选填信息并下载学习凭单。</p>
+<div id="quizArea"></div><button id="submitQuiz" onclick="submitQuiz()">✍️ 提交测验并判分</button><div class="status" id="quizStatus"></div>
+<div class="score-banner" id="scoreBanner"><div class="score-val" id="scoreVal">0/3</div><div>本次测验得分</div></div>
+<h3>自我评价</h3>
+<label class="check-item"><input type="checkbox"> 我能追踪变量变化。</label>
+<label class="check-item"><input type="checkbox"> 我能找到并验证一处程序错误。</label>
+<label class="check-item"><input type="checkbox"> 我能测试临界值并解释分支路径。</label>
+<label class="check-item"><input type="checkbox"> 我还没完全懂，需要老师或同伴帮助。</label>
+<h3>保存学习记录凭单</h3>
+<div class="row"><label>班级（选填） <input id="inputClass" type="text" placeholder="默认：六年级上册"></label><label>姓名（选填） <input id="inputName" type="text" placeholder="默认：小极客"></label></div>
+<button onclick="downloadReceipt()">📥 保存学习记录凭单 (.txt)</button><div class="status" id="receiptStatus"></div>
+<div class="footer-nav"><button class="btn-gray" onclick="go(4)">← 上一屏</button><button onclick="go(0)">回到首页</button></div>
+</section>
 </main>
-
 <script>
-const grade = 6;
-const stepLabels = ["1. 算力初探", "2. 代码排雷", "3. 逻辑升级", "4. 随堂微测"];
-let currentStep = 0;
-const totalSteps = stepLabels.length;
+const stepLabels = ["破冰","算力引擎","代码排雷","逻辑再造","效率对比","达标测验"];
+const panels=[...document.querySelectorAll(".panel")],stepper=document.getElementById("stepper");
+stepLabels.forEach((label,i)=>{const n=document.createElement("div");n.className="step-node";n.innerHTML='<span class="step-num">'+i+'</span><span class="step-title">'+label+'</span>';n.onclick=()=>go(i);stepper.appendChild(n)});
+function go(i){panels.forEach((p,j)=>p.classList.toggle("active",j===i));[...stepper.children].forEach((n,j)=>{n.classList.toggle("active",j===i);n.classList.toggle("done",j<i)});window.scrollTo({top:0,behavior:"smooth"})}
 
-function goStep(idx) {
-  if (idx < 0 || idx >= totalSteps) return;
-  document.querySelectorAll('.panel').forEach((p, i) => {
-    p.classList.toggle('active', i === idx);
-  });
-  document.querySelectorAll('.step-item').forEach((s, i) => {
-    s.classList.toggle('active', i === idx);
-    if (i < idx) s.classList.add('completed');
-  });
-  currentStep = idx;
-}
-function nextStep(idx) { goStep(idx); }
-function prevStep(idx) { goStep(idx); }
+let selected=null,matched=new Set();
+document.querySelectorAll(".match").forEach(b=>b.onclick=()=>{if(b.classList.contains("done"))return;if(!selected){selected=b;b.classList.add("selected");return}
+if(selected.dataset.pair===b.dataset.pair){selected.classList.remove("selected");selected.classList.add("done");b.classList.add("done");matched.add(b.dataset.pair);document.getElementById("matchStatus").textContent="配对进度："+matched.size+"/3"+(matched.size===3?"，全部正确！":"")}else{document.getElementById("matchStatus").textContent="还没配对成功，再试一次；注意符号的用途。";selected.classList.remove("selected")}selected=null});
 
-// 关卡一
-let engineRan = false;
-function runEngine() {
-  const c = document.getElementById('console1');
-  const status = document.getElementById('idleStatus');
-  status.textContent = '状态: 高速运算中...';
-  c.innerHTML = '<span class="text-yellow">&gt;&gt;&gt; [F5] 启动 Python 算力引擎，开始 36 次循环枚举...</span>';
-  setTimeout(() => {
-    c.innerHTML = `================ RESTART: D:/鸡兔同笼.py ================
-<span class="text-green">&gt;&gt;&gt; 23 只鸡， 12 只兔。</span>
-&gt;&gt;&gt; [系统信息] 耗时 0.01 秒，36 次循环验证完毕，运算结果准确无误！`;
-    status.textContent = '状态: 运算成功 (耗时0.01s)';
-    engineRan = true;
-  }, 400);
-}
-
-// 关卡二
-const bugAnswers = { bug1: null, bug2: null, bug3: null };
-function checkBug(btn, qid, isRight) {
-  const p = btn.parentElement;
-  p.querySelectorAll('.opt-btn').forEach(b => b.className = 'opt-btn');
-  if (isRight) {
-    btn.classList.add('correct');
-    bugAnswers[qid] = true;
-  } else {
-    btn.classList.add('wrong');
-    bugAnswers[qid] = false;
-  }
-}
-
-// 关卡三
-function updateLogicSim() {
-  const s1 = document.getElementById('slot1').value;
-  const s2 = document.getElementById('slot2').value;
-  const s3 = document.getElementById('slot3').value;
-  const c = document.getElementById('console3');
-
-  if (s1 === '0' && s2 === '1' && s3 === '0') {
-    c.innerHTML = `================ RESTART: D:/鸡兔同笼_完善版.py ================
-&gt;&gt;&gt; 正在验证 35头 / 93脚 (奇数脚异常)...
-<span class="text-green">&gt;&gt;&gt; 此题无解</span>
-&gt;&gt;&gt; [检测成功] 状态变量正确触发无解提示，算法逻辑严密健壮！`;
-  } else if (s1 !== 'none' && s2 !== 'none' && s3 !== 'none') {
-    c.innerHTML = `<span class="text-red">&gt;&gt;&gt; [逻辑异常] 当前装配的状态变量逻辑未通过测试，请重新检查信号灯初始值与终局判定！</span>`;
-  }
-}
-
-// 关卡四：测验
-const quiz = [
-  { q: "在 Python IDLE 编辑器中，能直接运行当前代码模块的快捷键是？", ans: 0 },
-  { q: "运行提示 NameError: name 'Tu' is not defined，主要原因是什么？", ans: 1 },
-  { q: "鸡兔同笼程序中引入状态变量 jie 的核心目的是什么？", ans: 1 }
+const program=[
+{code:"x = 2  （初始值）",key:""},
+{code:"y = 5  （初始值）",key:""},
+{code:"count = 0  （初始值）",key:""},
+{code:"x = x + 1",key:"x",run:s=>s.x++},
+{code:"y = y + x",key:"y",run:s=>s.y+=s.x},
+{code:"count = count + 1",key:"count",run:s=>s.count++},
+{code:"x = x + 1",key:"x",run:s=>s.x++},
+{code:"y = y + x",key:"y",run:s=>s.y+=s.x},
+{code:"count = count + 1",key:"count",run:s=>s.count++}
 ];
-const picks = [null, null, null];
+let traceIndex=3,state={x:2,y:5,count:0};
+function renderTrace(changed=""){document.getElementById("traceCode").innerHTML=program.map((p,i)=>'<div class="code-line '+(i===traceIndex?"hl":"")+'">'+(i===traceIndex?"▶ ":"　 ")+(i+1)+". "+p.code+"</div>").join("");["x","y","count"].forEach(k=>{document.getElementById("v"+(k==="count"?"c":k)).textContent=state[k];document.getElementById("card-"+k).classList.toggle("changed",k===changed)})}
+function traceStep(){if(traceIndex>=program.length){document.getElementById("traceStatus").textContent="程序已执行结束。";return}let p=program[traceIndex];p.run(state);traceIndex++;renderTrace(p.key);document.getElementById("traceStatus").textContent="刚执行："+p.code+"；核对哪张变量记事卡改变了。";let tr=document.createElement("tr");tr.innerHTML="<td>执行后 "+(traceIndex-2)+"</td><td>"+state.x+"</td><td>"+state.y+"</td><td>"+state.count+"</td>";document.getElementById("traceLog").appendChild(tr)}
+function traceReset(){traceIndex=3;state={x:2,y:5,count:0};document.getElementById("traceLog").innerHTML="<tr><td>初始值</td><td>2</td><td>5</td><td>0</td></tr>";document.getElementById("traceStatus").textContent="准备就绪：预测第1行执行后哪个变量改变。";renderTrace()}
+function traceRun(){while(traceIndex<program.length)traceStep()}
+function showChallenge(){document.getElementById("challengeHint").textContent="第一次更新后 x=3；第二次执行 y=y+x 时，使用当前 x=3，而不是初始的 2。"}
+renderTrace();
 
-function pickQuiz(qIdx, optIdx, el) {
-  picks[qIdx] = optIdx;
-  const parent = el.parentElement;
-  parent.querySelectorAll('.quiz-opt').forEach(opt => opt.classList.remove('selected'));
-  el.classList.add('selected');
-}
+let fixed=false;
+function runBug(){document.getElementById("bugStatus").textContent=fixed?"修复后：count 依次为 0、1、2，达到 3 后循环结束。":"试运行发现：count 一直是 0，条件 count < 3 永远成立，循环无法结束。"}
+function fixBug(){fixed=true;document.getElementById("updateLine").textContent="count = count + 1";document.getElementById("updateLine").className="fix";document.getElementById("bugStatus").textContent="修复成功！控制变量每轮加 1，条件最终变为假。"}
+function resetBug(){fixed=false;document.getElementById("updateLine").textContent="count = count";document.getElementById("updateLine").className="bug";document.getElementById("bugStatus").textContent="已重置，找出控制变量没有更新的问题。"}
+function testBoundary(){let le=document.getElementById("boundary").value==="le";document.getElementById("boundaryStatus").textContent="测试结果：2→"+(le||2<3?"继续":"停止")+"；3→"+(le||3<3?"继续":"停止")+"；4→"+(le||4<3?"继续":"停止")+"。如果达到3就应停止，应选 count < 3。"}
 
-let lastScore = 0;
-function submitLesson() {
-  const name = document.getElementById('stuName').value.trim() || '信息科技探索者';
-  const cls = document.getElementById('stuClass').value.trim() || '六年级';
-  
-  let correctCount = 0;
-  quiz.forEach((item, idx) => {
-    const parent = document.querySelectorAll('.quiz-opts')[idx];
-    const opts = parent.querySelectorAll('.quiz-opt');
-    opts.forEach((opt, oIdx) => {
-      opt.classList.remove('is-correct', 'is-wrong');
-      if (oIdx === item.ans) opt.classList.add('is-correct');
-      if (picks[idx] === oIdx && oIdx !== item.ans) opt.classList.add('is-wrong');
-    });
-    if (picks[idx] === item.ans) correctCount++;
-  });
+document.getElementById("battery").addEventListener("input",branchTest);
+function buildFlow(){let cond=document.getElementById("condition").value==="ge"?"电量 ≥ 30？":"电量 > 30？",yes=document.getElementById("yesAction").value,no=document.getElementById("noAction").value;document.getElementById("flowRoute").innerHTML="<span>开始</span><span>读取电量</span><span>判断："+cond+"</span><span>是(Y)： "+yes+"</span><span>否(N)： "+no+"</span><span>结束</span>";branchTest()}
+function branchTest(){let val=+document.getElementById("battery").value;document.getElementById("batteryVal").textContent=val;let ok=document.getElementById("condition").value==="ge"?val>=30:val>30;let yes=document.getElementById("yesAction").value,no=document.getElementById("noAction").value;let spans=document.querySelectorAll("#flowRoute span");spans.forEach(s=>s.classList.remove("current"));spans[2].classList.add("current");spans[ok?3:4].classList.add("current");document.getElementById("branchStatus").textContent="电量 "+val+"：走 "+(ok?"是(Y) → "+yes:"否(N) → "+no)+"。"}
+function edgeChallenge(){document.getElementById("battery").value=30;branchTest();let correct=document.getElementById("condition").value==="ge";document.getElementById("edgeStatus").textContent=correct?"边界正确：电量 30 满足 ≥30，走是(Y)路径。":"边界提醒：>30 不包含 30；要让临界值也通过，请选择 ≥30。"}
 
-  lastScore = Math.round((correctCount / quiz.length) * 100);
-  const selfChoice = document.querySelector('input[name="selfEval"]:checked').value;
+function comparePaths(){let target=+document.getElementById("target").value,linear=[],binary=[],steps=0;for(let n=1;n<=target;n++){linear.push(n);steps++;if(n===target)break}let lo=1,hi=5,bsteps=0;while(lo<=hi){let mid=Math.floor((lo+hi)/2);binary.push(mid);bsteps++;if(mid===target)break;if(mid<target)lo=mid+1;else hi=mid-1}document.getElementById("linearLog").textContent=linear.join(" → ");document.getElementById("linearSteps").textContent=steps;document.getElementById("binaryLog").textContent=binary.join(" → ");document.getElementById("binarySteps").textContent=bsteps;document.getElementById("effStatus").textContent="目标 "+target+"：顺序查找 "+steps+" 步，二分查找 "+bsteps+" 步。观察路径和步数的差别。"}
 
-  const cert = document.getElementById('certBox');
-  const certDesc = document.getElementById('certDesc');
-  cert.style.display = 'block';
-  certDesc.innerHTML = `祝贺 <strong>${cls} 班 ${name}</strong> 同学完成本课学习！<br>随堂微测验得分：<strong>${lastScore} 分</strong>（答对 ${correctCount}/${quiz.length} 题）<br>自我评价：<strong>${selfChoice}</strong>`;
-  cert.scrollIntoView({ behavior: 'smooth' });
-}
-
-function exportVoucher() {
-  const name = document.getElementById('stuName').value.trim() || '匿名学生';
-  const cls = document.getElementById('stuClass').value.trim() || '601';
-  const selfChoice = document.querySelector('input[name="selfEval"]:checked').value;
-  const timeStr = new Date().toLocaleString('zh-CN');
-
-  // 首行结构化可 grep 标准行：#GRADE6_CLASSWORK_VOUCHER|班级|姓名|得分|自评|时间戳
-  const content = `#GRADE6_CLASSWORK_VOUCHER|${cls}|${name}|${lastScore}|${selfChoice}|${timeStr}
-============================================================
-      浙江省中小学信息科技课堂实训通关凭单 (浙教版2026)
-============================================================
-学生班级: ${cls}
-学生姓名: ${name}
-实训课程: 第5课 算法的执行 (小学六年级上册)
-测验得分: ${lastScore} 分
-自我评价: ${selfChoice}
-通关项目: 算力实测先锋、代码排雷神探、健壮逻辑大师
-导出时间: ${timeStr}
-验证状态: 单文件免部署 · 互联网机房开箱即用
-============================================================`;
-
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${cls}_${name}_第05课算法的执行_${lastScore}分.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+const quiz = [
+{ q: "执行赋值语句 x=x+1 时，程序先做什么？", options: ["A. 先计算右侧，再更新 x", "B. 先清空 x，再结束", "C. 直接跳过这行"], correct: 0 },
+{ q: "循环条件一直为真，最应检查什么？", options: ["A. 控制变量是否更新", "B. 页面颜色是否改变", "C. 程序标题是否正确"], correct: 0 },
+{ q: "条件是电量>=30，电量正好为30时走哪条路？", options: ["A. 是(Y)路径", "B. 否(N)路径", "C. 程序一定停止"], correct: 0 }
+];
+let answers=Array(quiz.length).fill(null),quizLocked=false;
+function renderQuiz(){const box=document.getElementById("quizArea");box.innerHTML=quiz.map((q,i)=>'<h3>'+(i+1)+'. '+q.q+'</h3><div class="option-list" id="opts'+i+'">'+q.options.map((o,j)=>'<div class="option-item '+(answers[i]===j?"picked":"")+'" onclick="pick('+i+','+j+')">'+o+'</div>').join("")+'</div>').join("")}
+function pick(i,j){if(quizLocked)return;answers[i]=j;renderQuiz()}
+function submitQuiz(){if(answers.some(a=>a===null)){document.getElementById("quizStatus").textContent="还有题目未选择，请完成后再提交。";return}quizLocked=true;let score=0;quiz.forEach((q,i)=>{let opts=document.getElementById("opts"+i);opts.classList.add("locked");[...opts.children].forEach((el,j)=>{if(j===q.correct)el.classList.add("correct");else if(j===answers[i])el.classList.add("wrong")});if(answers[i]===q.correct)score++});window.lessonScore=score;document.getElementById("scoreVal").textContent=score+"/3";document.getElementById("scoreBanner").style.display="block";document.getElementById("quizStatus").textContent="判分完成：绿色为正确答案。"}
+renderQuiz();
+function downloadReceipt(){let cls=document.getElementById("inputClass").value.trim()||"六年级上册",name=document.getElementById("inputName").value.trim()||"小极客",score=window.lessonScore===undefined?"未测":window.lessonScore+"/3",time=new Date().toLocaleString("zh-CN");let text="# 班级|姓名|第05课 算法的执行|得分|时间\n"+cls+"|"+name+"|第05课 算法的执行|"+score+"|"+time+"\n";let blob=new Blob(["\uFEFF"+text],{type:"text/plain;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=cls+"_"+name+"_第05课算法的执行_"+score+".txt";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);document.getElementById("receiptStatus").textContent="学习凭单已保存，可按课堂要求上传平台。"}
 </script>
 </body>
 </html>
