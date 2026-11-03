@@ -37,12 +37,14 @@
       basic: all.some(t => t.basicEver), star: all.some(t => t.starEver),
       transfer: all.some(t => t.transferEver), reflection: reflectionEver || needsHelp
     };
-    $('medalArea').replaceChildren(...medalDefs.map(m => {
+    if ($('medalArea') && Array.isArray(window.medalDefs)) {
+      $('medalArea').replaceChildren(...medalDefs.map(m => {
       const el = document.createElement('div');
       el.className = 'medal' + (achieved[m.event] ? ' got' : '');
       el.textContent = `${achieved[m.event] ? '★ 已获得' : '☆ 待探索'} ${m.label}`;
       return el;
     }));
+    }
   }
 
   function update(id) {
@@ -255,6 +257,7 @@
     }
   });
 
+  if ($('openCert')) {
   $('openCert').addEventListener('click', () => {
     certReturnFocus = document.activeElement;
     const fields = receiptFields();
@@ -275,6 +278,7 @@
     if (event.key === 'Tab') { event.preventDefault(); $('closeCert').focus(); }
   });
   $('certModal').addEventListener('click', event => { if (event.target === $('certModal')) closeCertificate(); });
+  }
   $('restartLesson').addEventListener('click', () => { $('restartConfirm').hidden = false; $('restartYes').focus(); });
   $('restartNo').addEventListener('click', () => { $('restartConfirm').hidden = true; $('restartLesson').focus(); });
   $('restartYes').addEventListener('click', () => location.reload());

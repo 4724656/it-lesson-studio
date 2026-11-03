@@ -271,7 +271,6 @@ def check_html(path):
 
     trio = {
         "测验(quiz)": bool(re.search(r"\bquiz\b", text)),
-        "徽章(medal)": "medal" in text.lower(),
         "导出(Blob+download)": "Blob" in text and "download" in text,
     }
     for name, ok in trio.items():

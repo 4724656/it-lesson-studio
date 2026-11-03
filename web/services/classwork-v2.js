@@ -37,8 +37,35 @@ export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, plan
   const limits = readHtmlLimits(gradeNum);
   const blueprintBlock = simBlueprint ? `\n推荐仿真原型与关卡拆解（若教师未指定冲突设想则优先以此构建多屏探究主线）：\n- 原型：${simBlueprint.archetypeName}\n${simBlueprint.interactiveDesign}` : '';
   return {
-    system: [globalRules, read('skills/it-lesson-studio/modules/classwork.md'), read('references/classwork-v2-contract.md')].join('\n\n'),
-    user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。\n定位：支撑 35—40 分钟机房主课堂的完整数字化探究舱（非课后小练习），请设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“痛点体验 ➔ 原理建模 ➔ 核心动手仿真沙箱（基础+⭐进阶） ➔ 调试或迁移应用”。注意：screens 每一屏的 kind 属性必须严格二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏），严禁自造其他词汇。\n年级：${grade}；课题：${lessonTitle}\n实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}\n教师设想（在硬性契约内优先）：${requirements || '未指定'}\n已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}${blueprintBlock}\n以下文稿是任务同源依据，使用完整文本，不另造任务名称：\n<lesson-plan>\n${planContent}\n</lesson-plan>\n<worksheet>\n${worksheetContent}\n</worksheet>\n<slides>\n${slidesContent || ''}\n</slides>\n仅输出接口契约要求的 JSON 对象。`
+    system: [globalRules, read('skills/4-classwork/SKILL.md'), read('references/classwork-v2-contract.md')].join('\n\n'),
+    user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。
+【3~8年级学段认知阶梯与核心设计要求】：
+1. 👶 严格对齐学段学情（坚决防拔高）：
+   - 3~4年级【玩具拟物·生活具象】：大卡片、玩具式道具（发光灯泡、开盖分类箱、升降温度计），题干严格 ≤20 字儿童口语，绝对禁止代码与底层计算机原理，绝不跨课节超纲；
+   - 5~6年级【解谜探索·规则控制台】：仪表盘控制台、流程图插槽、如果-那么分支切换、阈值联动执行器，题干 ≤30 字，考查生活规则与因果，不考死记编程语法；
+   - 7~8年级【极客工坊·微型实验室】：网络拓扑连线、脉冲数据包、实时折线图、密码转盘、2D散点画布，题干 ≤40 字，重在直观探究机理，不搞大学高数与公式推导。
+   - 所有年级反馈文案讲通俗生活因果（如“水温超过30℃，风扇转起来啦”），严禁使用“状态转移”、“布尔真值判定”等成人学术黑话。
+2. 🎨 交互精品感（把HTML+CSS+JS玩出花）：
+   - 充分利用原生 CSS 与 SVG 绘制生动具象道具；
+   - 按钮带按压立体微位移（translateY(2px)），滑块带实时数值气泡，徽章点亮带弹跳动效（@keyframes medalPop），让孩子动手觉得好玩、有质感、有成就感。
+3. 🎮 探究主线：设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“生活体验 ➔ 原理操作 ➔ 核心动手仿真沙箱（基础+⭐进阶） ➔ 调试或迁移应用”。注意：screens 每一屏的 kind 属性必须严格二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏），严禁自造其他词汇。
+
+年级：${grade}；课题：${lessonTitle}
+实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}
+教师设想（在硬性契约内优先）：${requirements || '未指定'}
+已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}${blueprintBlock}
+
+以下文稿是任务同源依据，使用完整文本，不另造任务名称：
+<lesson-plan>
+${planContent}
+</lesson-plan>
+<worksheet>
+${worksheetContent}
+</worksheet>
+<slides>
+${slidesContent || ''}
+</slides>
+仅输出接口契约要求的 JSON 对象。`
   };
 }
 
@@ -105,9 +132,10 @@ export function validateV2Payload(payload, gradeNum) {
     requireThat(nonempty(q.q) && words(q.q) <= limits.quiz_stem && Array.isArray(q.options) && q.options.length >= 2 && q.options.every(nonempty)
       && Number.isInteger(q.correct) && q.correct >= 0 && q.correct < q.options.length && nonempty(q.why), '测验字段、题干或答案索引不合规');
   });
-  requireThat(Array.isArray(payload.medals) && payload.medals.length === 4, '需要四枚动态徽章');
-  const events = ['basic', 'star', 'transfer', 'reflection'];
-  requireThat(events.every(event => payload.medals.filter(m => m.event === event && nonempty(m.label)).length === 1), '徽章必须分别对应基础、进阶、迁移、学习品质');
+  if (Array.isArray(payload.medals)) {
+    const events = ['basic', 'star', 'transfer', 'reflection'];
+    requireThat(events.every(event => payload.medals.filter(m => m.event === event && nonempty(m.label)).length === 1), '徽章格式非法');
+  }
   return payload;
 }
 
@@ -197,13 +225,12 @@ export function assembleClassworkV2(payload, { gradeNum, grade, lessonTitle }) {
 <header class="top"><div class="top-title"><h1>${h(lessonTitle)}</h1><button id="helpFlag" aria-pressed="false">🚩 我需要帮助</button></div><nav id="stepper" class="stepper" aria-label="任务导航"></nav><p id="progressCapsule" role="status"></p><p id="helpBanner" hidden>我需要帮助，请老师或同伴过来看看。</p></header>
 <main>${panels}
 <section class="panel" data-step="${payload.screens.length}"><h2 tabindex="-1">评价与学习记录</h2><p data-prose>回顾探究，再记录自己的收获。</p><div id="quizArea"></div><button id="quizSubmit">提交测验并判分</button><p id="quizMessage" role="status"></p><p id="scoreBox" hidden></p>
-<h3>我的成长徽章</h3><div id="medalArea" class="medal-wall"></div><h3>自我评价</h3><div id="selfList"></div><p id="selfMessage" role="status"></p>
-<label>班级（选填）<input id="inputClass" maxlength="60" autocomplete="off"></label><label>姓名（选填）<input id="inputName" maxlength="60" autocomplete="off"></label><div class="task-tools"><button id="saveReceipt" disabled>保存学习凭单 (.txt)</button><button id="viewReceipt" disabled>查看／复制凭单</button><button id="openCert">生成电子通关奖状</button></div>
+<h3>自我评价</h3><div id="selfList"></div><p id="selfMessage" role="status"></p>
+<label>班级（选填）<input id="inputClass" maxlength="60" autocomplete="off"></label><label>姓名（选填）<input id="inputName" maxlength="60" autocomplete="off"></label><div class="task-tools"><button id="saveReceipt" disabled>保存学习凭单 (.txt)</button><button id="viewReceipt" disabled>查看／复制凭单</button></div>
 <div id="receiptPanel" hidden><label>学习凭单<textarea id="receiptText" readonly rows="4"></textarea></label><button id="copyReceipt">复制凭单</button><p id="receiptMessage" role="status"></p></div></section>
 <footer class="nav-row"><button id="prevStep">上一屏</button><p id="navMessage" role="status"></p><button id="nextStep">下一屏／稍后再来</button></footer>
 <button id="restartLesson">重新开始整节课</button><div id="restartConfirm" hidden><p>这会清除本轮任务成就与首次测验成绩，确定重新开始吗？</p><button id="restartYes">确定重新开始</button><button id="restartNo">继续本轮学习</button></div>
 </main>
-<div id="certModal" class="cert-modal" role="dialog" aria-modal="true" aria-labelledby="certHeading" hidden><div class="certificate"><h2 id="certHeading">🏆 探究成长奖状</h2><p id="certContent"></p><p id="certMedals"></p><button id="closeCert">关闭奖状</button></div></div>
 <script>
 "use strict";
 const stepLabels = ${safeJson(labels)};
