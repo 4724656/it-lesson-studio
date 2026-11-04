@@ -29,7 +29,8 @@
     "k12-education"
   ],
   "dependencies": {
-    "@marp-team/marp-cli": "^4.5.1"
+    "@marp-team/marp-cli": "^4.5.1",
+    "undici": "^8.12.3"
   },
   "engines": {
     "node": ">=20"

@@ -240,16 +240,237 @@ function classifyKnnPoint(px, py, kVal, samples, svgEl) {
 
 ---
 
-## 三、终极关卡（第 `maxScreens` 屏）必须 100% 闭环包含以下三件套（彻底去除花哨虚拟徽章与弹窗奖状），且**全程严禁使用 `alert()` 弹窗阻断学生操作**：
+## 三、随堂作业内置标准微引擎与通用交互底座（开箱即用原生代码）
+
+在 `<script>` 开头或独立模块中内联以下标准底座，实现音效、存盘、Toast、两步点击与 SVG 场景联动：
+
+### 1. Web Audio 原生合成音效引擎与静音开关
+零外部音频文件，机房断网即开即响：
+```javascript
+let soundOn = true, ac = null;
+function beep(f, d) {
+  if (!soundOn) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.15, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d);
+    o.start(); o.stop(ac.currentTime + d);
+  } catch(e) {}
+}
+function good() { beep(880, 0.12); setTimeout(() => beep(1320, 0.14), 110); }
+function bad() { beep(220, 0.22); }
+
+function toggleSound() {
+  soundOn = !soundOn;
+  const btn = document.getElementById('btnSound');
+  if (btn) btn.textContent = soundOn ? '🔊' : '🔇';
+  toast(soundOn ? '声音已开启' : '已静音');
+}
+```
+
+### 2. LocalStorage 自动存盘与无弹窗 Toast
+学生误按 F5 刷新页面进度不丢失，全流程无阻塞弹窗：
+```javascript
+const STORAGE_KEY = "lesson_state_" + (document.title.split('｜')[0] || "classwork");
+let S = {};
+try { S = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch(e) { S = {}; }
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
+  renderStars();
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 1900);
+}
+
+function addStars(num) {
+  S.stars = (S.stars || 0) + num;
+  save();
+  good();
+  toast(`⭐ +${num}！已收集 ${S.stars} 颗星`);
+}
+
+function renderStars() {
+  const el = document.getElementById('starCount');
+  if (el) el.textContent = `⭐ ${S.stars || 0}`;
+}
+```
+
+### 3. “先点选、再落位、后检查”两步点击交互组件（机房防手滑）
+替代易误触的 HTML5 原生拖拽，低龄友好：
+
+#### A. 左右配对组件（Match）
+```javascript
+let selectedLeft = null;
+function onSelectLeft(el, id) {
+  document.querySelectorAll('.match-left').forEach(i => i.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedLeft = { el, id };
+  beep(520, 0.08);
+}
+
+function onSelectRight(rightEl, targetId) {
+  if (!selectedLeft) {
+    toast('请先点击左侧项目！');
+    return;
+  }
+  const isRight = (selectedLeft.id === targetId);
+  if (isRight) {
+    selectedLeft.el.classList.remove('sel');
+    selectedLeft.el.classList.add('right');
+    rightEl.classList.add('right');
+    good();
+    toast('配对成功！✨');
+    S['match_' + selectedLeft.id] = true;
+    selectedLeft = null;
+    save();
+  } else {
+    bad();
+    toast('还不太对，再想一想？');
+  }
+}
+```
+
+#### B. 收纳盒归类组件（Sort）
+```javascript
+let activeChip = null;
+function pickChip(chipEl, type) {
+  if (chipEl.classList.contains('placed')) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  chipEl.classList.add('sel');
+  activeChip = { el: chipEl, type: type, text: chipEl.textContent };
+  beep(600, 0.08);
+}
+
+function placeIntoBox(boxEl, boxType) {
+  if (!activeChip) {
+    toast('请先点击上方的卡片！');
+    return;
+  }
+  const correct = (activeChip.type === boxType);
+  if (correct) {
+    activeChip.el.classList.remove('sel');
+    activeChip.el.classList.add('placed');
+    const badge = document.createElement('span');
+    badge.className = 'chip right';
+    badge.textContent = activeChip.text;
+    boxEl.querySelector('.box-content').appendChild(badge);
+    good();
+    toast('归类正确！📦');
+    activeChip = null;
+    save();
+  } else {
+    bad();
+    toast('这个分类不适合它哦，换个盒子试试？');
+  }
+}
+```
+
+### 4. 原生 SVG 640x360 场景寻宝与脉冲热点骨架
+第一关破冰探秘标准模板：
+```html
+<div class="scene-wrap" style="position:relative; max-width:640px; margin:0 auto;">
+  <svg viewBox="0 0 640 360" class="scene-svg" style="width:100%; border-radius:14px; background:#EAF2F8;">
+    <!-- 1. 背景与道路 -->
+    <rect x="0" y="0" width="640" height="240" fill="#E8F4F8"/>
+    <rect x="0" y="240" width="640" height="120" fill="#D5DBDB"/>
+    <!-- 2. 标志性建筑与生活设施矢量元素（至少20~25个矢量元素） -->
+    <rect x="40" y="80" width="180" height="160" rx="8" fill="#FADBD8" stroke="#E74C3C" stroke-width="2"/>
+    <polygon points="30,80 130,20 230,80" fill="#E74C3C"/>
+    <text x="130" y="60" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">智能校门</text>
+    <!-- 闸机与摄像头细节 -->
+    <rect x="80" y="160" width="30" height="60" fill="#BDC3C7"/>
+    <circle cx="95" cy="150" r="10" fill="#3498DB"/>
+  </svg>
+  
+  <!-- 3. 绝对定位热点按钮（百分比坐标与 SVG 元素中心对齐） -->
+  <button class="hs" style="left:15%; top:42%;" onclick="findHotspot(this, 'cam1', '智能闸机摄像头', '它是校门的人脸识别眼睛，刷脸放行！')">👁️</button>
+  <button class="hs" style="left:55%; top:60%;" onclick="findHotspot(this, 'cam2', '测温小眼睛', '红外热成像仪，进校自动测温！')">🌡️</button>
+</div>
+
+<div id="foundCard" class="card" style="margin-top:14px; min-height:60px;">
+  <p id="foundDesc" style="color:var(--text-sub);">👉 点击上面画面的小圆点，寻找藏在身边的智能设备！</p>
+</div>
+```
+
+```javascript
+function findHotspot(btn, id, name, desc) {
+  if (btn.classList.contains('found')) return;
+  btn.classList.add('found');
+  document.getElementById('foundDesc').innerHTML = `<b>【找到设备】${name}</b>：${desc}`;
+  addStars(2);
+  S['hs_' + id] = true;
+  save();
+}
+
+function giveHint() {
+  const notFound = [...document.querySelectorAll('.hs:not(.found)')];
+  if (notFound.length === 0) {
+    toast('太棒了！所有热点已经全部找到！🎉');
+    return;
+  }
+  const pick = notFound[Math.floor(Math.random() * notFound.length)];
+  pick.classList.add('hint');
+  setTimeout(() => pick.classList.remove('hint'), 1500);
+  beep(440, 0.1);
+  toast('仔细看！有个热点在晃动哦 👀');
+}
+```
+
+### 5. 全量学习单汇总与 `.txt` 导出标准实现
+带 `\uFEFF` UTF-8 BOM，首两行兼容平台标准，后续追加完整学习单详情：
+```javascript
+function exportReport(lessonTitle) {
+  const cls = (document.getElementById('inputClass')?.value || '本班').trim();
+  const name = (document.getElementById('inputName')?.value || '小极客').trim();
+  const score = S.quizScore !== undefined ? S.quizScore : '未测';
+  const now = new Date().toLocaleString('zh-CN', { hour12: false });
+  
+  const lines = [
+    `# 班级|姓名|课题|得分|时间`,
+    `${cls}|${name}|${lessonTitle}|${score}|${now}`,
+    ``,
+    `================ 课堂探究学习单详情 ===============`,
+    `获得星星：⭐ ${S.stars || 0} 颗`,
+    `【一、探究寻宝】${S.hotspotsFound || '已探索场景'}`,
+    `【二、动手实验】${S.handsOnDone ? '已完成核心仿真实验' : '已进行实验'}`,
+    `【三、随堂测验】得分：${score} 分`,
+    `【四、自我评价】${S.selfEval || '自主完成学习'}`
+  ];
+  
+  const content = "\\uFEFF" + lines.join("\\r\\n");
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${cls}_${name}_${lessonTitle}_${score}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast("学习凭单导出成功！📥");
+}
+```
+---
+
+## 四、终极关卡（第 maxScreens 屏）评价闭环三件套
 
 1. **随堂测验 (`const quiz = [...];`) —— 严格先选后判**：
    - 点击选项时仅切换 `.picked` 高亮选中态，**绝不提前暴露红绿对错**；
    - 点击【提交测验并判分】按钮后：若仍有未选题，在按钮下方状态栏温和提示“还有题目未选择哦”（**不用 `alert`**）；全部选完后统一标出 `.correct`（绿）与 `.wrong`（红），给 `.option-list` 加上 `.locked` 锁定，并展示总分横幅。
 2. **自我评价打卡 —— 必留心理安全出口**：
    - 3~4 项复选/单选清单，**必须包含一条含“我还没完全懂”字样的选项**（如：`我还没完全懂，需要老师或同伴帮助`），通过 `check_lesson.py` 门禁检查。
-3. **极简无感 `.txt` 学习凭单导出 (`exportReport()`) —— 零弹窗一键秒下**：
-   - 提供班级、姓名输入框（选填），**当学生未填写姓名或班级时，自动使用 `'本班'` / `'小极客'`（或 `'同学'`）兜底，严禁弹 `alert()` 逼迫学生打字**！
-   - 凭单文件首行必须为结构化标准格式：`# 班级|姓名|课题|得分|时间`，随后列出各关卡探究数据与自评结果，通过 `Blob` + `<a download="班级_姓名_课题_得分.txt">` 一键秒下，直接供“中小学信息科技与人工智能平台”上传汇聚。
+3. **所见即所得学习单与极简 `.txt` 凭单导出 —— 零弹窗一键秒下**：
+   - 凭单首两行必须满足标准格式：`# 班级|姓名|课题|得分|时间`，随后列出完整探究细节；
+   - 姓名班级选填，未填使用默认值，带 BOM 头直接通过 `Blob` 下载。
 
 ---
 

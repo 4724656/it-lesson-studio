@@ -1,3 +1,14 @@
+import { Agent, setGlobalDispatcher } from 'undici';
+
+// 针对深度推理或大体量代码生成模型（如 gpt-5.6-terra），放宽 headersTimeout 与 bodyTimeout 至 15 分钟
+try {
+  setGlobalDispatcher(new Agent({
+    headersTimeout: 900000,
+    bodyTimeout: 900000,
+    connectTimeout: 60000
+  }));
+} catch {}
+
 /** OpenAI-compatible transport. No prompts, credentials or response bodies in telemetry. */
 export async function callLlmApi({ apiBase, apiKey, model, messages, temperature = 0.3, signal, onMetadata }) {
   const started = performance.now();

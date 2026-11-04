@@ -548,6 +548,65 @@ const CLASSWORK_BENCHMARK_CSS = `
     box-shadow: 0 20px 50px rgba(0,0,0,0.4); animation: zoomCert 0.3s ease; position: relative;
   }
   @keyframes zoomCert { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  /* 顶部集星器与声音控制 */
+  .h-star { color: #F1C40F; font-size: 15px; font-weight: 800; margin-left: 10px; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-sound { background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 2px 6px; }
+  /* 页面浮动 Toast 提示 */
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: rgba(30, 41, 59, 0.92); color: #fff; padding: 8px 22px; border-radius: 30px;
+    font-size: 14px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 9999;
+    pointer-events: none; opacity: 0; transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* SVG 场景寻宝与脉冲热点 */
+  .scene-wrap { position: relative; max-width: 640px; margin: 16px auto; }
+  .scene-svg { width: 100%; border-radius: 14px; display: block; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .hs {
+    position: absolute; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%;
+    background: #FF7675; border: 2px solid #fff; color: #fff; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.7); animation: pulse 1.8s infinite; transition: all 0.2s; z-index: 10;
+  }
+  .hs.found { background: #00B894; animation: none; box-shadow: 0 2px 8px rgba(0, 184, 148, 0.4); transform: translate(-50%, -50%) scale(0.92); }
+  .hs.hint { animation: shake 0.5s ease-in-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(255, 118, 117, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0); } }
+  @keyframes shake { 0%, 100% { transform: translate(-50%, -50%) rotate(0deg); } 25% { transform: translate(-50%, -50%) rotate(-12deg); } 75% { transform: translate(-50%, -50%) rotate(12deg); } }
+  /* 悬浮小助手吉祥物 */
+  .mascot {
+    position: fixed; right: 20px; bottom: 20px; width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, #6C5CE7, #a29bfe); color: #fff; font-size: 24px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4); z-index: 100; transition: transform 0.2s; border: none;
+  }
+  .mascot:hover { transform: scale(1.1); }
+  .mascot-bub {
+    position: fixed; right: 78px; bottom: 25px; background: #fff; border: 2px solid #6C5CE7;
+    border-radius: 14px; padding: 12px 16px; max-width: 260px; font-size: 13px; color: #2D3436;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: none; z-index: 100;
+  }
+  .mascot-bub.on { display: block; animation: slideUp 0.25s ease; }
+  /* 两步点击配对与收纳盒 */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px;
+    background: #fff; border: 2px solid var(--border); font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; user-select: none;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.sel { border-color: #E67E22; background: #FEF9E7; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(230, 126, 34, 0.25); }
+  .chip.placed { opacity: 0.35; pointer-events: none; border-style: dashed; }
+  .chip.right { border-color: #27AE60; background: #EAFAF1; color: #1E8449; }
+  .chip.wrong { border-color: #E74C3C; background: #FDEDEC; color: #C0392B; }
+  .box { background: #F8F9FA; border: 2px dashed #BDC3C7; border-radius: 14px; padding: 14px; min-height: 110px; transition: border-color 0.2s; cursor: pointer; }
+  .box:hover { border-color: #3498DB; }
+  .box-title { font-size: 15px; font-weight: 800; color: #2C3E50; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .box-content { display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px; }
+  /* 全量学习单预览报告框 */
+  .report-box {
+    background: #FDFEFE; border: 2px solid #D5D8DC; border-radius: 12px; padding: 14px 18px;
+    font-family: Consolas, monospace; font-size: 13px; line-height: 1.6; color: #34495E;
+    margin: 16px 0; max-height: 200px; overflow-y: auto; white-space: pre-wrap;
+  }
 `;
 
 /**
@@ -894,8 +953,8 @@ ${materialsPrompt}
   const { screens: maxScreens, handsOn: maxHandsOn, quiz: maxQuiz, prosePerScreen: maxProse, quizStem: maxQuizStem } = limits;
 
   const promptPhase2 = `
-你现在需要为本课专门编写配套的【课堂作业.html】单文件离线“数字化探究舱 (Inquiry Workspace)”应用。
-必须支撑机房课堂 35~40 分钟学生动手探究，并与刚才生成的教案、导学单实现 100% 任务同源咬合！
+你现在需要为本课专门编写配套的【课堂作业.html】单文件离线“数字化探究工坊 (Inquiry Workspace)”应用。
+必须支撑机房课堂 35~40 分钟学生自主动手探究，并与刚才生成的教案、导学单实现 100% 任务同源咬合！
 
 【课程基本信息】：
 - 授课年级：${grade}（${gradeNum}年级）
@@ -919,7 +978,7 @@ ${worksheetContent.slice(0, 1000)}
 0. **教师个性化教学设想绝对优先**：
    - 若上方存在【教师教学设想与特别说明】，必须 100% 优先围绕教师设想的特色情境、案例与交互需求量身定制仿真沙箱！
    - 若无特殊说明，则严格按照上方【本课专属仿真器蓝图】实现高可玩性的原生 JS 微型仿真器。
-1. **单文件纯原生断网运行**：
+1. **单文件纯原生断网运行与页面头部**：
    - 严禁任何外部网络资源链接（严禁 http://、https://、// 外链 CSS/JS/图片/字体，全部内嵌）；
    - 头部必须包含：
      <!DOCTYPE html>
@@ -936,7 +995,13 @@ ${worksheetContent.slice(0, 1000)}
      </style>
      </head>
 2. **顶栏导航与闯关步进器（严格 ${maxScreens} 屏）**：
-   - 必须使用 <header class="top-bar">，内部包含 <div class="brand"> 和 <div class="stepper" id="stepper"></div>；
+   - 必须使用 <header class="top-bar">，内部包含：
+     <div class="brand">
+       <h1>${lessonTitle}</h1>
+       <span class="h-star" id="starCount">⭐ 0</span>
+       <button id="btnSound" class="btn-sound" onclick="toggleSound()">🔊</button>
+     </div>
+     <div class="stepper" id="stepper"></div>
    - JS 必须声明：const stepLabels = [...]; 且数组元素个数**必须严格等于 ${maxScreens} 项**！
    - 🚨 步进序号必须从 1 开始编号（1~${maxScreens}），严禁显示 0 开头（序号渲染必须写 (i + 1) 或 index + 1）！
 3. **关卡容器 DOM 结构与门禁属性（极其重要！）**：
@@ -945,20 +1010,38 @@ ${worksheetContent.slice(0, 1000)}
    - **每屏正文导语字数门禁 (data-prose)**：
      * 每一屏（从 data-step="0" 到 data-step="${maxScreens - 1}"）内部必须有且仅有 1 个核心导语段落标记 \`<p data-prose>...简短导语...</p>\`；
      * 🚨 字数红线：${gradeNum}年级每屏 \`<p data-prose>\` 内的文字**必须严格 ≤ ${maxProse} 字**！详细的操作提示、故事细节请放在不带 data-prose 属性的 \`<div class="tip-box">\` 或卡片内，绝不可让 data-prose 超字数！
-4. **支撑 40 分钟课堂的仿真设计与学科精准输入**：
-   - 杜绝要求学生输入长篇文字小作文！采用点击配对、部件解剖、参数滑块、开关翻转、代码单步追踪、下拉/词块拼装等精准学科交互；
-   - 在核心仿真屏内设置**“基础通关任务”**与 \`<div class="challenge-card"><h4>⭐ 进阶挑战星</h4>...</div>\`，让快学生有深度探究空间，慢学生稳步达标；
+4. **学段认知适配与 6 大高质感互动武器**：
+   - **低年级（3~4年级）**：
+     * 首关优先采用【原生内联 SVG 640x360 场景寻宝】：使用 \`<div class="scene-wrap"><svg viewBox="0 0 640 360" class="scene-svg">...绘制生活/校园场景矢量元素...</svg><button class="hs" style="left:..%; top:..%;">...</button></div>\` 叠加带呼吸脉冲的热点，点击发现设备加星（\`findHotspot()\`），并配备【💡 给我一点提示】按钮（\`giveHint()\` 抖动热点）；
+     * 采用【两步点击法配对与归类（严禁拖拽！）】：左右点击连线配对（\`.sel\` 选中，\`.right\`/\`.wrong\` 反馈）、卡片入箱分类（点卡片 \`.chip.sel\` 再点大盒子 \`.box\`）；
+     * 杜绝长篇打字：提供词块选填或单行简短感受，禁止要求小学生打字写小作文！
+   - **中高年级（5~8年级）**：
+     * 采用代码单步追踪器（人肉 CPU）、流程图词块插槽、参数滑块阈值调试、密码轮盘或拓扑连线实验台；
+   - 核心动手仿真屏内设置**“基础通关任务”**与 \`<div class="challenge-card"><h4>⭐ 进阶挑战星</h4>...</div>\`，让快学生有深度探究空间，慢学生稳步达标；
    - 关卡内的随堂巩固单选题必须支持**“答错温和提示可无限重选，答对后变绿锁定”**。
-5. **终极关卡（第 ${maxScreens} 屏，data-step="${maxScreens - 1}"）：达标测验与评价闭环（100% 闭环，零 alert 弹窗！）**：
+5. **开箱即用微引擎底座（音效 + 存盘 + Toast + 小助手）**：
+   - 必须在 \`<script>\` 开头内联标准化底座：
+     * **15行原生 Web Audio 音效**：\`beep(f, d)\`、\`good()\`、\`bad()\`、\`toggleSound()\`，右上角自带声音开关；
+     * **LocalStorage 自动存盘**：使用 \`STORAGE_KEY\` 实时把学生进度、星星数、测验得分存入本地，刷新不丢现场；
+     * **顶部非阻断 Toast 提示**：页面内置 \`<div id="toast" class="toast"></div>\`，所有提示调用 \`toast(msg)\`，**全流程严禁调用 alert() / confirm() / prompt()**！
+     * **右下角悬浮智能小助手**：预埋 \`<button class="mascot" onclick="toggleMascot()">🤖</button><div id="mascotBub" class="mascot-bub"></div>\`，点击轮播 5~6 条操作锦囊；
+6. **终极关卡（第 ${maxScreens} 屏，data-step="${maxScreens - 1}"）：达标测验与全量学习单闭环**：
    - **① 随堂测验 (Quiz)**：
-     * JS 必须严格声明：\`const quiz = [ { q: "题干", options: ["A. ...", "B. ...", "C. ..."], correct: 0 }, ... ];\`（整条语句末尾必须带分号 \`;\`，但数组内部各项之间必须用逗号 \`,\` 分隔，严禁在 options 数组后误写分号！）；
+     * JS 必须严格声明：\`const quiz = [ { q: "题干", options: ["A. ...", "B. ...", "C. ..."], correct: 0, explain: "解析" }, ... ];\`（整条语句末尾必须带分号 \`;\`，但数组内部各项之间必须用逗号 \`,\` 分隔，严禁在 options 数组后误写分号！）；
      * 🚨 题数与题干字数铁律：${gradeNum}年级**严格只能有 ${maxQuiz} 道题**！每道题 \`q:\` 题干字数**必须严格 ≤ ${maxQuizStem} 字**！
-     * 规则：**先选后判**！点击选项只加 \`.picked\` 高亮，绝不提前标红绿；点击【✍️ 提交测验并判分】后统一标出 \`.correct\` / \`.wrong\`、锁定列表并展示得分横幅（若未答完在页面状态栏温和提示，**严禁调用 alert()**）。
+     * 规则：**先选后判**！点击选项只加 \`.picked\` 高亮，绝不提前标红绿；点击【✍️ 提交测验并判分】后统一标出 \`.correct\` / \`.wrong\`、锁定列表并展示得分横幅。
    - **② 自我评价打卡**：
      * 包含 3~4 项复选框，**其中最后一项必须包含“我还没完全懂，需要老师或同伴帮助”字样**！
-   - **③ 极简无感导出学习凭单 (.txt)**：
-     * 提供班级 \`#inputClass\` 与姓名 \`#inputName\` 选填框，但**绝不强制填写，严禁任何 alert() 弹窗拦截**！未填时默认使用 \`'${grade}'\` 与 \`'小极客'\` 兜底，点击【📥 保存学习记录凭单 (.txt)】直接通过 \`Blob\` 和 \`a.download\` 一键秒下！
-     * 凭单首行必须严格为：\`# 班级|姓名|${lessonTitle}|得分|时间\`。
+   - **③ 可视化全量学习单预览与一键导出 (.txt)**：
+     * 界面提供 \`<div class="report-box" id="reportPreview"></div>\` 实时预览探究轨迹；
+     * 提供班级 \`#inputClass\` 与姓名 \`#inputName\` 选填框（严禁弹窗强迫填写，未填默认使用 \`'${grade}'\` 与 \`'小极客'\`）；
+     * 点击【📥 保存学习记录凭单 (.txt)】，通过带 \`\\uFEFF\` BOM 头的 Blob 一键秒下；
+     * 凭单首两行必须严格满足平台格式：
+       \`# 班级|姓名|${lessonTitle}|得分|时间\`
+       \`\${cls}|\${name}|${lessonTitle}|\${score}|\${now}\`
+       随后追加详细探究轨迹（获得的星星数、场景寻宝数、实验完成度、测验得分、自评结果）。
+7. **代码规模与丰满度底线（严禁偷懒缩写）**：
+   - 完整 HTML 源码总行数须达到 **550 ~ 900 行**，严禁使用 \`// ...其余同上\` 占位符或残缺逻辑！
 
 【输出格式要求】：
 请只输出完整的 HTML 代码，直接包含在 ===FILE: 课堂作业.html=== 标记中：

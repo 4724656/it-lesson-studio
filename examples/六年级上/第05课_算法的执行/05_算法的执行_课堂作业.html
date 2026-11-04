@@ -7,162 +7,1612 @@
 <meta name="lesson-book" content="浙教版2026版六年级上册·第05课 算法的执行">
 <title>第05课 算法的执行｜课堂作业</title>
 <style>
-:root{--bg-page:#F4F7F4;--card-bg:#fff;--primary:#1E5128;--primary-light:#EBF4EC;--accent:#4E9F3D;--gold:#F39C12;--blue:#2980B9;--text:#2C3E50;--sub:#576574;--danger:#E74C3C;--border:#DCDDE1;--radius:16px;--shadow:0 8px 24px rgba(30,81,40,.08)}
-*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg-page);color:var(--text);font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:50px}
-header.top-bar{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#1E5128,#2D6A4F);color:white;padding:14px 20px;box-shadow:0 4px 16px #0002}
-.top-inner{max-width:900px;margin:auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.brand{display:flex;align-items:center;gap:10px}.brand-badge{background:var(--gold);padding:2px 8px;border-radius:6px;font-size:12px;font-weight:800}.brand h1{font-size:20px}
-.stepper{display:flex;gap:6px;flex-wrap:wrap}.step-node{cursor:pointer;opacity:.65;padding:4px 9px;border-radius:20px;background:#ffffff15}.step-node.active{opacity:1;background:#ffffff38}.step-num{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#204B35;font-size:13px;font-weight:bold}.step-node.active .step-num,.step-node.done .step-num{background:var(--gold)}
-main{max-width:880px;margin:24px auto;padding:0 16px}.panel{display:none;background:white;border-radius:var(--radius);padding:26px 30px;box-shadow:var(--shadow);border:1px solid #dcdee199}.panel.active{display:block}.panel-tag{display:inline-block;color:var(--accent);background:var(--primary-light);font-size:13px;font-weight:800;padding:3px 10px;border-radius:6px;margin-bottom:8px}h2{font-size:23px;color:var(--primary);margin-bottom:12px}h3{color:var(--primary);margin:17px 0 8px}p[data-prose]{margin-bottom:16px}
-.story-box,.tip-box{padding:12px 16px;border-radius:10px;margin:12px 0;background:#F4F8FA;border-left:4px solid var(--blue)}.tip-box{background:#FFF9E6;border:1px solid #FDE3A7;color:#765500}
-.challenge-card{background:#FFF9EA;border:2px dashed var(--gold);border-radius:12px;padding:14px 18px;margin:16px 0}.challenge-card h4{color:#B65D00}
-button,.btn{font:inherit;font-weight:800;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;margin:4px 3px;background:var(--accent);color:white}button:hover{filter:brightness(.94)}button:disabled{opacity:.5;cursor:not-allowed}.btn-gray{background:#64748b}.btn-gold{background:var(--gold)}.btn-blue{background:var(--blue)}
-.console-box{background:#0F172A;color:#38BDF8;border-radius:12px;padding:14px;margin:12px 0;font:15px/1.8 Consolas,monospace;overflow:auto}.code-line{padding:2px 8px;border-radius:5px}.code-line.hl{background:#f39c1266;color:white;font-weight:bold}
-.var-grid{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.var-card{background:#F8FAFC;border:2px solid var(--border);border-radius:10px;padding:8px 18px;text-align:center;min-width:95px}.var-name{font-size:12px;color:var(--sub);font-weight:bold}.var-val{font-size:22px;font-weight:900;color:var(--blue);font-family:Consolas,monospace}.var-card.changed{border-color:var(--gold);background:#fff8dd}
-.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}.status{min-height:28px;color:var(--primary);font-weight:700;margin:8px 0}.codebox{padding:14px;background:#f2f5f7;border-radius:10px;font:15px/1.9 Consolas,monospace}.codebox .bug{color:var(--danger);font-weight:bold}.codebox .fix{color:var(--accent);font-weight:bold}
-input[type=range]{accent-color:var(--accent);width:min(360px,80%)}select,input[type=text]{font:inherit;border:1px solid var(--border);border-radius:8px;padding:8px}
-.route{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0}.route span{padding:10px 14px;border-radius:9px;background:var(--primary-light);font-weight:700}.route span.current{background:var(--gold);color:#fff}
-table{border-collapse:collapse;margin:12px 0;width:100%}th,td{border:1px solid var(--border);padding:8px;text-align:center}th{background:var(--primary-light)}
-.option-list{display:grid;gap:8px;margin:10px 0 18px}.option-item{border:2px solid var(--border);border-radius:10px;padding:10px 14px;background:#fafafa;cursor:pointer}.option-item.picked{border-color:var(--blue);background:#edf4f9}.option-item.correct{border-color:var(--accent);background:#edf7ec}.option-item.wrong{border-color:var(--danger);background:#fdecec}.option-list.locked .option-item{pointer-events:none}
-.score-banner{display:none;background:#edf7ec;border:2px solid var(--accent);border-radius:12px;padding:14px;text-align:center;margin:16px 0}.score-val{font-size:30px;font-weight:900;color:var(--primary)}.check-item{display:flex;gap:9px;align-items:center;padding:6px}.footer-nav{display:flex;justify-content:space-between;gap:10px;margin-top:22px;padding-top:15px;border-top:2px dashed #eee}
-@media(max-width:600px){.panel{padding:20px 16px}.brand h1{font-size:17px}.footer-nav{flex-wrap:wrap}}
+:root {
+  --bg-page:#F4F7F4;
+  --card-bg:#FFFFFF;
+  --primary:#1E5128;
+  --primary-light:#EBF4EC;
+  --accent:#4E9F3D;
+  --accent-gold:#F39C12;
+  --accent-blue:#2980B9;
+  --text-main:#2C3E50;
+  --text-sub:#576574;
+  --danger:#E74C3C;
+  --border:#DCDDE1;
+  --radius:16px;
+  --shadow:0 8px 24px rgba(30,81,40,.08);
+}
+* {
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+body {
+  background:var(--bg-page);
+  color:var(--text-main);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.65;
+  font-size:16px;
+  padding-bottom:60px;
+  user-select:none;
+}
+header.top-bar {
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:linear-gradient(135deg,#1E5128 0%,#2D6A4F 100%);
+  color:#fff;
+  padding:14px 20px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.15);
+}
+.top-inner {
+  max-width:900px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.brand {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.brand h1 {
+  font-size:20px;
+  font-weight:800;
+  letter-spacing:.5px;
+}
+.h-star {
+  color:#F1C40F;
+  font-size:15px;
+  font-weight:800;
+}
+.btn-sound {
+  background:transparent;
+  border:none;
+  color:#fff;
+  font-size:19px;
+  cursor:pointer;
+}
+.stepper {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.step-node {
+  display:flex;
+  align-items:center;
+  gap:5px;
+  cursor:pointer;
+  opacity:.64;
+  transition:.2s;
+  padding:4px 8px;
+  border-radius:20px;
+  background:rgba(255,255,255,.08);
+}
+.step-node:hover {
+  opacity:.95;
+}
+.step-node.active {
+  opacity:1;
+  background:rgba(255,255,255,.22);
+  box-shadow:0 0 10px rgba(243,156,18,.4);
+}
+.step-node.done {
+  opacity:1;
+}
+.step-num {
+  width:23px;
+  height:23px;
+  border-radius:50%;
+  background:#204B35;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:800;
+}
+.step-node.active .step-num {
+  background:var(--accent-gold);
+  border:2px solid #fff;
+}
+.step-node.done .step-num {
+  background:var(--accent);
+}
+.step-title {
+  font-size:12px;
+  font-weight:700;
+}
+main {
+  max-width:880px;
+  margin:24px auto;
+  padding:0 16px;
+}
+.panel {
+  display:none;
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  padding:28px 30px;
+  box-shadow:var(--shadow);
+  border:1px solid rgba(220,221,225,.6);
+  animation:slideUp .35s ease;
+}
+.panel.active {
+  display:block;
+}
+@keyframes slideUp {
+  from {
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to {
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+.panel-tag {
+  display:inline-block;
+  color:var(--accent);
+  background:var(--primary-light);
+  font-size:13px;
+  font-weight:800;
+  padding:3px 10px;
+  border-radius:6px;
+  margin-bottom:8px;
+}
+h2.panel-title {
+  font-size:23px;
+  font-weight:800;
+  color:var(--primary);
+  margin-bottom:10px;
+}
+.story-box {
+  background:#F4F8FA;
+  border-left:4px solid var(--accent-blue);
+  border-radius:0 12px 12px 0;
+  padding:12px 18px;
+  margin:16px 0;
+  font-size:15px;
+}
+.story-box b {
+  color:var(--accent-blue);
+}
+.tip-box {
+  background:#FFF9E6;
+  border:1px solid #FDE3A7;
+  color:#936500;
+  border-radius:10px;
+  padding:10px 16px;
+  font-size:14px;
+  margin:14px 0 18px;
+}
+.challenge-card {
+  background:linear-gradient(135deg,#FFFDF5,#FEF5E7);
+  border:2px dashed #F39C12;
+  border-radius:12px;
+  padding:14px 18px;
+  margin:16px 0;
+}
+.challenge-card h4 {
+  color:#D35400;
+  font-size:15px;
+  margin-bottom:6px;
+}
+.scene-wrap {
+  position:relative;
+  max-width:640px;
+  margin:16px auto;
+}
+.scene-svg {
+  width:100%;
+  border-radius:14px;
+  display:block;
+  box-shadow:0 4px 16px rgba(0,0,0,.06);
+}
+.hs {
+  position:absolute;
+  transform:translate(-50%,-50%);
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:#FF7675;
+  border:2px solid #fff;
+  color:#fff;
+  font-size:16px;
+  cursor:pointer;
+  box-shadow:0 0 0 0 rgba(255,118,117,.7);
+  animation:pulse 1.8s infinite;
+}
+.hs.found {
+  background:#00B894;
+  animation:none;
+}
+.hs.hint {
+  animation:shake .5s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow:0 0 0 0 rgba(255,118,117,.7); }
+  70% { box-shadow:0 0 0 12px rgba(255,118,117,0); }
+  100% { box-shadow:0 0 0 0 rgba(255,118,117,0); }
+}
+@keyframes shake {
+  25% { transform:translate(-50%,-50%) rotate(-12deg); }
+  75% { transform:translate(-50%,-50%) rotate(12deg); }
+}
+.pulse-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin:18px 0;
+}
+.pulse-card {
+  border:2px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+  text-align:center;
+  cursor:pointer;
+  background:#FAFBFC;
+  transition:.2s;
+}
+.pulse-card:hover {
+  transform:translateY(-2px);
+  border-color:var(--accent);
+}
+.pulse-card.done {
+  background:#EDF7EC;
+  border-color:var(--accent);
+}
+.pulse-icon {
+  font-size:34px;
+  display:block;
+}
+.case-lab {
+  background:#2C3E50;
+  border-radius:14px;
+  padding:20px;
+  color:#fff;
+  margin:16px 0;
+}
+.console-box {
+  background:#0F172A;
+  color:#BDEBFF;
+  border-radius:12px;
+  padding:14px;
+  font-family:Consolas,Monaco,"Courier New",monospace;
+  font-size:14px;
+  line-height:1.7;
+  min-height:170px;
+  overflow-x:auto;
+}
+.code-line {
+  padding:3px 8px;
+  border-radius:6px;
+  white-space:pre-wrap;
+}
+.code-line.hl {
+  background:rgba(243,156,18,.35);
+  color:#fff;
+  font-weight:700;
+}
+.var-grid {
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:14px 0;
+}
+.var-card {
+  background:#F8FAFC;
+  border:2px solid var(--border);
+  border-radius:10px;
+  padding:8px 16px;
+  text-align:center;
+  min-width:105px;
+  transition:.25s;
+}
+.var-card.flash {
+  border-color:var(--accent-gold);
+  background:#FFF9DB;
+  transform:scale(1.06);
+}
+.var-name {
+  font-size:12px;
+  color:var(--text-sub);
+  font-weight:700;
+}
+.var-val {
+  font-size:21px;
+  font-weight:900;
+  color:var(--accent-blue);
+  font-family:Consolas,monospace;
+}
+.execution-status {
+  padding:10px 14px;
+  border-radius:10px;
+  background:#EAF4FB;
+  color:#1F618D;
+  font-size:14px;
+  font-weight:700;
+}
+.debug-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin:16px 0;
+}
+.debug-card {
+  border:2px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  background:#FAFBFC;
+}
+.debug-card h4 {
+  color:var(--primary);
+  margin-bottom:7px;
+}
+.bug-line {
+  padding:8px 10px;
+  border-radius:8px;
+  font-family:Consolas,monospace;
+  background:#17202A;
+  color:#D6EAF8;
+  margin:7px 0;
+  cursor:pointer;
+  border:2px solid transparent;
+}
+.bug-line.selected {
+  border-color:var(--accent-gold);
+}
+.bug-line.fixed {
+  background:#1E5128;
+  color:#fff;
+  border-color:#4E9F3D;
+}
+.flow-layout {
+  display:grid;
+  grid-template-columns:1fr 1.15fr;
+  gap:18px;
+  margin:16px 0;
+}
+.chip-bank {
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  align-content:start;
+}
+.chip {
+  display:inline-flex;
+  align-items:center;
+  padding:8px 12px;
+  border-radius:20px;
+  background:#fff;
+  border:2px solid var(--border);
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.chip:hover {
+  border-color:var(--accent);
+}
+.chip.sel {
+  border-color:#E67E22;
+  background:#FEF9E7;
+  transform:translateY(-2px);
+}
+.chip.placed {
+  opacity:.35;
+  pointer-events:none;
+}
+.chip.right {
+  border-color:#27AE60;
+  background:#EAFAF1;
+}
+.flow-board {
+  background:#F7FBF8;
+  border:2px dashed #9CBFA4;
+  border-radius:14px;
+  padding:14px;
+}
+.flow-box {
+  min-height:53px;
+  border:2px dashed #95A5A6;
+  border-radius:10px;
+  background:#fff;
+  margin:8px auto;
+  max-width:330px;
+  padding:10px;
+  text-align:center;
+  cursor:pointer;
+  font-weight:700;
+}
+.flow-box.filled {
+  border-color:var(--accent);
+  background:#EDF7EC;
+}
+.flow-arrow {
+  text-align:center;
+  color:var(--accent);
+  font-weight:900;
+}
+.branch-lab {
+  background:#EFF7F1;
+  border:2px solid #B8D9BF;
+  border-radius:14px;
+  padding:17px;
+  margin:16px 0;
+}
+.range-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.range-row input {
+  flex:1;
+  accent-color:var(--accent);
+}
+.temperature {
+  min-width:92px;
+  font-size:24px;
+  font-weight:900;
+  color:#D35400;
+}
+.branch-path {
+  display:grid;
+  grid-template-columns:1fr 48px 1fr;
+  gap:10px;
+  align-items:center;
+  margin-top:14px;
+}
+.path-card {
+  border:2px solid var(--border);
+  border-radius:12px;
+  padding:13px;
+  text-align:center;
+  background:#fff;
+}
+.path-card.active-yes {
+  border-color:var(--danger);
+  background:#FDEDEC;
+  color:#C0392B;
+}
+.path-card.active-no {
+  border-color:var(--accent);
+  background:#EDF7EC;
+  color:#1E8449;
+}
+.decision {
+  border-radius:50%;
+  width:48px;
+  height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#F39C12;
+  color:#fff;
+  font-size:13px;
+  font-weight:900;
+  transform:rotate(45deg);
+}
+.decision span {
+  transform:rotate(-45deg);
+}
+.compare-table {
+  width:100%;
+  border-collapse:collapse;
+  margin:16px 0;
+  overflow:hidden;
+  border-radius:12px;
+}
+.compare-table th {
+  background:var(--primary);
+  color:#fff;
+  padding:10px;
+  text-align:left;
+}
+.compare-table td {
+  padding:10px;
+  border-bottom:1px solid var(--border);
+  background:#fff;
+}
+.compare-table tr:last-child td {
+  border-bottom:none;
+}
+.path-track {
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.path-dot {
+  width:25px;
+  height:25px;
+  border-radius:50%;
+  background:#D5DBDB;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  font-weight:800;
+}
+.path-dot.on {
+  background:var(--accent);
+  color:#fff;
+}
+.option-list {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin:12px 0 20px;
+}
+.option-item {
+  border:2px solid var(--border);
+  border-radius:12px;
+  padding:12px 18px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:16px;
+  background:#FAFAFA;
+  transition:.2s;
+}
+.option-item:hover {
+  border-color:var(--accent);
+}
+.option-item.picked {
+  border-color:var(--accent-blue);
+  background:#EDF4F9;
+  font-weight:700;
+}
+.option-item.correct {
+  border-color:var(--accent);
+  background:#EDF7EC;
+  color:#1E5128;
+  font-weight:800;
+}
+.option-item.wrong {
+  border-color:var(--danger);
+  background:#FDEDEC;
+  color:var(--danger);
+}
+.option-list.locked .option-item {
+  pointer-events:none;
+}
+.option-list.locked .option-item:not(.correct) {
+  opacity:.55;
+}
+.score-banner {
+  display:none;
+  background:linear-gradient(135deg,#EDF7EC,#D4EDDA);
+  border:2px solid #4E9F3D;
+  border-radius:14px;
+  padding:18px;
+  text-align:center;
+  margin:20px 0;
+}
+.score-val {
+  font-size:35px;
+  font-weight:900;
+  color:#1E5128;
+}
+.check-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 10px;
+  border-radius:8px;
+  font-size:15px;
+  cursor:pointer;
+}
+.check-item:hover {
+  background:#F1F4F7;
+}
+.check-item input {
+  width:18px;
+  height:18px;
+  accent-color:var(--accent);
+}
+.input-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:16px 0;
+}
+.input-row input {
+  width:100%;
+  padding:10px 12px;
+  border:2px solid var(--border);
+  border-radius:10px;
+  font:inherit;
+}
+.report-box {
+  background:#FDFEFE;
+  border:2px solid #D5D8DC;
+  border-radius:12px;
+  padding:14px 18px;
+  font-family:Consolas,monospace;
+  font-size:13px;
+  line-height:1.6;
+  color:#34495E;
+  margin:16px 0;
+  max-height:230px;
+  overflow-y:auto;
+  white-space:pre-wrap;
+}
+.footer-nav {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:26px;
+  padding-top:18px;
+  border-top:2px dashed #ECEFF1;
+}
+.btn {
+  font-family:inherit;
+  font-size:15px;
+  font-weight:800;
+  padding:11px 20px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:.2s;
+}
+.btn:active {
+  transform:scale(.97);
+}
+.btn-green {
+  background:var(--accent);
+  color:#fff;
+}
+.btn-gold {
+  background:var(--accent-gold);
+  color:#fff;
+}
+.btn-gray {
+  background:#E2E8F0;
+  color:#475569;
+}
+.btn:hover {
+  filter:brightness(.96);
+}
+.toast {
+  position:fixed;
+  top:16px;
+  left:50%;
+  transform:translateX(-50%) translateY(-20px);
+  background:rgba(30,41,59,.92);
+  color:#fff;
+  padding:8px 22px;
+  border-radius:30px;
+  font-size:14px;
+  font-weight:700;
+  z-index:9999;
+  pointer-events:none;
+  opacity:0;
+  transition:.25s;
+}
+.toast.on {
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+.mascot {
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#6C5CE7,#A29BFE);
+  color:#fff;
+  font-size:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  border:none;
+  z-index:100;
+  box-shadow:0 6px 20px rgba(108,92,231,.4);
+}
+.mascot-bub {
+  position:fixed;
+  right:78px;
+  bottom:25px;
+  background:#fff;
+  border:2px solid #6C5CE7;
+  border-radius:14px;
+  padding:12px 16px;
+  max-width:260px;
+  font-size:13px;
+  color:#2D3436;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  display:none;
+  z-index:100;
+}
+.mascot-bub.on {
+  display:block;
+}
+@media(max-width:768px) {
+  .panel {
+    padding:22px 18px;
+  }
+  .step-title {
+    display:none;
+  }
+  .pulse-row,
+  .debug-grid,
+  .flow-layout,
+  .input-row {
+    grid-template-columns:1fr;
+  }
+  .branch-path {
+    grid-template-columns:1fr;
+  }
+  .decision {
+    margin:auto;
+  }
+}
 </style>
 </head>
 <body>
-<header class="top-bar"><div class="top-inner"><div class="brand"><span class="brand-badge">六年级</span><h1>第05课 算法的执行</h1></div><div class="stepper" id="stepper"></div></div></header>
+<header class="top-bar">
+  <div class="top-inner">
+    <div class="brand">
+      <h1>第05课 算法的执行</h1>
+      <span class="h-star" id="starCount">⭐ 0</span>
+      <button id="btnSound" class="btn-sound" onclick="toggleSound()">🔊</button>
+    </div>
+    <div class="stepper" id="stepper"></div>
+  </div>
+</header>
+
 <main>
 <section class="panel active" data-step="0">
-<span class="panel-tag">破冰 · 认识执行</span><h2>生活与算力：计算机怎样做事？</h2>
-<p data-prose>算法像菜谱，CPU像照步骤做事的厨师；每执行一步，变量这张“记事卡”都可能改变。</p>
-<div class="story-box">小任务：从 <b>x=2、y=5、count=0</b> 出发，按程序一步一步执行。先预测，再验证。</div>
-<h3>流程图要素识别</h3><p>点击左侧符号，再点击右侧对应含义，完成配对。</p>
-<div class="row" id="matchArea">
-<button class="btn-blue match" data-pair="start">椭圆：起止框</button><button class="btn-blue match" data-pair="process">矩形：处理框</button><button class="btn-blue match" data-pair="decision">菱形：判断框</button>
-</div><div class="row">
-<button class="match" data-pair="decision">根据条件选择路径</button><button class="match" data-pair="start">算法开始或结束</button><button class="match" data-pair="process">变量赋值或计算</button>
-</div><div class="status" id="matchStatus">配对进度：0/3</div>
-<div class="tip-box">想一想：执行赋值语句时，右边先计算，结果再写入左边的变量。</div>
-<div class="footer-nav"><span></span><button onclick="go(1)">进入任务一：算力引擎 →</button></div>
+  <div class="panel-tag">第1站 · 生活与算力破冰</div>
+  <h2 class="panel-title">任务一：算力引擎</h2>
+  <p data-prose>智能体温门不会一下子知道结果，它会像严格执行菜谱一样，先读取数据，再判断并执行。</p>
+  <div class="story-box">
+    <b>校园体温门：</b>同样是36.8℃，为什么程序必须按顺序读取、比较，再决定“放行”或“复测”？
+  </div>
+  <div class="scene-wrap">
+    <svg viewBox="0 0 640 360" class="scene-svg" aria-label="智能体温门场景">
+      <rect width="640" height="360" fill="#DFF3E4"></rect>
+      <rect y="252" width="640" height="108" fill="#D7CCC8"></rect>
+      <rect x="42" y="48" width="220" height="206" rx="12" fill="#F8F9F9" stroke="#2D6A4F" stroke-width="6"></rect>
+      <text x="76" y="92" font-size="25" fill="#1E5128" font-weight="bold">校园智能门</text>
+      <rect x="77" y="118" width="150" height="70" rx="8" fill="#1B2836"></rect>
+      <text x="94" y="160" font-size="24" fill="#F1C40F">36.8 ℃</text>
+      <rect x="410" y="66" width="145" height="195" rx="20" fill="#566573"></rect>
+      <circle cx="482" cy="110" r="34" fill="#85C1E9"></circle>
+      <rect x="444" y="157" width="76" height="61" rx="8" fill="#F4D03F"></rect>
+      <line x1="320" y1="252" x2="320" y2="148" stroke="#2C3E50" stroke-width="18"></line>
+      <circle cx="320" cy="112" r="44" fill="#F5CBA7"></circle>
+      <line x1="287" y1="200" x2="250" y2="168" stroke="#2C3E50" stroke-width="12"></line>
+      <text x="282" y="320" font-size="18" fill="#566573">小明正在测温</text>
+      <path d="M267 132 C330 84,390 90,428 117" fill="none" stroke="#2980B9" stroke-width="4" stroke-dasharray="8 6"></path>
+    </svg>
+    <button class="hs" id="hotspot" style="left:76%;top:34%;" onclick="findHotspot()">1</button>
+  </div>
+  <div class="pulse-row">
+    <button class="pulse-card" id="readBtn" onclick="pulseStep('read')">
+      <span class="pulse-icon">📥</span>
+      <b>第一步：读取数据</b><br>
+      <small>读取体温 36.8℃</small>
+    </button>
+    <button class="pulse-card" id="judgeBtn" onclick="pulseStep('judge')">
+      <span class="pulse-icon">⚖️</span>
+      <b>第二步：判断并执行</b><br>
+      <small>比较阈值后给出结果</small>
+    </button>
+  </div>
+  <div class="tip-box" id="introResult">💡 请依次点击两步，体验“先后顺序”就是算法执行的关键。</div>
+  <button class="btn btn-gray" onclick="giveHint()">💡 给我一点提示</button>
+  <div class="footer-nav">
+    <span>完成两步体验后，进入单步追踪器。</span>
+    <button class="btn btn-green" onclick="goStep(1)">进入任务一 →</button>
+  </div>
 </section>
 
 <section class="panel" data-step="1" data-panel-type="hands-on">
-<span class="panel-tag">任务一：算力引擎</span><h2>人肉 CPU · 单步执行追踪器</h2>
-<p data-prose>先预测当前指令执行后的变量变化，再单步执行。观察指针下移，并核对 x、y、count 记事卡。</p>
-<div class="tip-box">规则：每次只执行一行。赋值先算右侧；变量更新后再继续。初始值与导学单一致。</div>
-<div class="console-box" id="traceCode"></div>
-<div class="var-grid"><div class="var-card" id="card-x"><div class="var-name">x</div><div class="var-val" id="vx">2</div></div><div class="var-card" id="card-y"><div class="var-name">y</div><div class="var-val" id="vy">5</div></div><div class="var-card" id="card-count"><div class="var-name">count</div><div class="var-val" id="vc">0</div></div></div>
-<div class="row"><button onclick="traceStep()">▶ 单步执行</button><button class="btn-gray" onclick="traceReset()">↺ 重新开始</button><button class="btn-blue" onclick="traceRun()">⏩ 执行到结束</button></div><div class="status" id="traceStatus">准备就绪：预测第1行执行后哪个变量改变。</div>
-<table><thead><tr><th>记录</th><th>x</th><th>y</th><th>count</th></tr></thead><tbody id="traceLog"><tr><td>初始值</td><td>2</td><td>5</td><td>0</td></tr></tbody></table>
-<div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>执行到结束后，解释为什么第二次更新 y 时使用的是已经改变的 x。</p><button class="btn-gold" onclick="showChallenge()">查看变量更新提示</button><div class="status" id="challengeHint"></div></div>
-<div class="footer-nav"><button class="btn-gray" onclick="go(0)">← 上一屏</button><button onclick="go(2)">进入任务二：代码排雷 →</button></div>
+  <div class="panel-tag">第2站 · 单步算法执行追踪器</div>
+  <h2 class="panel-title">任务一：算力引擎</h2>
+  <p data-prose>把CPU想成照着菜谱做菜的算力引擎：书签指向哪一行，就只执行那一行，再更新记事牌。</p>
+  <div class="tip-box">基础通关：连续点击“单步执行”，记录 <b>x、y、count</b> 的变化。避坑口诀：<b>看指针—算右边—写左边</b>。</div>
+  <div class="case-lab">
+    <div>
+      <div class="console-box" id="codeBox">
+        <div class="code-line" data-line="0">1. x = 2</div>
+        <div class="code-line" data-line="1">2. y = 3</div>
+        <div class="code-line" data-line="2">3. count = 0</div>
+        <div class="code-line" data-line="3">4. x = x + y</div>
+        <div class="code-line" data-line="4">5. count = count + 1</div>
+        <div class="code-line" data-line="5">6. y = x - 1</div>
+      </div>
+      <button class="btn btn-gold" onclick="stepExecute()">▶ 单步执行</button>
+      <button class="btn btn-gray" onclick="resetExecution()">↺ 重置</button>
+    </div>
+    <div>
+      <h3>变量记事牌</h3>
+      <div class="var-grid">
+        <div class="var-card" id="cardX">
+          <div class="var-name">x</div>
+          <div class="var-val" id="valX">?</div>
+        </div>
+        <div class="var-card" id="cardY">
+          <div class="var-name">y</div>
+          <div class="var-val" id="valY">?</div>
+        </div>
+        <div class="var-card" id="cardCount">
+          <div class="var-name">count</div>
+          <div class="var-val" id="valCount">?</div>
+        </div>
+      </div>
+      <div class="execution-status" id="executionStatus">准备中：先找到第1行代码。</div>
+    </div>
+  </div>
+  <div class="challenge-card">
+    <h4>⭐ 进阶挑战星</h4>
+    不看答案，预测执行第4行 <code>x = x + y</code> 后 x 是多少；再执行验证。能说出“右边先计算、左边再写入”即可加星。
+    <br><button class="btn btn-green" style="margin-top:10px" onclick="claimPredictStar()">我已预测并验证</button>
+  </div>
+  <div class="footer-nav">
+    <button class="btn btn-gray" onclick="goStep(0)">← 返回</button>
+    <button class="btn btn-green" onclick="goStep(2)">进入任务二 →</button>
+  </div>
 </section>
 
 <section class="panel" data-step="2" data-panel-type="hands-on">
-<span class="panel-tag">任务二：代码排雷</span><h2>找出循环中的“卡住点”</h2>
-<p data-prose>循环执行不完，常见原因是控制变量没有更新；边界判断也要用临界值测试，不能只靠猜。</p>
-<div class="story-box">侦查目标：循环本想从 1 数到 3，却一直重复。检查每一行，找出问题并修复。</div>
-<div class="codebox">1. count = 0<br>2. <span id="bugLine" class="bug">while count &lt; 3:</span><br>3. &nbsp;&nbsp;&nbsp;显示 count<br>4. &nbsp;&nbsp;&nbsp;<span id="updateLine" class="bug">count = count</span></div>
-<div class="row"><button onclick="runBug()">▶ 试运行</button><button class="btn-green" onclick="fixBug()">🛠 修复：让 count 增加 1</button><button class="btn-gray" onclick="resetBug()">重置</button></div><div class="status" id="bugStatus">请选择操作，观察循环是否能够结束。</div>
-<div class="tip-box">排雷口诀：循环条件能否变假？循环里的控制变量有没有更新？</div>
-<h3>临界值排雷</h3><p>规则：count 达到 3 时应当停止。选择更合适的循环条件，再测试 2、3、4。</p>
-<div class="row"><label>条件 <select id="boundary"><option value="lt">count &lt; 3</option><option value="le">count &lt;= 3</option></select></label><button onclick="testBoundary()">测试 2、3、4</button></div>
-<div class="status" id="boundaryStatus"></div>
-<div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>如果任务改成“count 达到 3 时也要执行一次”，判断条件需要怎样调整？用临界值 3 验证。</p></div>
-<div class="footer-nav"><button class="btn-gray" onclick="go(1)">← 上一屏</button><button onclick="go(3)">进入任务三：逻辑再造 →</button></div>
+  <div class="panel-tag">第3站 · 调试侦探工作台</div>
+  <h2 class="panel-title">任务二：代码排雷</h2>
+  <p data-prose>循环像绕操场跑步：每一圈都要让计数牌发生变化，否则判断条件永远成立，程序就会一直转圈。</p>
+  <div class="tip-box">基础通关：先点击“可疑代码”，再点击“补上修复语句”。答错可以无限重选，找到错误后才能锁定。</div>
+  <div class="debug-grid">
+    <div class="debug-card">
+      <h4>问题程序：为什么一直重复？</h4>
+      <div class="bug-line" id="bugA" onclick="pickBug('A')">1. count = 0</div>
+      <div class="bug-line" id="bugB" onclick="pickBug('B')">2. while count &lt; 3:</div>
+      <div class="bug-line" id="bugC" onclick="pickBug('C')">3. 　 print("第" + count + "次")</div>
+      <div class="bug-line" id="bugD" onclick="pickBug('D')">4. 　 （少了什么？）</div>
+      <p id="bugHint" style="margin-top:10px;font-size:14px">请选择最可疑的位置。</p>
+    </div>
+    <div class="debug-card">
+      <h4>修复工具箱</h4>
+      <div class="bug-line" id="fixA" onclick="pickFix('A')">count = count + 1</div>
+      <div class="bug-line" id="fixB" onclick="pickFix('B')">count = count - 1</div>
+      <div class="bug-line" id="fixC" onclick="pickFix('C')">print("停止")</div>
+      <p id="fixHint" style="margin-top:10px;font-size:14px">先找出循环中“不变”的变量。</p>
+    </div>
+  </div>
+  <div class="execution-status" id="debugStatus">调试步骤：① 找到变量没有变化的位置；② 补上让条件最终不成立的语句。</div>
+  <div class="challenge-card">
+    <h4>⭐ 进阶挑战星</h4>
+    假如把修复语句改为 <code>count = count + 2</code>，程序会打印几次？在脑中追踪 count：0 → 2 → 4，再说出你的判断。
+    <br><button class="btn btn-green" style="margin-top:10px" onclick="claimDebugStar()">我已完成步进推理</button>
+  </div>
+  <div class="footer-nav">
+    <button class="btn btn-gray" onclick="goStep(1)">← 返回</button>
+    <button class="btn btn-green" onclick="goStep(3)">进入任务三 →</button>
+  </div>
 </section>
 
 <section class="panel" data-step="3" data-panel-type="hands-on">
-<span class="panel-tag">任务三：逻辑再造</span><h2>拼装分支，让算法按条件行动</h2>
-<p data-prose>点击词块重构判断流程，再拖动数值测试“是(Y)”和“否(N)”两条路径；试试阈值边界。</p>
-<div class="story-box">情境：电量达到 30 时开启节能提示；不足 30 时继续运行。选择条件、处理方式并验证路径。</div>
-<h3>流程图词块拼图槽</h3>
-<div class="row"><label>判断条件 <select id="condition"><option value="ge">电量 &gt;= 30</option><option value="gt">电量 &gt; 30</option></select></label><label>是(Y)处理 <select id="yesAction"><option>开启节能提示</option><option>继续运行</option></select></label><label>否(N)处理 <select id="noAction"><option>继续运行</option><option>开启节能提示</option></select></label><button onclick="buildFlow()">拼装流程</button></div>
-<div class="route" id="flowRoute"><span>开始</span><span>读取电量</span><span>判断：电量 ≥ 30？</span><span>是：开启节能提示</span><span>否：继续运行</span><span>结束</span></div>
-<h3>分支条件仿真沙箱</h3><div class="row"><label for="battery">电量：<b id="batteryVal">30</b></label><input id="battery" type="range" min="0" max="60" value="30" oninput="branchTest()"><button onclick="branchTest()">测试当前值</button></div>
-<div class="status" id="branchStatus">拖动滑块，覆盖两条分支路径。</div>
-<div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>电量正好为 30 时应该开启提示。比较 &gt; 与 &gt;=，选择正确条件并测试临界值。</p><button class="btn-gold" onclick="edgeChallenge()">测试边界值 30</button><div class="status" id="edgeStatus"></div></div>
-<div class="footer-nav"><button class="btn-gray" onclick="go(2)">← 上一屏</button><button onclick="go(4)">比较执行效率 →</button></div>
+  <div class="panel-tag">第4站 · 流程图词块与分支沙箱</div>
+  <h2 class="panel-title">任务三：逻辑再造</h2>
+  <p data-prose>先把流程图的判断和处理拼好，再用不同体温测试“是、否”两条路径，最后检查临界值37.3℃。</p>
+  <div class="tip-box">基础通关：点击一个词块，再点击对应虚线框。完成后拖动体温滑块，让“放行”和“提示复测”两条路径都亮一次。</div>
+  <div class="flow-layout">
+    <div>
+      <h3 style="margin-bottom:10px">备选词块</h3>
+      <div class="chip-bank">
+        <button class="chip" data-chip="judge" onclick="selectChip('judge')">判断：体温 ≥ 37.3？</button>
+        <button class="chip" data-chip="yes" onclick="selectChip('yes')">提示复测</button>
+        <button class="chip" data-chip="no" onclick="selectChip('no')">正常放行</button>
+        <button class="chip" data-chip="wrong" onclick="selectChip('wrong')">体温 ＞ 37.3？</button>
+      </div>
+    </div>
+    <div class="flow-board">
+      <div class="flow-box filled">开始：读取体温</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box" id="slotJudge" onclick="placeChip('judge')">点击填入：判断框</div>
+      <div class="flow-arrow">↙ 是　　否 ↘</div>
+      <div class="flow-box" id="slotYes" onclick="placeChip('yes')">点击填入：是(Y)处理框</div>
+      <div class="flow-box" id="slotNo" onclick="placeChip('no')">点击填入：否(N)处理框</div>
+    </div>
+  </div>
+  <div class="branch-lab">
+    <h3>分支条件动态仿真沙箱</h3>
+    <div class="range-row">
+      <label for="tempRange">传感器体温：</label>
+      <input id="tempRange" type="range" min="36.0" max="38.5" step="0.1" value="36.8" oninput="testBranchInput(this.value,37.3)">
+      <span class="temperature" id="tempValue">36.8℃</span>
+    </div>
+    <div class="branch-path">
+      <div class="path-card" id="pathYes">是(Y)：提示复测<br><small>体温达到37.3℃</small></div>
+      <div class="decision"><span>判断</span></div>
+      <div class="path-card" id="pathNo">否(N)：正常放行<br><small>体温低于37.3℃</small></div>
+    </div>
+    <p id="branchStatus" style="margin-top:12px;font-weight:700">当前等待测试：请拖动滑块。</p>
+  </div>
+  <div class="challenge-card">
+    <h4>⭐ 进阶挑战星</h4>
+    临界值漏洞：若写成 <code>体温 &gt; 37.3</code>，刚好37.3℃会被放行。请把滑块调到37.3℃，说明为什么必须使用 <code>≥</code>。
+    <br><button class="btn btn-green" style="margin-top:10px" onclick="claimBranchStar()">我理解 ≥ 和 ＞ 的区别</button>
+  </div>
+  <div class="footer-nav">
+    <button class="btn btn-gray" onclick="goStep(2)">← 返回</button>
+    <button class="btn btn-green" onclick="goStep(4)">比较执行效率 →</button>
+  </div>
 </section>
 
 <section class="panel" data-step="4">
-<span class="panel-tag">对比分析 · 执行路径</span><h2>算法执行效率：步数会一样吗？</h2>
-<p data-prose>同一个目标可能有不同执行路径。比较实际执行步数，理解判断与循环如何影响算法运行过程。</p>
-<div class="story-box">任务：在 1、2、3、4、5 中找到目标数 4。顺序查找从头逐个检查；二分查找每次排除一半。</div>
-<div class="row"><label>目标数 <select id="target"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></label><button onclick="comparePaths()">▶ 比较两条执行路径</button></div>
-<table><thead><tr><th>方法</th><th>执行记录</th><th>检查步数</th></tr></thead><tbody><tr><td>顺序查找</td><td id="linearLog">等待运行</td><td id="linearSteps">—</td></tr><tr><td>二分查找</td><td id="binaryLog">等待运行</td><td id="binarySteps">—</td></tr></tbody></table>
-<div class="status" id="effStatus">观察：哪条路径更快？目标位置改变后，步数是否也会改变？</div>
-<div class="tip-box">执行步数是比较算法效率的一种方法。本例数据量较小，不代表所有情形下的速度差异。</div>
-<div class="footer-nav"><button class="btn-gray" onclick="go(3)">← 上一屏</button><button onclick="go(5)">进入终极关卡 →</button></div>
+  <div class="panel-tag">第5站 · 执行效率观察站</div>
+  <h2 class="panel-title">不同路径，步数不同</h2>
+  <p data-prose>算法不只要得到结果，还要观察走了多少步；条件不同会让程序选择不同路径，执行效率也会变化。</p>
+  <div class="story-box">
+    <b>体温门比较：</b>低于阈值走“放行”路径，高于或等于阈值走“复测”路径。点击按钮，看每条路径经过的步骤。
+  </div>
+  <button class="btn btn-green" onclick="showEfficiency('normal')">测试 36.8℃：正常放行</button>
+  <button class="btn btn-gold" onclick="showEfficiency('review')">测试 37.5℃：提示复测</button>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>执行路径</th>
+        <th>经过步骤</th>
+        <th>步数</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td id="effName">等待测试</td>
+        <td>
+          <div class="path-track" id="effTrack">
+            <span class="path-dot">1</span>
+            <span class="path-dot">2</span>
+            <span class="path-dot">3</span>
+            <span class="path-dot">4</span>
+            <span class="path-dot">5</span>
+          </div>
+        </td>
+        <td id="effSteps">—</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="tip-box" id="effResult">💡 点击上方任一测试按钮。注意：效率比较的是执行过程，不只是最后显示的结果。</div>
+  <div class="challenge-card">
+    <h4>⭐ 进阶挑战星</h4>
+    如果程序要连续检测100名同学，哪一种情况可能增加更多处理步骤？请结合“复测需要额外操作”说出理由。
+    <br><button class="btn btn-green" style="margin-top:10px" onclick="claimEfficiencyStar()">我已完成效率分析</button>
+  </div>
+  <div class="footer-nav">
+    <button class="btn btn-gray" onclick="goStep(3)">← 返回</button>
+    <button class="btn btn-green" onclick="goStep(5)">进入终极关卡 →</button>
+  </div>
 </section>
 
 <section class="panel" data-step="5">
-<span class="panel-tag">终极关卡 · 达标测验</span><h2>测一测：我懂算法执行了吗？</h2>
-<p data-prose>先独立选择三题，再统一提交判分；完成自我评价后，选填信息并下载学习凭单。</p>
-<div id="quizArea"></div><button id="submitQuiz" onclick="submitQuiz()">✍️ 提交测验并判分</button><div class="status" id="quizStatus"></div>
-<div class="score-banner" id="scoreBanner"><div class="score-val" id="scoreVal">0/3</div><div>本次测验得分</div></div>
-<h3>自我评价</h3>
-<label class="check-item"><input type="checkbox"> 我能追踪变量变化。</label>
-<label class="check-item"><input type="checkbox"> 我能找到并验证一处程序错误。</label>
-<label class="check-item"><input type="checkbox"> 我能测试临界值并解释分支路径。</label>
-<label class="check-item"><input type="checkbox"> 我还没完全懂，需要老师或同伴帮助。</label>
-<h3>保存学习记录凭单</h3>
-<div class="row"><label>班级（选填） <input id="inputClass" type="text" placeholder="默认：六年级上册"></label><label>姓名（选填） <input id="inputName" type="text" placeholder="默认：小极客"></label></div>
-<button onclick="downloadReceipt()">📥 保存学习记录凭单 (.txt)</button><div class="status" id="receiptStatus"></div>
-<div class="footer-nav"><button class="btn-gray" onclick="go(4)">← 上一屏</button><button onclick="go(0)">回到首页</button></div>
+  <div class="panel-tag">第6站 · 达标测验与学习凭单</div>
+  <h2 class="panel-title">终极关卡：完成评价闭环</h2>
+  <p data-prose>先独立选择三道题，全部选好后再统一判分；最后完成自评，保存你的完整算法探究记录。</p>
+  <div id="quizArea"></div>
+  <button class="btn btn-gold" onclick="submitQuiz()">✍️ 提交测验并判分</button>
+  <div class="score-banner" id="scoreBanner">
+    <div class="score-val" id="scoreVal">0 / 3</div>
+    <div id="scoreDesc">测验完成</div>
+  </div>
+  <h3 style="margin-top:20px">自我评价打卡</h3>
+  <label class="check-item"><input type="checkbox" class="selfCheck" value="我能看懂代码指针和变量变化"> 我能看懂代码指针和变量变化</label>
+  <label class="check-item"><input type="checkbox" class="selfCheck" value="我能找到循环中的错误"> 我能找到循环中的错误</label>
+  <label class="check-item"><input type="checkbox" class="selfCheck" value="我能修正临界值判断"> 我能修正临界值判断</label>
+  <label class="check-item"><input type="checkbox" class="selfCheck" value="我还没完全懂，需要老师或同伴帮助"> 我还没完全懂，需要老师或同伴帮助</label>
+  <h3 style="margin-top:20px">全量学习单预览</h3>
+  <div class="input-row">
+    <input id="inputClass" type="text" placeholder="班级（选填）" oninput="updateReport()">
+    <input id="inputName" type="text" placeholder="姓名（选填）" oninput="updateReport()">
+  </div>
+  <div class="report-box" id="reportPreview"></div>
+  <button class="btn btn-green" onclick="downloadReport()">📥 保存学习记录凭单 (.txt)</button>
+  <div class="footer-nav">
+    <button class="btn btn-gray" onclick="goStep(4)">← 返回</button>
+    <span>完成后将下载的 .txt 文件上传平台。</span>
+  </div>
 </section>
 </main>
+
+<div id="toast" class="toast"></div>
+<button class="mascot" onclick="toggleMascot()">🤖</button>
+<div id="mascotBub" class="mascot-bub"></div>
+
 <script>
-const stepLabels = ["破冰","算力引擎","代码排雷","逻辑再造","效率对比","达标测验"];
-const panels=[...document.querySelectorAll(".panel")],stepper=document.getElementById("stepper");
-stepLabels.forEach((label,i)=>{const n=document.createElement("div");n.className="step-node";n.innerHTML='<span class="step-num">'+(i + 1)+'</span><span class="step-title">'+label+'</span>';n.onclick=()=>go(i);stepper.appendChild(n)});
-function go(i){panels.forEach((p,j)=>p.classList.toggle("active",j===i));[...stepper.children].forEach((n,j)=>{n.classList.toggle("active",j===i);n.classList.toggle("done",j<i)});window.scrollTo({top:0,behavior:"smooth"})}
-
-let selected=null,matched=new Set();
-document.querySelectorAll(".match").forEach(b=>b.onclick=()=>{if(b.classList.contains("done"))return;if(!selected){selected=b;b.classList.add("selected");return}
-if(selected.dataset.pair===b.dataset.pair){selected.classList.remove("selected");selected.classList.add("done");b.classList.add("done");matched.add(b.dataset.pair);document.getElementById("matchStatus").textContent="配对进度："+matched.size+"/3"+(matched.size===3?"，全部正确！":"")}else{document.getElementById("matchStatus").textContent="还没配对成功，再试一次；注意符号的用途。";selected.classList.remove("selected")}selected=null});
-
-const program=[
-{code:"x = 2  （初始值）",key:""},
-{code:"y = 5  （初始值）",key:""},
-{code:"count = 0  （初始值）",key:""},
-{code:"x = x + 1",key:"x",run:s=>s.x++},
-{code:"y = y + x",key:"y",run:s=>s.y+=s.x},
-{code:"count = count + 1",key:"count",run:s=>s.count++},
-{code:"x = x + 1",key:"x",run:s=>s.x++},
-{code:"y = y + x",key:"y",run:s=>s.y+=s.x},
-{code:"count = count + 1",key:"count",run:s=>s.count++}
-];
-let traceIndex=3,state={x:2,y:5,count:0};
-function renderTrace(changed=""){document.getElementById("traceCode").innerHTML=program.map((p,i)=>'<div class="code-line '+(i===traceIndex?"hl":"")+'">'+(i===traceIndex?"▶ ":"　 ")+(i+1)+". "+p.code+"</div>").join("");["x","y","count"].forEach(k=>{document.getElementById("v"+(k==="count"?"c":k)).textContent=state[k];document.getElementById("card-"+k).classList.toggle("changed",k===changed)})}
-function traceStep(){if(traceIndex>=program.length){document.getElementById("traceStatus").textContent="程序已执行结束。";return}let p=program[traceIndex];p.run(state);traceIndex++;renderTrace(p.key);document.getElementById("traceStatus").textContent="刚执行："+p.code+"；核对哪张变量记事卡改变了。";let tr=document.createElement("tr");tr.innerHTML="<td>执行后 "+(traceIndex-2)+"</td><td>"+state.x+"</td><td>"+state.y+"</td><td>"+state.count+"</td>";document.getElementById("traceLog").appendChild(tr)}
-function traceReset(){traceIndex=3;state={x:2,y:5,count:0};document.getElementById("traceLog").innerHTML="<tr><td>初始值</td><td>2</td><td>5</td><td>0</td></tr>";document.getElementById("traceStatus").textContent="准备就绪：预测第1行执行后哪个变量改变。";renderTrace()}
-function traceRun(){while(traceIndex<program.length)traceStep()}
-function showChallenge(){document.getElementById("challengeHint").textContent="第一次更新后 x=3；第二次执行 y=y+x 时，使用当前 x=3，而不是初始的 2。"}
-renderTrace();
-
-let fixed=false;
-function runBug(){document.getElementById("bugStatus").textContent=fixed?"修复后：count 依次为 0、1、2，达到 3 后循环结束。":"试运行发现：count 一直是 0，条件 count < 3 永远成立，循环无法结束。"}
-function fixBug(){fixed=true;document.getElementById("updateLine").textContent="count = count + 1";document.getElementById("updateLine").className="fix";document.getElementById("bugStatus").textContent="修复成功！控制变量每轮加 1，条件最终变为假。"}
-function resetBug(){fixed=false;document.getElementById("updateLine").textContent="count = count";document.getElementById("updateLine").className="bug";document.getElementById("bugStatus").textContent="已重置，找出控制变量没有更新的问题。"}
-function testBoundary(){let le=document.getElementById("boundary").value==="le";document.getElementById("boundaryStatus").textContent="测试结果：2→"+(le||2<3?"继续":"停止")+"；3→"+(le||3<3?"继续":"停止")+"；4→"+(le||4<3?"继续":"停止")+"。如果达到3就应停止，应选 count < 3。"}
-
-document.getElementById("battery").addEventListener("input",branchTest);
-function buildFlow(){let cond=document.getElementById("condition").value==="ge"?"电量 ≥ 30？":"电量 > 30？",yes=document.getElementById("yesAction").value,no=document.getElementById("noAction").value;document.getElementById("flowRoute").innerHTML="<span>开始</span><span>读取电量</span><span>判断："+cond+"</span><span>是(Y)： "+yes+"</span><span>否(N)： "+no+"</span><span>结束</span>";branchTest()}
-function branchTest(){let val=+document.getElementById("battery").value;document.getElementById("batteryVal").textContent=val;let ok=document.getElementById("condition").value==="ge"?val>=30:val>30;let yes=document.getElementById("yesAction").value,no=document.getElementById("noAction").value;let spans=document.querySelectorAll("#flowRoute span");spans.forEach(s=>s.classList.remove("current"));spans[2].classList.add("current");spans[ok?3:4].classList.add("current");document.getElementById("branchStatus").textContent="电量 "+val+"：走 "+(ok?"是(Y) → "+yes:"否(N) → "+no)+"。"}
-function edgeChallenge(){document.getElementById("battery").value=30;branchTest();let correct=document.getElementById("condition").value==="ge";document.getElementById("edgeStatus").textContent=correct?"边界正确：电量 30 满足 ≥30，走是(Y)路径。":"边界提醒：>30 不包含 30；要让临界值也通过，请选择 ≥30。"}
-
-function comparePaths(){let target=+document.getElementById("target").value,linear=[],binary=[],steps=0;for(let n=1;n<=target;n++){linear.push(n);steps++;if(n===target)break}let lo=1,hi=5,bsteps=0;while(lo<=hi){let mid=Math.floor((lo+hi)/2);binary.push(mid);bsteps++;if(mid===target)break;if(mid<target)lo=mid+1;else hi=mid-1}document.getElementById("linearLog").textContent=linear.join(" → ");document.getElementById("linearSteps").textContent=steps;document.getElementById("binaryLog").textContent=binary.join(" → ");document.getElementById("binarySteps").textContent=bsteps;document.getElementById("effStatus").textContent="目标 "+target+"：顺序查找 "+steps+" 步，二分查找 "+bsteps+" 步。观察路径和步数的差别。"}
-
+const STORAGE_KEY = "zj2026_grade6_lesson05_algorithm_execution";
+const stepLabels = ["破冰", "算力引擎", "代码排雷", "逻辑再造", "效率比较", "达标测验"];
 const quiz = [
-{ q: "执行赋值语句 x=x+1 时，程序先做什么？", options: ["A. 先计算右侧，再更新 x", "B. 先清空 x，再结束", "C. 直接跳过这行"], correct: 0 },
-{ q: "循环条件一直为真，最应检查什么？", options: ["A. 控制变量是否更新", "B. 页面颜色是否改变", "C. 程序标题是否正确"], correct: 0 },
-{ q: "条件是电量>=30，电量正好为30时走哪条路？", options: ["A. 是(Y)路径", "B. 否(N)路径", "C. 程序一定停止"], correct: 0 }
+  { q: "执行 x=x+y 时，计算机先做什么？", options: ["A. 先计算右边 x+y", "B. 直接把x清零", "C. 同时改写x和y"], correct: 0, explain: "赋值时先计算右边表达式，再把结果写入左边变量。" },
+  { q: "循环中缺少哪类语句最容易造成死循环？", options: ["A. 改变循环变量的语句", "B. 输出提示的语句", "C. 写注释的语句"], correct: 0, explain: "循环变量不变化，判断条件可能永远成立。" },
+  { q: "体温37.3℃也要复测，条件应写成？", options: ["A. 体温 > 37.3", "B. 体温 >= 37.3", "C. 体温 = 37.3"], correct: 1, explain: "“达到37.3℃”包含37.3℃本身，因此要用≥。" }
 ];
-let answers=Array(quiz.length).fill(null),quizLocked=false;
-function renderQuiz(){const box=document.getElementById("quizArea");box.innerHTML=quiz.map((q,i)=>'<h3>'+(i+1)+'. '+q.q+'</h3><div class="option-list" id="opts'+i+'">'+q.options.map((o,j)=>'<div class="option-item '+(answers[i]===j?"picked":"")+'" onclick="pick('+i+','+j+')">'+o+'</div>').join("")+'</div>').join("")}
-function pick(i,j){if(quizLocked)return;answers[i]=j;renderQuiz()}
-function submitQuiz(){if(answers.some(a=>a===null)){document.getElementById("quizStatus").textContent="还有题目未选择，请完成后再提交。";return}quizLocked=true;let score=0;quiz.forEach((q,i)=>{let opts=document.getElementById("opts"+i);opts.classList.add("locked");[...opts.children].forEach((el,j)=>{if(j===q.correct)el.classList.add("correct");else if(j===answers[i])el.classList.add("wrong")});if(answers[i]===q.correct)score++});window.lessonScore=score;document.getElementById("scoreVal").textContent=score+"/3";document.getElementById("scoreBanner").style.display="block";document.getElementById("quizStatus").textContent="判分完成：绿色为正确答案。"}
+
+let soundOn = true;
+let audioCtx = null;
+let currentStep = 0;
+let stars = 0;
+let introRead = false;
+let introJudge = false;
+let hotspotFound = false;
+let execPointer = 0;
+let vars = { x:"?", y:"?", count:"?" };
+let selectedBug = "";
+let debugSolved = false;
+let selectedChip = "";
+let flowPlaced = { judge:false, yes:false, no:false };
+let branchTrueEver = false;
+let branchFalseEver = false;
+let branchAllEver = false;
+let quizAnswers = [null, null, null];
+let quizScore = null;
+let earned = {};
+let toastTimer = null;
+
+function beep(f, d) {
+  if (!soundOn) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    oscillator.frequency.value = f;
+    gain.gain.setValueAtTime(.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + d);
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + d);
+  } catch (e) {}
+}
+
+function good() {
+  beep(660, .09);
+  setTimeout(() => beep(880, .12), 100);
+}
+
+function bad() {
+  beep(190, .14);
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById("btnSound").textContent = soundOn ? "🔊" : "🔇";
+  toast(soundOn ? "音效已开启" : "音效已关闭");
+}
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("on"), 2200);
+}
+
+function saveState() {
+  const state = {
+    currentStep,
+    stars,
+    introRead,
+    introJudge,
+    hotspotFound,
+    execPointer,
+    vars,
+    selectedBug,
+    debugSolved,
+    flowPlaced,
+    branchTrueEver,
+    branchFalseEver,
+    branchAllEver,
+    quizAnswers,
+    quizScore,
+    earned,
+    inputClass:document.getElementById("inputClass") ? document.getElementById("inputClass").value : "",
+    inputName:document.getElementById("inputName") ? document.getElementById("inputName").value : ""
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const state = JSON.parse(raw);
+    currentStep = state.currentStep || 0;
+    stars = state.stars || 0;
+    introRead = !!state.introRead;
+    introJudge = !!state.introJudge;
+    hotspotFound = !!state.hotspotFound;
+    execPointer = state.execPointer || 0;
+    vars = state.vars || vars;
+    selectedBug = state.selectedBug || "";
+    debugSolved = !!state.debugSolved;
+    flowPlaced = state.flowPlaced || flowPlaced;
+    branchTrueEver = !!state.branchTrueEver;
+    branchFalseEver = !!state.branchFalseEver;
+    branchAllEver = !!state.branchAllEver;
+    quizAnswers = state.quizAnswers || quizAnswers;
+    quizScore = state.quizScore;
+    earned = state.earned || {};
+    setTimeout(() => {
+      document.getElementById("inputClass").value = state.inputClass || "";
+      document.getElementById("inputName").value = state.inputName || "";
+      restoreVisuals();
+      goStep(currentStep);
+      updateReport();
+    }, 0);
+  } catch (e) {}
+}
+
+function buildStepper() {
+  const stepper = document.getElementById("stepper");
+  stepper.innerHTML = "";
+  stepLabels.forEach((label, i) => {
+    const node = document.createElement("div");
+    node.className = "step-node";
+    node.innerHTML = `<span class="step-num">${i + 1}</span><span class="step-title">${label}</span>`;
+    node.onclick = () => goStep(i);
+    stepper.appendChild(node);
+  });
+}
+
+function goStep(step) {
+  currentStep = step;
+  document.querySelectorAll(".panel").forEach(panel => {
+    panel.classList.toggle("active", Number(panel.dataset.step) === step);
+  });
+  document.querySelectorAll(".step-node").forEach((node, i) => {
+    node.classList.toggle("active", i === step);
+    node.classList.toggle("done", i < step);
+  });
+  window.scrollTo({ top:0, behavior:"smooth" });
+  updateReport();
+  saveState();
+}
+
+function addStar(key, message) {
+  if (earned[key]) {
+    toast("这颗星已经记录过啦！");
+    return;
+  }
+  earned[key] = true;
+  stars++;
+  document.getElementById("starCount").textContent = `⭐ ${stars}`;
+  good();
+  toast(message || "获得一颗探究星！");
+  updateReport();
+  saveState();
+}
+
+function findHotspot() {
+  if (hotspotFound) {
+    toast("你已经发现体温传感器！");
+    return;
+  }
+  hotspotFound = true;
+  document.getElementById("hotspot").classList.add("found");
+  document.getElementById("hotspot").textContent = "✓";
+  addStar("hotspot", "发现传感器：数据要先被读取！");
+}
+
+function giveHint() {
+  const h = document.getElementById("hotspot");
+  h.classList.add("hint");
+  toast("提示：智能门右侧的圆形传感器会先读取体温。");
+  setTimeout(() => h.classList.remove("hint"), 1800);
+}
+
+function pulseStep(type) {
+  if (type === "read") {
+    introRead = true;
+    document.getElementById("readBtn").classList.add("done");
+    document.getElementById("introResult").textContent = "✅ 已读取：传感器把 36.8℃ 交给程序。下一步要比较阈值。";
+    good();
+  }
+  if (type === "judge") {
+    if (!introRead) {
+      bad();
+      toast("先读取数据，再进行判断。");
+      return;
+    }
+    introJudge = true;
+    document.getElementById("judgeBtn").classList.add("done");
+    document.getElementById("introResult").textContent = "✅ 执行完成：36.8℃低于37.3℃，程序选择“正常放行”。";
+    addStar("intro", "两步体验完成：算法会按顺序执行！");
+  }
+  saveState();
+}
+
+function renderExecution() {
+  document.querySelectorAll(".code-line").forEach((line, i) => {
+    line.classList.toggle("hl", i === execPointer && execPointer < 6);
+  });
+  document.getElementById("valX").textContent = vars.x;
+  document.getElementById("valY").textContent = vars.y;
+  document.getElementById("valCount").textContent = vars.count;
+}
+
+function flashVar(id) {
+  const card = document.getElementById(id);
+  card.classList.add("flash");
+  setTimeout(() => card.classList.remove("flash"), 450);
+}
+
+function stepExecute() {
+  const status = document.getElementById("executionStatus");
+  if (execPointer >= 6) {
+    status.textContent = "全部执行完毕：CPU已经逐行完成这份菜谱。";
+    toast("已经到最后一行，可重置再追踪一次。");
+    return;
+  }
+  const actions = [
+    () => { vars.x = 2; flashVar("cardX"); status.textContent = "执行第1行：把2写入变量 x。"; },
+    () => { vars.y = 3; flashVar("cardY"); status.textContent = "执行第2行：把3写入变量 y。"; },
+    () => { vars.count = 0; flashVar("cardCount"); status.textContent = "执行第3行：计数牌 count 从0开始。"; },
+    () => { vars.x = Number(vars.x) + Number(vars.y); flashVar("cardX"); status.textContent = "执行第4行：先算右边 2+3，再把5写回 x。"; },
+    () => { vars.count = Number(vars.count) + 1; flashVar("cardCount"); status.textContent = "执行第5行：count 增加1，变成1。"; },
+    () => { vars.y = Number(vars.x) - 1; flashVar("cardY"); status.textContent = "执行第6行：用当前 x=5 计算，y 更新为4。"; }
+  ];
+  actions[execPointer]();
+  execPointer++;
+  renderExecution();
+  beep(520, .07);
+  if (execPointer === 6) {
+    addStar("execution", "单步追踪完成：你像CPU一样逐行执行了代码！");
+  }
+  saveState();
+}
+
+function resetExecution() {
+  execPointer = 0;
+  vars = { x:"?", y:"?", count:"?" };
+  document.getElementById("executionStatus").textContent = "准备中：先找到第1行代码。";
+  renderExecution();
+  toast("单步追踪器已重置。");
+  saveState();
+}
+
+function claimPredictStar() {
+  if (execPointer < 4) {
+    toast("请至少执行到第4行，再用结果验证预测。");
+    return;
+  }
+  addStar("predict", "预测与验证完成：右边先算，左边后写！");
+}
+
+function pickBug(id) {
+  if (debugSolved) return;
+  selectedBug = id;
+  document.querySelectorAll("#bugA,#bugB,#bugC,#bugD").forEach(el => el.classList.remove("selected"));
+  document.getElementById("bug" + id).classList.add("selected");
+  if (id === "D") {
+    document.getElementById("bugHint").textContent = "找得好！第4行缺少改变 count 的语句。现在选修复工具。";
+    good();
+  } else {
+    document.getElementById("bugHint").textContent = "再想想：循环条件里的 count 有没有在循环体中变大？";
+    bad();
+  }
+  saveState();
+}
+
+function pickFix(id) {
+  if (debugSolved) return;
+  document.querySelectorAll("#fixA,#fixB,#fixC").forEach(el => el.classList.remove("selected"));
+  document.getElementById("fix" + id).classList.add("selected");
+  if (selectedBug === "D" && id === "A") {
+    debugSolved = true;
+    document.getElementById("bugD").textContent = "4. 　 count = count + 1";
+    document.getElementById("bugD").classList.add("fixed");
+    document.getElementById("fixA").classList.add("fixed");
+    document.getElementById("debugStatus").textContent = "✅ 排雷成功：count 会从0变成1、2、3，循环条件最终不成立。";
+    addStar("debug", "代码排雷成功：你修复了死循环！");
+  } else {
+    document.getElementById("fixHint").textContent = "温和提示：修复语句要让 count 朝着“不再小于3”的方向变化。";
+    bad();
+  }
+  saveState();
+}
+
+function claimDebugStar() {
+  if (!debugSolved) {
+    toast("先完成基础排雷，再挑战步进推理。");
+    return;
+  }
+  addStar("debugChallenge", "步进推理完成：count=0、2后下一次会到4！");
+}
+
+function selectChip(name) {
+  if (name === "wrong") {
+    bad();
+    toast("边界值37.3℃也要复测，这个判断会漏掉临界值。");
+    return;
+  }
+  const chip = document.querySelector(`[data-chip="${name}"]`);
+  if (chip.classList.contains("placed")) return;
+  document.querySelectorAll(".chip").forEach(el => el.classList.remove("sel"));
+  chip.classList.add("sel");
+  selectedChip = name;
+  toast("已选词块，请点击对应虚线框。");
+}
+
+function placeChip(slot) {
+  const expected = slot;
+  if (!selectedChip) {
+    toast("先从左边点击一个备选词块。");
+    return;
+  }
+  if (selectedChip !== expected) {
+    bad();
+    toast("这个词块不适合这里，换一个试试。");
+    return;
+  }
+  const target = document.getElementById("slot" + slot.charAt(0).toUpperCase() + slot.slice(1));
+  const texts = {
+    judge:"判断：体温 ≥ 37.3？",
+    yes:"是(Y)：提示复测",
+    no:"否(N)：正常放行"
+  };
+  target.textContent = texts[slot];
+  target.classList.add("filled");
+  flowPlaced[slot] = true;
+  const chip = document.querySelector(`[data-chip="${slot}"]`);
+  chip.classList.remove("sel");
+  chip.classList.add("placed","right");
+  selectedChip = "";
+  good();
+  if (flowPlaced.judge && flowPlaced.yes && flowPlaced.no) {
+    addStar("flow", "流程图重构完成：判断决定了两条执行路径！");
+  } else {
+    toast("填入正确！继续完成其他流程图槽位。");
+  }
+  saveState();
+}
+
+function testBranchInput(val, threshold) {
+  const value = Number(val);
+  const ok = value >= threshold;
+  document.getElementById("tempValue").textContent = `${value.toFixed(1)}℃`;
+  const yes = document.getElementById("pathYes");
+  const no = document.getElementById("pathNo");
+  yes.classList.toggle("active-yes", ok);
+  no.classList.toggle("active-no", !ok);
+  if (ok) {
+    branchTrueEver = true;
+    document.getElementById("branchStatus").textContent = `执行路径：${value.toFixed(1)}℃ ≥ 37.3℃，走“是(Y)→提示复测”。`;
+  } else {
+    branchFalseEver = true;
+    document.getElementById("branchStatus").textContent = `执行路径：${value.toFixed(1)}℃ < 37.3℃，走“否(N)→正常放行”。`;
+  }
+  if (branchTrueEver && branchFalseEver) {
+    branchAllEver = true;
+    addStar("branchCover", "双路径测试完成：是、否两条路都验证过了！");
+  }
+  saveState();
+}
+
+function claimBranchStar() {
+  const temp = Number(document.getElementById("tempRange").value);
+  if (temp !== 37.3) {
+    toast("请先把滑块精确调到37.3℃，观察临界值。");
+    return;
+  }
+  addStar("boundary", "临界值挑战完成：达到阈值要使用 ≥！");
+}
+
+function showEfficiency(type) {
+  const track = document.getElementById("effTrack");
+  const dots = track.querySelectorAll(".path-dot");
+  let used = 0;
+  if (type === "normal") {
+    used = 4;
+    document.getElementById("effName").textContent = "36.8℃：读取→判断→放行";
+    document.getElementById("effSteps").textContent = "4步";
+    document.getElementById("effResult").textContent = "结果：低于阈值，走正常放行路径。程序执行了4个主要步骤。";
+  } else {
+    used = 5;
+    document.getElementById("effName").textContent = "37.5℃：读取→判断→复测";
+    document.getElementById("effSteps").textContent = "5步";
+    document.getElementById("effResult").textContent = "结果：达到阈值，走提示复测路径，多了复测处理步骤。";
+  }
+  dots.forEach((dot, i) => dot.classList.toggle("on", i < used));
+  addStar("efficiency", "已完成一条执行路径的步数观察！");
+  saveState();
+}
+
+function claimEfficiencyStar() {
+  addStar("effChallenge", "效率分析完成：额外处理会增加执行步骤！");
+}
+
+function renderQuiz() {
+  const area = document.getElementById("quizArea");
+  area.innerHTML = "";
+  quiz.forEach((item, qi) => {
+    const block = document.createElement("div");
+    block.style.margin = "18px 0";
+    block.innerHTML = `<h3>${qi + 1}. ${item.q}</h3>`;
+    const list = document.createElement("div");
+    list.className = "option-list" + (quizScore !== null ? " locked" : "");
+    item.options.forEach((option, oi) => {
+      const optionEl = document.createElement("div");
+      optionEl.className = "option-item";
+      if (quizAnswers[qi] === oi) optionEl.classList.add("picked");
+      if (quizScore !== null) {
+        if (oi === item.correct) optionEl.classList.add("correct");
+        if (quizAnswers[qi] === oi && oi !== item.correct) optionEl.classList.add("wrong");
+      }
+      optionEl.innerHTML = `<span>○</span><span>${option}</span>`;
+      optionEl.onclick = () => chooseQuiz(qi, oi);
+      list.appendChild(optionEl);
+    });
+    block.appendChild(list);
+    if (quizScore !== null) {
+      const exp = document.createElement("div");
+      exp.className = "tip-box";
+      exp.textContent = `解析：${item.explain}`;
+      block.appendChild(exp);
+    }
+    area.appendChild(block);
+  });
+}
+
+function chooseQuiz(qi, oi) {
+  if (quizScore !== null) return;
+  quizAnswers[qi] = oi;
+  renderQuiz();
+  beep(440, .05);
+  saveState();
+}
+
+function submitQuiz() {
+  if (quizScore !== null) {
+    toast("测验已经判分，可以保存学习凭单。");
+    return;
+  }
+  if (quizAnswers.some(answer => answer === null)) {
+    toast("请先完成3道题的选择，再统一判分。");
+    return;
+  }
+  quizScore = quiz.reduce((sum, item, i) => sum + (quizAnswers[i] === item.correct ? 1 : 0), 0);
+  document.getElementById("scoreBanner").style.display = "block";
+  document.getElementById("scoreVal").textContent = `${quizScore} / 3`;
+  document.getElementById("scoreDesc").textContent = quizScore === 3 ? "全部正确！你已掌握算法执行要点。" : "测验完成！请阅读解析，再回看对应任务。";
+  renderQuiz();
+  if (quizScore === 3) addStar("quizFull", "满分达标：三道题全部正确！");
+  else good();
+  updateReport();
+  saveState();
+}
+
+function getSelfChecks() {
+  return Array.from(document.querySelectorAll(".selfCheck:checked")).map(el => el.value);
+}
+
+function updateReport() {
+  const report = document.getElementById("reportPreview");
+  if (!report) return;
+  const cls = document.getElementById("inputClass").value.trim() || "六年级上册";
+  const name = document.getElementById("inputName").value.trim() || "小极客";
+  const lines = [
+    "# 班级|姓名|第05课 算法的执行|得分|时间",
+    `${cls}|${name}|第05课 算法的执行|${quizScore === null ? "未判分" : quizScore + "/3"}|保存时生成`,
+    "",
+    "【探究轨迹】",
+    `获得星星数：${stars}`,
+    `体温门热点：${hotspotFound ? "已发现" : "未完成"}`,
+    `破冰两步：${introRead && introJudge ? "已完成" : "进行中"}`,
+    `单步执行：已执行 ${execPointer}/6 行`,
+    `当前变量：x=${vars.x}，y=${vars.y}，count=${vars.count}`,
+    `代码排雷：${debugSolved ? "已修复 count=count+1" : "未完成"}`,
+    `流程图拼装：判断${flowPlaced.judge ? "✓" : "○"} 是${flowPlaced.yes ? "✓" : "○"} 否${flowPlaced.no ? "✓" : "○"}`,
+    `双分支覆盖：${branchAllEver ? "已覆盖是/否两条路径" : "未完整覆盖"}`,
+    `测验得分：${quizScore === null ? "未提交" : quizScore + "/3"}`,
+    `自我评价：${getSelfChecks().join("；") || "暂未选择"}`
+  ];
+  report.textContent = lines.join("\n");
+}
+
+function downloadReport() {
+  const cls = document.getElementById("inputClass").value.trim() || "六年级上册";
+  const name = document.getElementById("inputName").value.trim() || "小极客";
+  const now = new Date().toLocaleString("zh-CN", { hour12:false });
+  const score = quizScore === null ? "未判分" : `${quizScore}/3`;
+  const content = [
+    "# 班级|姓名|第05课 算法的执行|得分|时间",
+    `${cls}|${name}|第05课 算法的执行|${score}|${now}`,
+    "",
+    "【详细探究轨迹】",
+    `获得星星数：${stars}`,
+    `场景寻宝数：${hotspotFound ? 1 : 0}`,
+    `实验完成度：破冰${introRead && introJudge ? "完成" : "未完成"}；单步执行${execPointer}/6；排雷${debugSolved ? "完成" : "未完成"}；流程图${flowPlaced.judge && flowPlaced.yes && flowPlaced.no ? "完成" : "未完成"}；双分支${branchAllEver ? "完成" : "未完成"}`,
+    `测验得分：${score}`,
+    `自评结果：${getSelfChecks().join("；") || "未填写"}`
+  ].join("\n");
+  const blob = new Blob(["\uFEFF" + content], { type:"text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${cls}_${name}_算法的执行_${score.replace("/","分")}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  toast("学习记录凭单已下载，可上传学习平台。");
+  saveState();
+}
+
+const mascotTips = [
+  "先看代码指针，再看哪块变量记事牌发生变化。",
+  "赋值不是数学等号：右边先计算，左边再接收结果。",
+  "循环排雷时，先问：循环变量每一圈有没有变化？",
+  "判断临界值时，认真区分 > 和 ≥。",
+  "分支程序要用不同数据测试“是”和“否”两条路径。",
+  "测验要先全部选择，再统一提交判分。"
+];
+let mascotIndex = 0;
+
+function toggleMascot() {
+  const bubble = document.getElementById("mascotBub");
+  bubble.textContent = "🤖 " + mascotTips[mascotIndex];
+  mascotIndex = (mascotIndex + 1) % mascotTips.length;
+  bubble.classList.toggle("on");
+}
+
+function restoreVisuals() {
+  document.getElementById("starCount").textContent = `⭐ ${stars}`;
+  if (introRead) document.getElementById("readBtn").classList.add("done");
+  if (introJudge) document.getElementById("judgeBtn").classList.add("done");
+  if (hotspotFound) {
+    document.getElementById("hotspot").classList.add("found");
+    document.getElementById("hotspot").textContent = "✓";
+  }
+  renderExecution();
+  if (selectedBug) document.getElementById("bug" + selectedBug).classList.add("selected");
+  if (debugSolved) {
+    document.getElementById("bugD").textContent = "4. 　 count = count + 1";
+    document.getElementById("bugD").classList.add("fixed");
+    document.getElementById("fixA").classList.add("fixed");
+    document.getElementById("debugStatus").textContent = "✅ 排雷成功：count 会从0变成1、2、3，循环条件最终不成立。";
+  }
+  const slotText = {
+    judge:"判断：体温 ≥ 37.3？",
+    yes:"是(Y)：提示复测",
+    no:"否(N)：正常放行"
+  };
+  Object.keys(flowPlaced).forEach(key => {
+    if (flowPlaced[key]) {
+      const target = document.getElementById("slot" + key.charAt(0).toUpperCase() + key.slice(1));
+      target.textContent = slotText[key];
+      target.classList.add("filled");
+      const chip = document.querySelector(`[data-chip="${key}"]`);
+      chip.classList.add("placed","right");
+    }
+  });
+  if (quizScore !== null) {
+    document.getElementById("scoreBanner").style.display = "block";
+    document.getElementById("scoreVal").textContent = `${quizScore} / 3`;
+    document.getElementById("scoreDesc").textContent = "已恢复测验结果。";
+  }
+  renderQuiz();
+}
+
+document.querySelectorAll(".selfCheck").forEach(check => {
+  check.addEventListener("change", () => {
+    updateReport();
+    saveState();
+  });
+});
+
+buildStepper();
 renderQuiz();
-function downloadReceipt(){let cls=document.getElementById("inputClass").value.trim()||"六年级上册",name=document.getElementById("inputName").value.trim()||"小极客",score=window.lessonScore===undefined?"未测":window.lessonScore+"/3",time=new Date().toLocaleString("zh-CN");let text="# 班级|姓名|第05课 算法的执行|得分|时间\n"+cls+"|"+name+"|第05课 算法的执行|"+score+"|"+time+"\n";let blob=new Blob(["\uFEFF"+text],{type:"text/plain;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=cls+"_"+name+"_第05课算法的执行_"+score+".txt";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);document.getElementById("receiptStatus").textContent="学习凭单已保存，可按课堂要求上传平台。"}
+loadState();
+updateReport();
 </script>
 </body>
 </html>
