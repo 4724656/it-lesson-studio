@@ -113,7 +113,7 @@ table{border-collapse:collapse;margin:12px 0;width:100%}th,td{border:1px solid v
 <script>
 const stepLabels = ["破冰","算力引擎","代码排雷","逻辑再造","效率对比","达标测验"];
 const panels=[...document.querySelectorAll(".panel")],stepper=document.getElementById("stepper");
-stepLabels.forEach((label,i)=>{const n=document.createElement("div");n.className="step-node";n.innerHTML='<span class="step-num">'+i+'</span><span class="step-title">'+label+'</span>';n.onclick=()=>go(i);stepper.appendChild(n)});
+stepLabels.forEach((label,i)=>{const n=document.createElement("div");n.className="step-node";n.innerHTML='<span class="step-num">'+(i + 1)+'</span><span class="step-title">'+label+'</span>';n.onclick=()=>go(i);stepper.appendChild(n)});
 function go(i){panels.forEach((p,j)=>p.classList.toggle("active",j===i));[...stepper.children].forEach((n,j)=>{n.classList.toggle("active",j===i);n.classList.toggle("done",j<i)});window.scrollTo({top:0,behavior:"smooth"})}
 
 let selected=null,matched=new Set();

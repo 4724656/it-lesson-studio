@@ -154,7 +154,7 @@ stepLabels.forEach((label, i) => {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "step-node";
-  button.innerHTML = '<span class="step-num">' + i + '</span><span class="step-title">' + label + '</span>';
+  button.innerHTML = '<span class="step-num">' + (i + 1) + '</span><span class="step-title">' + label + '</span>';
   button.addEventListener("click", () => showStep(i));
   stepper.appendChild(button);
 });

@@ -702,6 +702,10 @@ export function sanitizeGeneratedClassworkHtml(rawHtml, gradeNum, grade, lessonT
   // 8. 彻底消除阻塞学生的 alert(...) 弹窗（转为 console.info 非阻塞提示）
   html = html.replace(/\balert\s*\(/g, 'console.info(');
 
+  // 9. 确保步进节点序号从 1 开始（严禁一线学生看到 0 开头的步进序号）
+  html = html.replace(/(<span\s+class=["']step-num["']>\s*(?:'|")?\s*\+\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*\+\s*(?:'|")?\s*<\/span>)/g, '$1($2 + 1)$3');
+  html = html.replace(/(<span\s+class=["']step-num["']>\s*\$\{)([a-zA-Z_$][a-zA-Z0-9_$]*)(\}\s*<\/span>)/g, '$1$2 + 1$3');
+
   return html;
 }
 
@@ -934,6 +938,7 @@ ${worksheetContent.slice(0, 1000)}
 2. **顶栏导航与闯关步进器（严格 ${maxScreens} 屏）**：
    - 必须使用 <header class="top-bar">，内部包含 <div class="brand"> 和 <div class="stepper" id="stepper"></div>；
    - JS 必须声明：const stepLabels = [...]; 且数组元素个数**必须严格等于 ${maxScreens} 项**！
+   - 🚨 步进序号必须从 1 开始编号（1~${maxScreens}），严禁显示 0 开头（序号渲染必须写 (i + 1) 或 index + 1）！
 3. **关卡容器 DOM 结构与门禁属性（极其重要！）**：
    - 必须严格使用 ${maxScreens} 个 <section class="panel" data-step="i">（i 从 0 到 ${maxScreens - 1} 严格连续递增，第 0 屏带 active 类）；
    - **动手实操屏标记 (data-panel-type="hands-on")**：在最核心的动手仿真关卡 section 标签上添加 \`data-panel-type="hands-on"\`，${gradeNum}年级**最少标记 1 个、最多绝不超过 ${maxHandsOn} 个**！
