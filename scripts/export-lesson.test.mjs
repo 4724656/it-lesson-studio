@@ -90,6 +90,27 @@ test('Phase 2 仿真蓝图匹配器: 精准识别 12 册典型课型并尊重教
   assert.equal(bpKnn.gradeNum, 8);
   assert.ok(bpKnn.archetypeName.includes('KNN'), '应命中 2D KNN 动态分类面原型');
 
+  // 防跨学段超纲截胡回归断言
+  const bpG5Algo = resolveSimulationBlueprint('五年级上册', '第02课 自然语言描述算法', '');
+  assert.equal(bpG5Algo.gradeNum, 5);
+  assert.ok(bpG5Algo.archetypeName.includes('自然语言算法步骤拼图'), '五上第2课应命中自然语言算法步骤拼图');
+  assert.ok(!bpG5Algo.archetypeName.includes('KNN') && !bpG5Algo.interactiveDesign.includes('KNN'), '五上第2课严禁误中八下KNN');
+
+  const bpG3Trace = resolveSimulationBlueprint('三年级上册', '第14课 关注网络痕迹', '');
+  assert.ok(!bpG3Trace.archetypeName.includes('IP/DHCP'), '三上网络痕迹严禁误中七上IP/DHCP');
+
+  const bpG4Safe = resolveSimulationBlueprint('四年级上册', '第04课 数据的安全', '');
+  assert.ok(!bpG4Safe.archetypeName.includes('凯撒'), '四上数据的安全严禁误中八上凯撒密码');
+
+  const bpG5Nn = resolveSimulationBlueprint('五年级下册', '第16课 认识神经网络', '');
+  assert.ok(bpG5Nn.archetypeName.includes('初识神经网络') && !bpG5Nn.archetypeName.includes('IP/DHCP'), '神经网络课严禁被“网络”词条截胡为IP/DHCP');
+
+  const bpG8Nn = resolveSimulationBlueprint('八年级下册', '第13课 神经网络的计算', '');
+  assert.ok(bpG8Nn.archetypeName.includes('人工神经网络') && !bpG8Nn.archetypeName.includes('IP/DHCP'), '八下神经网络严禁被截胡为IP/DHCP');
+
+  const bpG7Iot = resolveSimulationBlueprint('七年级下册', '第07课 常见的传感器', '');
+  assert.ok(bpG7Iot.archetypeName.includes('传感器') && !bpG7Iot.archetypeName.includes('DFS'), '七下传感器课不应捆绑迷宫DFS');
+
   const limits3 = getGradeLimits(3);
   assert.deepEqual(limits3, { screens: 5, handsOn: 2, quiz: 2, prosePerScreen: 60, quizStem: 30 });
 });

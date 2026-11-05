@@ -27,7 +27,7 @@ export function readHtmlLimits(grade, specText = read('references/output-spec.md
   return limits;
 }
 
-export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent, simBlueprint }) {
+export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, materialsText, planContent, worksheetContent, slidesContent, simBlueprint }) {
   const skill = read('skills/it-lesson-studio/SKILL.md');
   const globalRules = skill.slice(skill.indexOf('## 🎯'), skill.indexOf('## ⚙️'));
   const patterns = read('references/classwork-v2-patterns.md');
@@ -35,23 +35,30 @@ export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, plan
   const term = /上/.test(grade) && !/下/.test(grade) ? '上' : /下/.test(grade) && !/上/.test(grade) ? '下' : '';
   const selected = term ? patterns.split('\n').find(line => line.startsWith(`| **${cn}${term}**`)) : null;
   const limits = readHtmlLimits(gradeNum);
-  const blueprintBlock = simBlueprint ? `\n推荐仿真原型与关卡拆解（若教师未指定冲突设想则优先以此构建多屏探究主线）：\n- 原型：${simBlueprint.archetypeName}\n${simBlueprint.interactiveDesign}` : '';
+  const hasTeacherInput = Boolean((requirements && requirements.trim()) || (materialsText && materialsText.trim()));
+  const blueprintBlock = simBlueprint
+    ? `\n${hasTeacherInput ? '交互形式参考（⚠️ 教师已提供设想或教材原文，任务情境与名称必须严格遵循下方教案/导学单/教材，此蓝图仅作交互控件参考）' : '推荐仿真原型与关卡拆解（若教师未指定冲突设想则优先以此构建多屏探究主线）'}：\n- 原型：${simBlueprint.archetypeName}\n${simBlueprint.interactiveDesign}`
+    : '';
+  const materialsBlock = materialsText && materialsText.trim()
+    ? `\n教师提供的教材原文参考：\n${materialsText.trim().slice(0, 2000)}`
+    : '';
   return {
     system: [globalRules, read('skills/4-classwork/SKILL.md'), read('references/classwork-v2-contract.md')].join('\n\n'),
     user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。
 【3~8年级学段认知与交互设计要求】：
 1. 严格对齐学段学情（防超纲拔高）：
    - 3~4年级：大卡片、具象道具（发光灯泡、分类箱、温度计），题干 ≤ ${limits.quiz_stem} 字儿童口语，禁止出现代码与底层计算机原理；
-   - 5~6年级：仪表盘控制台、流程图插槽、分支条件切换、阈值联动执行器，题干 ≤ ${limits.quiz_stem} 字，考查生活规则与因果，不考死记编程语法；
-   - 7~8年级：网络拓扑连线、数据包传输、折线图、密码转盘、2D散点画布，题干 ≤ ${limits.quiz_stem} 字，直观探究机理，不搞大学公式推导。
+   - 5年级：自然语言步骤词块拼图、流程图插槽、生活分支条件切换、恒温阈值滑块，题干 ≤ ${limits.quiz_stem} 字，五年级全学年不学编程代码，禁止出现 Python 代码、KNN 或数学权重公式；
+   - 6年级：简短代码单步追踪、猜数字/枚举对比、串并联双开关电路与反馈调节，题干 ≤ ${limits.quiz_stem} 字，考查直观规则与因果，不考死记编程语法；
+   - 7~8年级：网络拓扑连线、传感器折线图、密码转盘、2D近邻分类画布，题干 ≤ ${limits.quiz_stem} 字，一课聚焦 1 个核心机理，不跨单元混塞其它算法，不搞大学公式推导。
    - 所有年级反馈文案讲通俗生活因果，禁止使用生硬的成人学术黑话。
 2. 界面与交互细节：
    - 运用原生 CSS 与 SVG 绘制直观道具，按钮与滑块提供清晰的状态反馈。
-3. 探究主线：设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“生活体验 ➔ 原理操作 ➔ 核心动手仿真（基础+⭐进阶） ➔ 调试或迁移应用”。screens 每一屏的 kind 属性必须二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏）。
+3. 探究主线：设计 2—3 个递进探究屏（加上自动生成的终极评价屏共 3—4 屏，封顶上限不超过 ${limits.screens} 屏，严禁为凑满上限屏数而堆砌复杂控件），覆盖“生活感知配对 ➔ 核心动手仿真（基础+⭐进阶） ➔ 迁移巩固”。screens 每一屏的 kind 属性必须二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏）。
 
 年级：${grade}；课题：${lessonTitle}
 实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}
-教师设想（在硬性契约内优先）：${requirements || '未指定'}
+教师设想（在硬性契约内优先）：${requirements || '未指定'}${materialsBlock}
 已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}${blueprintBlock}
 
 以下文稿是任务同源依据，使用完整文本，不另造任务名称：

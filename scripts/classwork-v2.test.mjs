@@ -106,18 +106,24 @@ test('Phase 1 loads modular skills 1-3; Phase 2 loads modular skill 4', async ()
         const body = JSON.parse(req.body);
         if (calls === 1) {
           assert.equal(body.messages[0].content, docsPrompt);
+          assert.ok(body.messages[1].content.includes('课本原文案例：西红柿炒鸡蛋步骤'));
+          assert.ok(body.messages[1].content.includes('仅作机房交互形式参考'));
         } else if (mode === 'v1') {
           assert.equal(body.messages[0].content, cwPrompt);
+          assert.ok(body.messages[1].content.includes('课本原文案例：西红柿炒鸡蛋步骤'));
+          assert.ok(body.messages[1].content.includes('仅提供 JS 交互形式参考'));
         } else if (mode === 'v2') {
           assert.ok(!body.messages[0].content.includes('grid-2'));
           assert.ok(body.messages[1].content.includes('plan-full-context'));
+          assert.ok(body.messages[1].content.includes('课本原文案例：西红柿炒鸡蛋步骤'));
+          assert.ok(body.messages[1].content.includes('仅作交互控件参考'));
         }
         const content = calls === 1 ? '===FILE: 教案.md===\nplan-full-context 灯泡权值探究 储物柜编码破译 编码容量对比\n===FILE: 导学案.md===\nworksheet 灯泡权值探究 储物柜编码破译 编码容量对比\n===FILE: 课件.md===\nslides 灯泡权值探究 储物柜编码破译 编码容量对比'
           : mode === 'v2' ? JSON.stringify(fixture()) : '<!DOCTYPE html><html><head></head><body></body></html>';
         return new Response(JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }));
       };
       const dir = path.join(root, mode);
-      const files = await generateLessonFiles({ ...identity, targetDir: dir });
+      const files = await generateLessonFiles({ ...identity, materialsText: '课本原文案例：西红柿炒鸡蛋步骤', targetDir: dir });
       assert.equal(calls, 2);
       assert.equal(files.length, 4);
       const htmlName = files.find(f => f.endsWith('.html'));
