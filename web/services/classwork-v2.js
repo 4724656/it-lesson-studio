@@ -27,7 +27,7 @@ export function readHtmlLimits(grade, specText = read('references/output-spec.md
   return limits;
 }
 
-export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent, simBlueprint }) {
+export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, materialsText, planContent, worksheetContent, slidesContent, simBlueprint }) {
   const skill = read('skills/it-lesson-studio/SKILL.md');
   const globalRules = skill.slice(skill.indexOf('## 🎯'), skill.indexOf('## ⚙️'));
   const patterns = read('references/classwork-v2-patterns.md');
@@ -35,7 +35,13 @@ export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, plan
   const term = /上/.test(grade) && !/下/.test(grade) ? '上' : /下/.test(grade) && !/上/.test(grade) ? '下' : '';
   const selected = term ? patterns.split('\n').find(line => line.startsWith(`| **${cn}${term}**`)) : null;
   const limits = readHtmlLimits(gradeNum);
-  const blueprintBlock = simBlueprint ? `\n推荐仿真原型与关卡拆解（若教师未指定冲突设想则优先以此构建多屏探究主线）：\n- 原型：${simBlueprint.archetypeName}\n${simBlueprint.interactiveDesign}` : '';
+  const hasTeacherInput = Boolean((requirements && requirements.trim()) || (materialsText && materialsText.trim()));
+  const blueprintBlock = simBlueprint
+    ? `\n${hasTeacherInput ? '交互形式参考（⚠️ 教师已提供设想或教材原文，任务情境与名称必须严格遵循下方教案/导学单/教材，此蓝图仅作交互控件参考）' : '推荐仿真原型与关卡拆解（若教师未指定冲突设想则优先以此构建多屏探究主线）'}：\n- 原型：${simBlueprint.archetypeName}\n${simBlueprint.interactiveDesign}`
+    : '';
+  const materialsBlock = materialsText && materialsText.trim()
+    ? `\n教师提供的教材原文参考：\n${materialsText.trim().slice(0, 2000)}`
+    : '';
   return {
     system: [globalRules, read('skills/4-classwork/SKILL.md'), read('references/classwork-v2-contract.md')].join('\n\n'),
     user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。
@@ -52,7 +58,7 @@ export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, plan
 
 年级：${grade}；课题：${lessonTitle}
 实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}
-教师设想（在硬性契约内优先）：${requirements || '未指定'}
+教师设想（在硬性契约内优先）：${requirements || '未指定'}${materialsBlock}
 已确认册次的可选范式：${selected || '册次不明确，不推断教材事实；围绕课题选型'}${blueprintBlock}
 
 以下文稿是任务同源依据，使用完整文本，不另造任务名称：

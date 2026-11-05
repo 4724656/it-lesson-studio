@@ -1055,8 +1055,17 @@ export async function generateLessonFiles({
 
   let materialsPrompt = '';
   if (materialsText && materialsText.trim()) {
-    materialsPrompt = `\n【教师提供的课本教材与知识点参考资料】：\n${materialsText.trim()}\n(请参考上述教材知识点与案例，融入教学任务与活动设计中。)\n`;
+    materialsPrompt = `\n【教师提供的课本教材与知识点参考资料（请严格以此课文内容、案例与知识点为准）】：\n${materialsText.trim()}\n(请紧扣上述教材原文的知识点、生活情境与案例设计教学任务，严禁脱离教材编造无关概念。)\n`;
   }
+
+  const hasTeacherContext = Boolean(
+    (requirements && requirements.trim()) ||
+    (materialsText && materialsText.trim()) ||
+    (images && Array.isArray(images) && images.length > 0)
+  );
+  const blueprintDirectivePhase1 = hasTeacherContext
+    ? `- 随堂互动作业交互组件参考（⚠️ 教师已提供具体教学设想或课本教材资料！教案、导学单、课件的任务名称与案例必须 100% 依据教师要求与课本原文提炼；下方蓝图仅作机房交互形式参考，若与课本案例不符请直接按课本案例改写，绝不生搬硬套）：`
+    : `- 配套随堂互动作业仿真蓝图（教师未上传课本原文或特定设想，请确保教案、导学单、课件的任务名称与该主线保持一致）：`;
 
   // =========================================================================
   // 阶段 1：生成教学文稿三件套（教案.md、导学案.md、课件.md）
@@ -1070,14 +1079,14 @@ export async function generateLessonFiles({
 - 授课年级：${grade}（${gradeNum}年级）
 - 课程课题：${lessonTitle}
 ${requirementsPrompt || '- 教师补充要求 / 教学意图：无特殊补充，请紧扣浙教版 2026 教材体系与 2022 义务教育信息科技新课标。'}
+${materialsPrompt}
 - 学段认知与防超纲红线（严格执行）：
   * 当前为 ${gradeNum} 年级，全篇只讲本节课 1 个核心主题，绝不把整单元或多节课内容塞进 40 分钟；
   * ${gradeNum <= 4 ? '小学 3~4 年级：采用具象生活情境、点选归类与直观图表，严禁出现编程代码、复杂二进制运算或高深算法名词。' : gradeNum === 5 ? '小学 5 年级：使用生活大白话、自然语言步骤卡、流程图或直观控制滑块；五年级全学年不学 Python 编程代码，严禁出现编程语言代码、机器学习 KNN 或数学权重公式！' : gradeNum === 6 ? '小学 6 年级：聚焦算法思想、简短直观代码单步观察或开关逻辑（与/或），不考复杂语法死记硬背。' : '初中 7~8 年级：聚焦本课单一核心技术机理的直观体验，不跨单元混塞其它算法，不搞大学公式推导。'}
-- 配套随堂互动作业仿真蓝图（${simBlueprint.hasCustomRequirements ? '若与上方教师设想冲突，以教师设想为准；' : ''}请确保教案、导学单、课件的任务名称与该主线保持一致）：
+${blueprintDirectivePhase1}
   【推荐仿真器原型】：${simBlueprint.archetypeName}
   【闯关任务设计】：
   ${simBlueprint.interactiveDesign}
-${materialsPrompt}
 【输出格式与门禁要求】：
 请按照以下三个文件标记完整输出，不要省略，保持四份材料任务同源对应：
 
@@ -1159,7 +1168,7 @@ ${materialsPrompt}
   }
 
   if (useV2) {
-    const prompt = buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent, simBlueprint });
+    const prompt = buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, materialsText, planContent, worksheetContent, slidesContent, simBlueprint });
     const raw = await callLlmApi({ apiBase, apiKey, model,
       messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
       temperature: 0.2, signal,
@@ -1186,6 +1195,12 @@ ${materialsPrompt}
   }
 
   const { screens: maxScreens, handsOn: maxHandsOn, quiz: maxQuiz, prosePerScreen: maxProse, quizStem: maxQuizStem } = limits;
+  const phase2MaterialsBlock = materialsText && materialsText.trim()
+    ? `\n- 教师提供的课本教材原文参考（请确保仿真器中的案例、术语与课本原文一致）：\n${materialsText.trim().slice(0, 2000)}\n`
+    : '';
+  const phase2BlueprintHeader = hasTeacherContext
+    ? `- 交互控件与状态机参考（⚠️ 教师已提供教学设想或课本原文，关卡名称与具体情境必须严格对齐【教案/导学单】与【课本教材】，下方蓝图仅提供 JS 交互形式参考）：`
+    : `- 本课推荐仿真器蓝图与分层关卡设计（当教师未指定特定仿真形式时以此为准）：`;
 
   const promptPhase2 = `
 请为本课编写配套的【课堂作业.html】单文件离线互动网页，支撑机房课堂 35~40 分钟学生自主动手探究，并与刚才生成的教案、导学单保持任务名称一致。
@@ -1193,8 +1208,8 @@ ${materialsPrompt}
 【课程基本信息】：
 - 授课年级：${grade}（${gradeNum}年级）
 - 课程课题：${lessonTitle}
-${requirementsPrompt}
-- 本课推荐仿真器蓝图与分层关卡设计（当教师未指定特定仿真形式时以此为准）：
+${requirementsPrompt}${phase2MaterialsBlock}
+${phase2BlueprintHeader}
   * 原型名称：${simBlueprint.archetypeName}
   * 本学期能力定位：${simBlueprint.semesterHint}
   * 关卡设计要求：
@@ -1209,8 +1224,8 @@ ${planContent.slice(0, 1800)}
 ${worksheetContent.slice(0, 1000)}
 
 【课堂作业.html 规范与 check_lesson.py 门禁指标】：
-0. **教师教学设想优先**：
-   - 若上方存在【教师教学设想与特别说明】，优先围绕教师设想的情境、案例与交互需求定制仿真任务；
+0. **教师教学设想与课本教材优先**：
+   - 若上方存在【教师教学设想与特别说明】或【课本教材原文参考】，100% 优先围绕教师设想和课本中的真实案例（以及刚才生成的教案/导学单关卡）定制互动任务；
    - 若无特殊说明，则按照上方【本课推荐仿真器蓝图】实现原生 JS 微型仿真器。
 1. **单文件纯原生断网运行与页面头部**：
    - 严禁外部网络资源链接（严禁 http://、https://、// 外链 CSS/JS/图片/字体，全部内嵌）；
