@@ -74,45 +74,92 @@ test('P0-1: runCmd 默认 shell:false', async () => {
   );
 });
 
-test('Phase 2 仿真蓝图匹配器: 精准识别 12 册典型课型并尊重教师自定义设想', async () => {
+test('Phase 2 仿真蓝图匹配器: 提供学段认知红线与 6 种通用 UI 交互积木，不按课题写死剧本', async () => {
   const { resolveSimulationBlueprint, getGradeLimits } = await import('../web/services/ai.js');
 
-  const bpParity = resolveSimulationBlueprint('四年级下册', '第07课 数据校验', '');
-  assert.equal(bpParity.gradeNum, 4);
-  assert.ok(bpParity.archetypeName.includes('奇偶校验'), '应命中奇偶校验仿真器原型');
+  const bpG4 = resolveSimulationBlueprint('四年级下册', '第07课 数据校验', '');
+  assert.equal(bpG4.gradeNum, 4);
+  assert.equal(bpG4.hasCustomRequirements, false);
+  assert.ok(bpG4.recommendedBlocks.includes('Chart.js') && bpG4.recommendedBlocks.includes('CSS Grid'), '四年级积木库应包含 Chart.js 与 CSS Grid 点阵/奇偶找错格');
 
-  const bpGate = resolveSimulationBlueprint('六年级下册', '第08课 开关量的与运算', '用双保险箱门禁做情境');
-  assert.equal(bpGate.gradeNum, 6);
-  assert.equal(bpGate.hasCustomRequirements, true);
-  assert.ok(bpGate.archetypeName.includes('逻辑门'), '应命中逻辑门与真值表仿真器原型');
+  const bpCustom = resolveSimulationBlueprint('六年级下册', '第08课 开关量的与运算', '用双保险箱门禁做情境');
+  assert.equal(bpCustom.gradeNum, 6);
+  assert.equal(bpCustom.hasCustomRequirements, true);
+  assert.ok(bpCustom.archetypeName.includes('教师定制情境'), '教师提供设想时应标记为教师定制情境');
 
-  const bpKnn = resolveSimulationBlueprint('八年级下册', '第09课 K近邻算法', '');
-  assert.equal(bpKnn.gradeNum, 8);
-  assert.ok(bpKnn.archetypeName.includes('KNN'), '应命中 2D KNN 动态分类面原型');
+  const bpG5 = resolveSimulationBlueprint('五年级上册', '第02课 自然语言描述算法', '');
+  assert.equal(bpG5.gradeNum, 5);
+  assert.ok(bpG5.gradeGuardrail.includes('全学年无编程代码'), '五年级必须包含全学年无编程代码红线');
+  assert.ok(bpG5.recommendedBlocks.includes('.flow-cond'), '五年级积木库应包含 .flow-cond 胶囊流程图组件');
+  assert.ok(bpG5.interactiveDesign.includes('关卡1') && bpG5.interactiveDesign.includes('关卡2') && bpG5.interactiveDesign.includes('关卡3'), '应具备完整三关卡递进结构');
 
-  // 防跨学段超纲截胡回归断言
-  const bpG5Algo = resolveSimulationBlueprint('五年级上册', '第02课 自然语言描述算法', '');
-  assert.equal(bpG5Algo.gradeNum, 5);
-  assert.ok(bpG5Algo.archetypeName.includes('自然语言算法步骤拼图'), '五上第2课应命中自然语言算法步骤拼图');
-  assert.ok(!bpG5Algo.archetypeName.includes('KNN') && !bpG5Algo.interactiveDesign.includes('KNN'), '五上第2课严禁误中八下KNN');
+  const bpG3 = resolveSimulationBlueprint('三年级上册', '第14课 关注网络痕迹', '');
+  assert.equal(bpG3.gradeNum, 3);
+  assert.ok(bpG3.gradeGuardrail.includes('严禁出现编程语言代码'), '三年级应明确禁止编程代码与复杂网络配置');
 
-  const bpG3Trace = resolveSimulationBlueprint('三年级上册', '第14课 关注网络痕迹', '');
-  assert.ok(!bpG3Trace.archetypeName.includes('IP/DHCP'), '三上网络痕迹严禁误中七上IP/DHCP');
-
-  const bpG4Safe = resolveSimulationBlueprint('四年级上册', '第04课 数据的安全', '');
-  assert.ok(!bpG4Safe.archetypeName.includes('凯撒'), '四上数据的安全严禁误中八上凯撒密码');
-
-  const bpG5Nn = resolveSimulationBlueprint('五年级下册', '第16课 认识神经网络', '');
-  assert.ok(bpG5Nn.archetypeName.includes('初识神经网络') && !bpG5Nn.archetypeName.includes('IP/DHCP'), '神经网络课严禁被“网络”词条截胡为IP/DHCP');
-
-  const bpG8Nn = resolveSimulationBlueprint('八年级下册', '第13课 神经网络的计算', '');
-  assert.ok(bpG8Nn.archetypeName.includes('人工神经网络') && !bpG8Nn.archetypeName.includes('IP/DHCP'), '八下神经网络严禁被截胡为IP/DHCP');
-
-  const bpG7Iot = resolveSimulationBlueprint('七年级下册', '第07课 常见的传感器', '');
-  assert.ok(bpG7Iot.archetypeName.includes('传感器') && !bpG7Iot.archetypeName.includes('DFS'), '七下传感器课不应捆绑迷宫DFS');
+  const bpG8 = resolveSimulationBlueprint('八年级下册', '第09课 K近邻算法', '');
+  assert.equal(bpG8.gradeNum, 8);
+  assert.ok(bpG8.recommendedBlocks.includes('scatter'), '八年级积木库应支持 Chart.js scatter 二维散点分类图');
 
   const limits3 = getGradeLimits(3);
   assert.deepEqual(limits3, { screens: 5, handsOn: 2, quiz: 2, prosePerScreen: 60, quizStem: 30 });
+});
+
+test('Chart.js 按需幂等内联与 check_lesson.py 豁免及外链安全检查', async () => {
+  const { sanitizeGeneratedClassworkHtml } = await import('../web/services/ai.js');
+
+  const chartHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>第8课 图表呈现｜课堂作业</title><meta name="lesson-grade" content="4"></head>
+<body>
+<main>
+  <section class="panel active" data-step="0" data-panel-type="hands-on">
+    <p data-prose>观察校园投票数据并切换柱状图。</p>
+    <div class="chart-box"><canvas id="voteChart"></canvas></div>
+  </section>
+  <section class="panel" data-step="1">
+    <p data-prose>完成随堂测验并导出学习凭单。</p>
+    <div>我还没完全懂，需要老师或同伴帮助</div>
+  </section>
+</main>
+<script>
+const stepLabels = ['图表实验', '达标评价'];
+const quiz = [ { q: '看趋势用什么图？', options: ['A. 折线图', 'B. 饼图'], correct: 0 } ];
+const ctx = document.getElementById('voteChart');
+const myChart = new Chart(ctx, { type: 'bar', data: { labels: ['A', 'B'], datasets: [{ data: [3, 5] }] } });
+function exportTxt() { const b = new Blob(['# 四(1)班|小极客|第8课|100|2026']); const a = document.createElement('a'); a.download = 'a.txt'; }
+</script>
+</body></html>`;
+
+  // 第一次调用：自动内联 data-local-lib="chart.js" 与 requestAnimationFrame resize 钩子
+  const inlinedOnce = sanitizeGeneratedClassworkHtml(chartHtml, 4, '四年级上册', '第8课 图表呈现');
+  const matchesOnce = inlinedOnce.match(/<script\s+data-local-lib="chart\.js">/g) || [];
+  assert.equal(matchesOnce.length, 1, '检测到 new Chart( 时应自动内联一次 chart.js');
+  assert.ok(inlinedOnce.includes('requestAnimationFrame'), '应包含 requestAnimationFrame 切屏 resize 钩子');
+
+  // 第二次调用：验证幂等防重，绝不重复注入
+  const inlinedTwice = sanitizeGeneratedClassworkHtml(inlinedOnce, 4, '四年级上册', '第8课 图表呈现');
+  const matchesTwice = inlinedTwice.match(/<script\s+data-local-lib="chart\.js">/g) || [];
+  assert.equal(matchesTwice.length, 1, '重复调用 sanitizeGeneratedClassworkHtml 必须保持幂等，不重复内联');
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'itls-chart-check-'));
+  const tmpHtmlPath = path.join(tmpDir, '四年级上册_第8课_课堂作业.html');
+  fs.writeFileSync(tmpHtmlPath, inlinedTwice, 'utf-8');
+
+  try {
+    let pyRunner = 'uv';
+    let runnerArgs = ['run', 'python', 'scripts/check_lesson.py', tmpHtmlPath];
+    try {
+      runCmd('uv', ['--version'], { stdio: 'ignore' });
+    } catch {
+      pyRunner = process.platform === 'win32' ? 'python' : 'python3';
+      runnerArgs = ['scripts/check_lesson.py', tmpHtmlPath];
+    }
+    const out = runCmd(pyRunner, runnerArgs, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+    assert.ok(out.includes('[OK] 全部检查通过'), `内联 Chart.js 后应通过 check_lesson.py，实际输出:\n${out}`);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });
 
 test('Phase 2 HTML 合规微调器: 自动修正超标字数/多余hands-on/alert弹窗并通过 check_lesson.py 0 FAIL 0 WARN', async () => {

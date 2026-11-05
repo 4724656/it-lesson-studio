@@ -54,7 +54,7 @@ export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, mate
    - 所有年级反馈文案讲通俗生活因果，禁止使用生硬的成人学术黑话。
 2. 界面与交互细节：
    - 运用原生 CSS 与 SVG 绘制直观道具，按钮与滑块提供清晰的状态反馈。
-3. 探究主线：设计 2—3 个递进探究屏（加上自动生成的终极评价屏共 3—4 屏，封顶上限不超过 ${limits.screens} 屏，严禁为凑满上限屏数而堆砌复杂控件），覆盖“生活感知配对 ➔ 核心动手仿真（基础+⭐进阶） ➔ 迁移巩固”。screens 每一屏的 kind 属性必须二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏）。
+3. 探究主线：设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“生活体验 ➔ 原理操作 ➔ 核心动手仿真（基础+⭐进阶） ➔ 调试或迁移应用”。screens 每一屏的 kind 属性必须二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏）。
 
 年级：${grade}；课题：${lessonTitle}
 实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}
