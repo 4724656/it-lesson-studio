@@ -319,10 +319,13 @@ def check_html(path):
         warns.append('缺少"我还没完全懂"这一自我评价项')
 
     # 检验内嵌 JavaScript 语法合法性（防止由于 SyntaxError 导致探究舱在机房浏览器中完全瘫痪）
-    scripts = re.findall(r'<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>', text, re.S)
-    for idx, sc in enumerate(scripts, 1):
+    # 识别本地预置内联库 <script data-local-lib="chart.js">（无外链 src，且全文已通过上方 ext 外链扫描）跳过重复 node --check
+    scripts = re.findall(r'<script\b((?![^>]*\bsrc=)[^>]*)>(.*?)</script>', text, re.S)
+    for idx, (sc_attrs, sc) in enumerate(scripts, 1):
         sc_clean = sc.strip()
         if not sc_clean:
+            continue
+        if re.search(r'\bdata-local-lib\s*=\s*["\']chart\.js["\']', sc_attrs, re.I):
             continue
         try:
             proc = subprocess.run(

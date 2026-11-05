@@ -73,12 +73,36 @@ description: "中小学信息科技随堂互动作业生成规范：涵盖 3~8 �
 - **非阻断浮动 Toast**：页面顶部居中内置 `.toast` 胶囊提示条，显示 1.8 秒后自动隐去，全流程**严禁使用 `alert()`、`confirm()`、`prompt()`**。
 - **右下角浮动小助手**：固定定位 `🤖` 按钮（`.mascot`），点击弹出气泡框（`.mascot-bub`），轮播 5~6 条本课知识点或操作提示。
 
-### 5. 核心动手仿真实验台（Hands-on Lab）
-- 按学段标准屏数设计（3~4年级 5 屏含 2 个 `hands-on`；5~6年级 6 屏含 2~3 个 `hands-on`；7~8年级 7 屏含 3 个 `hands-on`），支撑课堂 35~40 分钟探究容量：
-  - **低段（3~4年级）**：生活场景寻宝、文件分类整理箱、校园投票彩色统计柱状图、5×5 黑白像素点阵画板。
-  - **五年级（5年级 · 无代码）**：自然语言生活步骤卡排序补全、流程图词块拼图槽、分支条件（如果…否则…）路线点亮、恒温箱三环节滑块。
-  - **六年级（6年级）**：简短代码单步追踪器（高亮当前行、变量记事卡更新）、猜数字/枚举步数对比、双开关串并联电路。
-  - **初中（7~8年级）**：局域网 IP 分配台、物联网传感器折线监控、凯撒密码移位转盘、2D 平面近邻投票分类画布。
+### 5. 核心动手仿真实验台与 6 种通用 UI 交互积木（Hands-on Lab）
+- 按学段标准屏数设计（3~4年级 5 屏含 2 个 `hands-on`；5~6年级 6 屏含 2~3 个 `hands-on`；7~8年级 7 屏含 3 个 `hands-on`），围绕本课教案与导学单的具体任务灵活选配以下通用积木（**严禁退化为纯文字选择题**）：
+  1. **原生 SVG 640×360 场景寻宝**：用于低段导入与设备观察，叠加 `.hs` 脉冲热点与 `giveHint()` 抖动提示。
+  2. **两步点击配对与收纳盒归类（`.chip` + `.box`）**：用于概念配对、素材归类、自然语言步骤词块排序与漏步补全。
+  3. **语义化流程图与分支树插槽（`.flow-*` 预置样式）**：
+     - 使用 `.flow-col`（纵向主干）、`.flow-arrow`（`↓`）、`.flow-node`（圆角处理框，起止框加 `.start-end`）、`.flow-cond`（判断框）、`.flow-branch` + `.flow-branch-col` + `.flow-badge.yes/.no`（左右双分支）；
+     - **防裁切规范**：判断框 `.flow-cond` 已预置“琥珀色双边框 + `❖ 判断：` 前缀”胶囊切角样式，**严禁使用 `rotate(45deg)` 或斜边 `clip-path`**，确保内部填空词块按钮完整显示不被斜边切掉；
+     - **动态路径高亮**：当学生拖动滑块或切换测试条件时，为走通的节点和箭头切换 `.active-path` 类实现绿色发光高亮。
+  4. **原生 CSS Grid 方格矩阵与步进网格**：使用 CSS Grid + `<button>` 渲染 0/1 像素点阵涂色板、行列奇偶校验找错格、二分查找序列或迷宫 DFS 步进回溯网格。
+  5. **`<input type="range">` 滑块与状态过渡仿真**：配合原生 DOM 进度条、状态指示灯与 CSS `transition`，直观展示亮度/音量调节、恒温箱阈值控制、水箱闭环反馈或双开关串并联电路。
+  6. **`Chart.js` 动态统计/折线/散点图表（按需自动内联本地 `chart.umd.min.js`）**：
+     - 凡涉及数据图表（`bar` / `line` / `pie`）、物联网传感器实时波动曲线、算法步数对比或机器学习 KNN 二维坐标分类面（`scatter`），无需手搓 SVG 坐标轴，直接在脚本中调用 `new Chart(ctx, { type, data, options: { responsive: true, maintainAspectRatio: false } })`；
+     - **固定高度防拉长容器**：`<canvas>` 必须包裹在预置的 `<div class="chart-box"><canvas id="..."></canvas></div>` 容器内（`.chart-box` 已固定 `position: relative; width: 100%; height: 260px;`），防止在 Flex/Grid 布局下图表高度无限拉长；
+     - **严禁写外链 `<script src="...chart...">`**：构建流水线检测到 `new Chart(` 或 `Chart.` 时会自动将本地 `resources/libs/chart.umd.min.js` 内联到 `</head>` 前，并自动绑定切屏 `resize` 重绘钩子。
+- **可选能力：浏览器原生语音朗读（`window.speechSynthesis`）**：
+  - 适用于智能小搭档、对话机器人、语音合成参数（语速 `rate` / 音调 `pitch`）体验课；
+  - **防卡死与无耳机机房兼容规范**：调用前必须先执行 `window.speechSynthesis.cancel()` 清空队列防连点卡死，全过程用 `try { ... } catch (e) {}` 包裹，且**必须在页面对话气泡框中同步显示朗读文本**（确保未配耳机的机房学生也能看懂反馈）：
+    ```javascript
+    function speakText(text, rate = 1, pitch = 1) {
+      const bub = document.getElementById("speechBubble");
+      if (bub) bub.textContent = "🔊 " + text;
+      if (!soundOn || !("speechSynthesis" in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "zh-CN"; u.rate = rate; u.pitch = pitch;
+        window.speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+    ```
 
 ### 6. `localStorage` 自动存盘机制
 - 机房学生容易误按刷新键。使用以课题命名的 `localStorage` 键（如 `lesson_state_xxx`，需加 `try/catch` 容错），将学生的**班级、姓名、各关进度、配对结果、调查表输入、测验作答**自动保存，刷新后恢复现场。
