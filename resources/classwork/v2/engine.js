@@ -10,7 +10,6 @@
   const picked = quiz.map(() => null);
   let reflectionEver = false;
   let needsHelp = false;
-  let certReturnFocus = null;
   let receiptSnapshot = '';
   const errors = [];
   // Runtime diagnostics contain module IDs only, no identity or behavior trace.
@@ -27,24 +26,12 @@
     status('progressCapsule', `第 ${currentStep + 1}/${panels.length} 屏 · 基础 ${all.filter(t => t.basicEver).length}/${all.length} · ⭐ ${all.filter(t => t.starEver).length}/${all.length}`);
     for (const [id, t] of Object.entries(tasks)) {
       const achieved = t.independentEver ? '曾独立通关' : t.assistedEver ? '曾带提示通关' : '';
-      status(`task-state-${id}`, `${t.phase}${achieved ? ' · ' + achieved : ''}${t.starEver ? ' · ⭐ 已达成' : ''}`);
+      status(`task-state-${id}`, `${t.phase}${achieved ? ' · ' + achieved : ''}${t.starEver ? ' · ⭐ 已达成' : ''}${t.transferEver ? ' · 迁移已达成' : ''}`);
     }
     [...$('stepper').children].forEach((button, i) => {
       if (i === currentStep) button.setAttribute('aria-current', 'step');
       else button.removeAttribute('aria-current');
     });
-    const achieved = {
-      basic: all.some(t => t.basicEver), star: all.some(t => t.starEver),
-      transfer: all.some(t => t.transferEver), reflection: reflectionEver || needsHelp
-    };
-    if ($('medalArea') && Array.isArray(window.medalDefs)) {
-      $('medalArea').replaceChildren(...medalDefs.map(m => {
-      const el = document.createElement('div');
-      el.className = 'medal' + (achieved[m.event] ? ' got' : '');
-      el.textContent = `${achieved[m.event] ? '★ 已获得' : '☆ 待探索'} ${m.label}`;
-      return el;
-    }));
-    }
   }
 
   function update(id) {
@@ -257,28 +244,6 @@
     }
   });
 
-  if ($('openCert')) {
-  $('openCert').addEventListener('click', () => {
-    certReturnFocus = document.activeElement;
-    const fields = receiptFields();
-    const allBasic = Object.values(tasks).every(t => t.basicEver);
-    const title = allBasic ? '持续成长者' : '勇敢探索者';
-    status('certContent', `${fields.cls} · ${fields.name}\n${lessonConfig.title}\n${title}\n${new Date().toLocaleDateString('zh-CN')}`);
-    status('certMedals', [...$('medalArea').children].filter(el => el.classList.contains('got')).map(el => el.textContent).join(' · ') || '感谢你参与今天的探索。');
-    $('certModal').hidden = false;
-    $('closeCert').focus();
-  });
-  function closeCertificate() {
-    $('certModal').hidden = true;
-    certReturnFocus?.focus();
-  }
-  $('closeCert').addEventListener('click', closeCertificate);
-  $('certModal').addEventListener('keydown', event => {
-    if (event.key === 'Escape') { event.preventDefault(); closeCertificate(); }
-    if (event.key === 'Tab') { event.preventDefault(); $('closeCert').focus(); }
-  });
-  $('certModal').addEventListener('click', event => { if (event.target === $('certModal')) closeCertificate(); });
-  }
   $('restartLesson').addEventListener('click', () => { $('restartConfirm').hidden = false; $('restartYes').focus(); });
   $('restartNo').addEventListener('click', () => { $('restartConfirm').hidden = true; $('restartLesson').focus(); });
   $('restartYes').addEventListener('click', () => location.reload());

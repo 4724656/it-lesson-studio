@@ -1024,19 +1024,17 @@ svg {
 <div class="task-tools"><button data-hint="capacity">需要一点提示</button><button data-reset="capacity">重置实验</button></div><p id="hint-capacity" class="hint" hidden></p>
 </section>
 <section class="panel" data-step="3"><h2 tabindex="-1">评价与学习记录</h2><p data-prose>回顾探究，再记录自己的收获。</p><div id="quizArea"></div><button id="quizSubmit">提交测验并判分</button><p id="quizMessage" role="status"></p><p id="scoreBox" hidden></p>
-<h3>我的成长徽章</h3><div id="medalArea" class="medal-wall"></div><h3>自我评价</h3><div id="selfList"></div><p id="selfMessage" role="status"></p>
-<label>班级（选填）<input id="inputClass" maxlength="60" autocomplete="off"></label><label>姓名（选填）<input id="inputName" maxlength="60" autocomplete="off"></label><div class="task-tools"><button id="saveReceipt" disabled>保存学习凭单 (.txt)</button><button id="viewReceipt" disabled>查看／复制凭单</button><button id="openCert">生成电子通关奖状</button></div>
+<h3>自我评价</h3><div id="selfList"></div><p id="selfMessage" role="status"></p>
+<label>班级（选填）<input id="inputClass" maxlength="60" autocomplete="off"></label><label>姓名（选填）<input id="inputName" maxlength="60" autocomplete="off"></label><div class="task-tools"><button id="saveReceipt" disabled>保存学习凭单 (.txt)</button><button id="viewReceipt" disabled>查看／复制凭单</button></div>
 <div id="receiptPanel" hidden><label>学习凭单<textarea id="receiptText" readonly rows="4"></textarea></label><button id="copyReceipt">复制凭单</button><p id="receiptMessage" role="status"></p></div></section>
 <footer class="nav-row"><button id="prevStep">上一屏</button><p id="navMessage" role="status"></p><button id="nextStep">下一屏／稍后再来</button></footer>
 <button id="restartLesson">重新开始整节课</button><div id="restartConfirm" hidden><p>这会清除本轮任务成就与首次测验成绩，确定重新开始吗？</p><button id="restartYes">确定重新开始</button><button id="restartNo">继续本轮学习</button></div>
 </main>
-<div id="certModal" class="cert-modal" role="dialog" aria-modal="true" aria-labelledby="certHeading" hidden><div class="certificate"><h2 id="certHeading">🏆 探究成长奖状</h2><p id="certContent"></p><p id="certMedals"></p><button id="closeCert">关闭奖状</button></div></div>
 <script>
 "use strict";
 const stepLabels = ["灯泡权值探究","储物柜编码破译","编码容量对比","评价与学习记录"];
 const quiz = [{"q":"只亮权值 8 的灯，数值是多少？","options":["1","8","亮灯数量"],"correct":1,"why":"权值 8 的灯贡献数值 8，与亮灯总数不同。"},{"q":"权值 4 和 1 同时亮，总数是多少？","options":["2","41","5"],"correct":2,"why":"总数按权值相加：4+1=5。"}];
-const lessonConfig = {"title":"二进制灯泡","grade":"四年级上册","screens":[{"id":"binary","title":"灯泡权值探究","prose":"同样多的亮灯，总数会一样吗？先猜，再比较。","kind":"hands-on","goal":"比较位置与权值。","basicCriterion":"记录同亮灯数、不同总数的一对，再记录5并解释。","starCriterion":"基础后记录10，再尝试迁移。","hints":["试试只点亮一个灯泡，观察总数。","从左到右权值是 8、4、2、1，相加得到总数。","组成 5 的示范：点亮权值 4 和 1，编码为 0101；5=4+1。"],"sourceTask":"灯泡权值探究"},{"id":"decoder","title":"储物柜编码破译","prose":"智能储物柜用四位二进制给格口编号，来破译格口编码吧。","kind":"hands-on","goal":"拼出目标格口并发现奇偶位规律。","basicCriterion":"拨出6号格口并选出末位奇偶规律。","starCriterion":"拨出最大格口15，再修正错误格口。","hints":["6 可以拆成哪两个权值相加？试试 4 和 2。","观察权值 8、4、2 都是偶数，只有最右边的权值 1 是奇数。","示范：0110 对应 4+2=6（偶数末位为0）；四盏全亮 1111 对应 8+4+2+1=15；0011 对应 2+1=3。"],"sourceTask":"储物柜编码破译"},{"id":"capacity","title":"编码容量对比","prose":"同样4盏灯，只数亮灯盏数和按位置赋权，容量差多少？","kind":"explore","goal":"比较两种方案可表示的状态总数。","basicCriterion":"切换对比两种方案并选出4位状态数。","starCriterion":"推算增加到5盏灯时的最大状态总数。","hints":["只数亮灯盏数时，4 盏灯只有 0、1、2、3、4 共 5 种结果。","按位置赋权时，每盏灯都有开/关 2 种可能，4 盏灯是 2×2×2×2=16 种。","示范：分别点击两种方案对比按钮，选择 16 种；增加 1 盏灯后容量翻倍为 32 种。"],"sourceTask":"编码容量对比"}],"medals":[{"event":"basic","label":"权值发现者"},{"event":"star","label":"编码挑战者"},{"event":"transfer","label":"误区修正者"},{"event":"reflection","label":"认真学习者"}]};
-const medalDefs = [{"event":"basic","label":"权值发现者"},{"event":"star","label":"编码挑战者"},{"event":"transfer","label":"误区修正者"},{"event":"reflection","label":"认真学习者"}];
+const lessonConfig = {"title":"二进制灯泡","grade":"四年级上册","screens":[{"id":"binary","title":"灯泡权值探究","prose":"同样多的亮灯，总数会一样吗？先猜，再比较。","kind":"hands-on","goal":"比较位置与权值。","basicCriterion":"记录同亮灯数、不同总数的一对，再记录5并解释。","starCriterion":"基础后记录10，再尝试迁移。","hints":["试试只点亮一个灯泡，观察总数。","从左到右权值是 8、4、2、1，相加得到总数。","组成 5 的示范：点亮权值 4 和 1，编码为 0101；5=4+1。"],"sourceTask":"灯泡权值探究"},{"id":"decoder","title":"储物柜编码破译","prose":"智能储物柜用四位二进制给格口编号，来破译格口编码吧。","kind":"hands-on","goal":"拼出目标格口并发现奇偶位规律。","basicCriterion":"拨出6号格口并选出末位奇偶规律。","starCriterion":"拨出最大格口15，再修正错误格口。","hints":["6 可以拆成哪两个权值相加？试试 4 和 2。","观察权值 8、4、2 都是偶数，只有最右边的权值 1 是奇数。","示范：0110 对应 4+2=6（偶数末位为0）；四盏全亮 1111 对应 8+4+2+1=15；0011 对应 2+1=3。"],"sourceTask":"储物柜编码破译"},{"id":"capacity","title":"编码容量对比","prose":"同样4盏灯，只数亮灯盏数和按位置赋权，容量差多少？","kind":"explore","goal":"比较两种方案可表示的状态总数。","basicCriterion":"切换对比两种方案并选出4位状态数。","starCriterion":"推算增加到5盏灯时的最大状态总数。","hints":["只数亮灯盏数时，4 盏灯只有 0、1、2、3、4 共 5 种结果。","按位置赋权时，每盏灯都有开/关 2 种可能，4 盏灯是 2×2×2×2=16 种。","示范：分别点击两种方案对比按钮，选择 16 种；增加 1 盏灯后容量翻倍为 32 种。"],"sourceTask":"编码容量对比"}]};
 const simulationMounts = {"binary": function(root, api) { "use strict";
 const weights = [8,4,2,1];
 let bits = [0,0,0,0];
@@ -1182,7 +1180,6 @@ return {
   const picked = quiz.map(() => null);
   let reflectionEver = false;
   let needsHelp = false;
-  let certReturnFocus = null;
   let receiptSnapshot = '';
   const errors = [];
   // Runtime diagnostics contain module IDs only, no identity or behavior trace.
@@ -1199,22 +1196,12 @@ return {
     status('progressCapsule', `第 ${currentStep + 1}/${panels.length} 屏 · 基础 ${all.filter(t => t.basicEver).length}/${all.length} · ⭐ ${all.filter(t => t.starEver).length}/${all.length}`);
     for (const [id, t] of Object.entries(tasks)) {
       const achieved = t.independentEver ? '曾独立通关' : t.assistedEver ? '曾带提示通关' : '';
-      status(`task-state-${id}`, `${t.phase}${achieved ? ' · ' + achieved : ''}${t.starEver ? ' · ⭐ 已达成' : ''}`);
+      status(`task-state-${id}`, `${t.phase}${achieved ? ' · ' + achieved : ''}${t.starEver ? ' · ⭐ 已达成' : ''}${t.transferEver ? ' · 迁移已达成' : ''}`);
     }
     [...$('stepper').children].forEach((button, i) => {
       if (i === currentStep) button.setAttribute('aria-current', 'step');
       else button.removeAttribute('aria-current');
     });
-    const achieved = {
-      basic: all.some(t => t.basicEver), star: all.some(t => t.starEver),
-      transfer: all.some(t => t.transferEver), reflection: reflectionEver || needsHelp
-    };
-    $('medalArea').replaceChildren(...medalDefs.map(m => {
-      const el = document.createElement('div');
-      el.className = 'medal' + (achieved[m.event] ? ' got' : '');
-      el.textContent = `${achieved[m.event] ? '★ 已获得' : '☆ 待探索'} ${m.label}`;
-      return el;
-    }));
   }
 
   function update(id) {
@@ -1427,26 +1414,6 @@ return {
     }
   });
 
-  $('openCert').addEventListener('click', () => {
-    certReturnFocus = document.activeElement;
-    const fields = receiptFields();
-    const allBasic = Object.values(tasks).every(t => t.basicEver);
-    const title = allBasic ? '持续成长者' : '勇敢探索者';
-    status('certContent', `${fields.cls} · ${fields.name}\n${lessonConfig.title}\n${title}\n${new Date().toLocaleDateString('zh-CN')}`);
-    status('certMedals', [...$('medalArea').children].filter(el => el.classList.contains('got')).map(el => el.textContent).join(' · ') || '感谢你参与今天的探索。');
-    $('certModal').hidden = false;
-    $('closeCert').focus();
-  });
-  function closeCertificate() {
-    $('certModal').hidden = true;
-    certReturnFocus?.focus();
-  }
-  $('closeCert').addEventListener('click', closeCertificate);
-  $('certModal').addEventListener('keydown', event => {
-    if (event.key === 'Escape') { event.preventDefault(); closeCertificate(); }
-    if (event.key === 'Tab') { event.preventDefault(); $('closeCert').focus(); }
-  });
-  $('certModal').addEventListener('click', event => { if (event.target === $('certModal')) closeCertificate(); });
   $('restartLesson').addEventListener('click', () => { $('restartConfirm').hidden = false; $('restartYes').focus(); });
   $('restartNo').addEventListener('click', () => { $('restartConfirm').hidden = true; $('restartLesson').focus(); });
   $('restartYes').addEventListener('click', () => location.reload());

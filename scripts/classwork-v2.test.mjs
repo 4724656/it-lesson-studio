@@ -41,7 +41,6 @@ test('V2 rejects missing teaching predicates, invalid quiz, duplicated IDs and f
   rejectMutation(d => { d.screens.forEach(s => { s.kind = 'explore'; }); }, /动手/);
   rejectMutation(d => { d.screens.push({ ...d.screens[0] }); }, /重复/);
   rejectMutation(d => { d.quiz[0].correct = 10; }, /答案索引/);
-  rejectMutation(d => { d.medals[0].event = 'reflection'; }, /徽章/);
   rejectMutation(d => { delete d.screens[0].hints; }, /提示/);
   assert.throws(() => parseV2Payload('{"schemaVersion":2'), /未尝试补尾/);
   assert.deepEqual(parseV2Payload('```json\n' + JSON.stringify(fixture()) + '\n```'), fixture());
@@ -83,15 +82,19 @@ test('V2 assembler safely embeds lesson text and machine gates the final single 
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('V1 retains its exact frozen system prompt; V2 integration changes only the opted-in branch', async () => {
-  const { generateLessonFiles } = await import('../web/services/ai.js');
+test('Phase 1 loads modular skills 1-3; Phase 2 loads modular skill 4', async () => {
+  const { generateLessonFiles, loadDocumentsSystemPrompt, loadClassworkSystemPrompt } = await import('../web/services/ai.js');
   const { dbService } = await import('../web/db.js');
   const getSetting = dbService.getSetting;
   const fetch = globalThis.fetch;
   const previousMode = process.env.AI_HTML_GENERATOR;
   const previousDiagnostics = process.env.AI_GENERATION_DIAGNOSTICS;
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'itls-v2-pipeline-'));
-  const legacy = fs.readFileSync(new URL('../resources/prompts/legacy-skill-v1.md', import.meta.url), 'utf8');
+  const docsPrompt = loadDocumentsSystemPrompt();
+  const cwPrompt = loadClassworkSystemPrompt();
+  assert.ok(docsPrompt.includes('模块一') && docsPrompt.includes('模块二') && docsPrompt.includes('模块三'));
+  assert.ok(!docsPrompt.includes('模块四：'));
+  assert.ok(cwPrompt.includes('模块四：') && !cwPrompt.includes('## 一、教材分析'));
   dbService.getSetting = key => ({ ai_api_key: 'test', ai_model: 'test-model' })[key];
   try {
     for (const mode of ['v1', 'v2']) {
@@ -102,8 +105,9 @@ test('V1 retains its exact frozen system prompt; V2 integration changes only the
         calls++;
         const body = JSON.parse(req.body);
         if (calls === 1) {
-          if (mode === 'v1') assert.equal(body.messages[0].content, legacy);
-          else { assert.ok(body.messages[0].content.includes('### 模块三')); assert.ok(!body.messages[0].content.includes('### 模块四')); }
+          assert.equal(body.messages[0].content, docsPrompt);
+        } else if (mode === 'v1') {
+          assert.equal(body.messages[0].content, cwPrompt);
         } else if (mode === 'v2') {
           assert.ok(!body.messages[0].content.includes('grid-2'));
           assert.ok(body.messages[1].content.includes('plan-full-context'));

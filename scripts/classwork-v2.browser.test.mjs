@@ -62,7 +62,7 @@ test('offline navigation, honest basic/star/transfer, repeated reset and first s
   const { context, page, errors, external } = await open();
   try {
     assert.deepEqual(await page.evaluate(() => window.__itlsV2.errors), []);
-    assert.equal(await page.locator('.medal.got').count(), 0);
+    assert.ok((await page.locator('#progressCapsule').textContent()).includes('基础 0/3 · ⭐ 0/3'));
     await goFinal(page); // incomplete tasks do not lock evaluation
     assert.ok((await page.locator('#navMessage').textContent()).includes('尚未完成'));
     await goBinary(page);
@@ -74,16 +74,17 @@ test('offline navigation, honest basic/star/transfer, repeated reset and first s
     await page.locator('[data-reset="binary"]').click();
     await passBasic(page);
     assert.ok((await page.locator('#task-state-binary').textContent()).includes('独立通关'));
-    assert.equal(await page.locator('.medal.got').count(), 1);
+    assert.ok((await page.locator('#progressCapsule').textContent()).includes('基础 1/3 · ⭐ 0/3'));
     await record(page, '1010');
-    assert.equal(await page.locator('.medal.got').count(), 2, 'advanced does not automatically award transfer');
+    assert.ok((await page.locator('#task-state-binary').textContent()).includes('⭐ 已达成'));
+    assert.ok(!(await page.locator('#task-state-binary').textContent()).includes('迁移已达成'));
     await sim(page).locator('#transferAnswer').fill('9');
     await sim(page).locator('#transferCheck').click();
-    assert.equal(await page.locator('.medal.got').count(), 3);
+    assert.ok((await page.locator('#task-state-binary').textContent()).includes('迁移已达成'));
     await page.locator('[data-reset="binary"]').click();
     await page.locator('[data-reset="binary"]').click();
     assert.equal(await sim(page).locator('#value').textContent(), '0000 = 0');
-    assert.equal(await page.locator('.medal.got').count(), 3);
+    assert.ok((await page.locator('#task-state-binary').textContent()).includes('曾独立通关'));
     await goFinal(page);
     await page.locator('#quizSubmit').click();
     assert.ok((await page.locator('#quizMessage').textContent()).includes('2 题'));
@@ -93,7 +94,7 @@ test('offline navigation, honest basic/star/transfer, repeated reset and first s
     await submit(page, [1, -1]);
     assert.ok((await page.locator('#scoreBox').textContent()).includes('50 / 100'));
     await page.locator('#selfList input').last().check();
-    assert.equal(await page.locator('.medal.got').count(), 4);
+    assert.ok((await page.locator('#selfMessage').textContent()).includes('谢谢你告诉我们'));
     await goBinary(page);
     await page.locator('[data-reset="binary"]').click();
     await goFinal(page);
@@ -104,19 +105,19 @@ test('offline navigation, honest basic/star/transfer, repeated reset and first s
   } finally { await context.close(); }
 });
 
-test('full example causes assisted completion; skip/help never grant knowledge badges', async () => {
+test('full example causes assisted completion; skip/help never grant task completion', async () => {
   const { context, page } = await open();
   try {
     await page.locator('#helpFlag').click();
-    assert.equal(await page.locator('.medal.got').count(), 1);
+    assert.equal(await page.locator('#helpBanner').isVisible(), true);
     for (let i = 0; i < 3; i++) await page.locator('[data-hint="binary"]').click();
-    assert.equal(await page.locator('.medal.got').count(), 1);
+    assert.ok((await page.locator('#progressCapsule').textContent()).includes('基础 0/3'));
     await passBasic(page);
     const state = await page.locator('#task-state-binary').textContent();
     assert.ok(state.includes('带提示通关'));
     assert.ok(!state.includes('独立通关'));
     await page.locator('[data-reset="binary"]').click();
-    assert.equal(await page.locator('.medal.got').count(), 2);
+    assert.ok((await page.locator('#task-state-binary').textContent()).includes('曾带提示通关'));
   } finally { await context.close(); }
 });
 
@@ -150,18 +151,10 @@ test('blank identity and unavailable download/clipboard have the same plain-text
   } finally { await context.close(); }
 });
 
-test('certificate remains truthful and keyboard accessible at 1024x768 with denied storage', async () => {
+test('layout and keyboard interaction remain accessible at 1024x768 with denied storage', async () => {
   const { context, page, errors } = await open(fixture(), { width: 1024, height: 768 });
   try {
     await goFinal(page);
-    await page.locator('#openCert').click();
-    assert.ok((await page.locator('#certContent').textContent()).includes('勇敢探索者'));
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'closeCert');
-    await page.keyboard.press('Tab');
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'closeCert');
-    await page.keyboard.press('Escape');
-    assert.ok(await page.locator('#certModal').isHidden());
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'openCert');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await goBinary(page);
     await sim(page).locator('[data-bit="0"]').focus();
@@ -181,14 +174,13 @@ test('broken or pre-awarded module is visible to runtime validation while naviga
   const { context, page } = await open(payload);
   try {
     assert.deepEqual(await page.evaluate(() => window.__itlsV2.errors), ['binary']);
-    assert.equal(await page.locator('.medal.got').count(), 0);
+    assert.ok((await page.locator('#progressCapsule').textContent()).includes('基础 0/3'));
     await goFinal(page);
-    await page.locator('#openCert').click();
-    assert.ok(await page.locator('#certModal').isVisible());
+    assert.ok(await page.locator('#quizSubmit').isVisible());
   } finally { await context.close(); }
 });
 
-test('multi-screen classroom progression: completing all 3 inquiry screens unlocks full progress and 持续成长者 title', async () => {
+test('multi-screen classroom progression: completing all 3 inquiry screens unlocks full progress', async () => {
   const { context, page, errors } = await open();
   try {
     assert.equal(await page.locator('section.panel').count(), 4);
@@ -217,8 +209,7 @@ test('multi-screen classroom progression: completing all 3 inquiry screens unloc
     assert.ok((await page.locator('#progressCapsule').textContent()).includes('基础 3/3 · ⭐ 3/3'));
 
     await page.locator('#nextStep').click();
-    await page.locator('#openCert').click();
-    assert.ok((await page.locator('#certContent').textContent()).includes('持续成长者'));
+    assert.ok(await page.locator('#quizSubmit').isVisible());
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });

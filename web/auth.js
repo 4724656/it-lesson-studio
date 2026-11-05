@@ -11,7 +11,7 @@ export const INSECURE_DEFAULT_JWT_SECRET = 'it-lesson-studio-secret-key-2026';
  * 3. 若未设置或仍为公开弱密钥，自动生成 256 位安全随机密钥（32 字节 hex），并写入 SQLite 持久化；
  * 
  * 从而保证：
- * - 开箱即用、零配置 Docker 部署即具备生产级安全性
+ * - 开箱即用、零配置 Docker 部署具备默认安全密钥
  * - 每台机器 / 每次全新部署密钥完全独立，杜绝跨实例伪造 Token
  * - 密钥存入 SQLite（挂载至 ./web/data），容器重启不会丢失，用户 30 天会话保持有效
  *

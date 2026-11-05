@@ -39,16 +39,15 @@ export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, plan
   return {
     system: [globalRules, read('skills/4-classwork/SKILL.md'), read('references/classwork-v2-contract.md')].join('\n\n'),
     user: `生成本课的 HTML V2 教学差异 JSON。不要输出完整 HTML 或公共引擎。
-【3~8年级学段认知阶梯与核心设计要求】：
-1. 👶 严格对齐学段学情（坚决防拔高）：
-   - 3~4年级【玩具拟物·生活具象】：大卡片、玩具式道具（发光灯泡、开盖分类箱、升降温度计），题干严格 ≤20 字儿童口语，绝对禁止代码与底层计算机原理，绝不跨课节超纲；
-   - 5~6年级【解谜探索·规则控制台】：仪表盘控制台、流程图插槽、如果-那么分支切换、阈值联动执行器，题干 ≤30 字，考查生活规则与因果，不考死记编程语法；
-   - 7~8年级【极客工坊·微型实验室】：网络拓扑连线、脉冲数据包、实时折线图、密码转盘、2D散点画布，题干 ≤40 字，重在直观探究机理，不搞大学高数与公式推导。
-   - 所有年级反馈文案讲通俗生活因果（如“水温超过30℃，风扇转起来啦”），严禁使用“状态转移”、“布尔真值判定”等成人学术黑话。
-2. 🎨 交互精品感（把HTML+CSS+JS玩出花）：
-   - 充分利用原生 CSS 与 SVG 绘制生动具象道具；
-   - 按钮带按压立体微位移（translateY(2px)），滑块带实时数值气泡，徽章点亮带弹跳动效（@keyframes medalPop），让孩子动手觉得好玩、有质感、有成就感。
-3. 🎮 探究主线：设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“生活体验 ➔ 原理操作 ➔ 核心动手仿真沙箱（基础+⭐进阶） ➔ 调试或迁移应用”。注意：screens 每一屏的 kind 属性必须严格二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏），严禁自造其他词汇。
+【3~8年级学段认知与交互设计要求】：
+1. 严格对齐学段学情（防超纲拔高）：
+   - 3~4年级：大卡片、具象道具（发光灯泡、分类箱、温度计），题干 ≤ ${limits.quiz_stem} 字儿童口语，禁止出现代码与底层计算机原理；
+   - 5~6年级：仪表盘控制台、流程图插槽、分支条件切换、阈值联动执行器，题干 ≤ ${limits.quiz_stem} 字，考查生活规则与因果，不考死记编程语法；
+   - 7~8年级：网络拓扑连线、数据包传输、折线图、密码转盘、2D散点画布，题干 ≤ ${limits.quiz_stem} 字，直观探究机理，不搞大学公式推导。
+   - 所有年级反馈文案讲通俗生活因果，禁止使用生硬的成人学术黑话。
+2. 界面与交互细节：
+   - 运用原生 CSS 与 SVG 绘制直观道具，按钮与滑块提供清晰的状态反馈。
+3. 探究主线：设计 ${Math.max(2, limits.screens - 2)}—${limits.screens - 1} 个递进探究屏（加上自动生成的终极评价屏共 ${Math.max(3, limits.screens - 1)}—${limits.screens} 屏），覆盖“生活体验 ➔ 原理操作 ➔ 核心动手仿真（基础+⭐进阶） ➔ 调试或迁移应用”。screens 每一屏的 kind 属性必须二选一："hands-on"（动手实操屏）或 "explore"（认知探究屏）。
 
 年级：${grade}；课题：${lessonTitle}
 实际 spec-yaml 上限（不是必须凑满）：${JSON.stringify(limits)}
@@ -106,12 +105,7 @@ export function validateV2Payload(payload, gradeNum) {
     requireThat(nonempty(screen.sourceTask), '缺少文稿同源任务名');
     requireThat(nonempty(screen.title) && nonempty(screen.prose) && words(screen.prose) <= limits.prose_per_screen, '任务标题或导语不合规');
     if (typeof screen.kind === 'string') {
-      const k = screen.kind.trim().toLowerCase().replace(/_/g, '-');
-      if (/^hands[_-]?on$|^handson$|^practice$|^sandbox$|^实操$|^动手$|^操作$|^调试$|^代码/i.test(k) || k.includes('hand')) {
-        screen.kind = 'hands-on';
-      } else if (/^explore$|^exploration$|^match$|^pairing$|^inspect$|^dissect$|^concept$|^classify$|^categorize$|^adjust$|^slider$|^view$|^demo$|^探究$|^配对$|^解剖$|^观察$|^分类/i.test(k) || k.includes('explore') || k.includes('match')) {
-        screen.kind = 'explore';
-      }
+      screen.kind = screen.kind.trim().toLowerCase().replace(/_/g, '-');
     }
     requireThat(['explore', 'hands-on'].includes(screen.kind), '任务类型非法');
     if (screen.kind === 'hands-on') handsOn++;
@@ -132,80 +126,23 @@ export function validateV2Payload(payload, gradeNum) {
     requireThat(nonempty(q.q) && words(q.q) <= limits.quiz_stem && Array.isArray(q.options) && q.options.length >= 2 && q.options.every(nonempty)
       && Number.isInteger(q.correct) && q.correct >= 0 && q.correct < q.options.length && nonempty(q.why), '测验字段、题干或答案索引不合规');
   });
-  if (Array.isArray(payload.medals)) {
-    const events = ['basic', 'star', 'transfer', 'reflection'];
-    requireThat(events.every(event => payload.medals.filter(m => m.event === event && nonempty(m.label)).length === 1), '徽章格式非法');
-  }
   return payload;
 }
 
 export function validateSourceTasks(payload, documents) {
   const docs = Object.values(documents);
   requireThat(docs.length === 3 && docs.every(nonempty), '需要三件完整文稿');
-  const allText = docs.join('\n');
-  const allKeywords = [];
   for (const screen of payload.screens) {
     const raw = String(screen.sourceTask || '').trim();
     const clean = raw.replace(/^[一二三四五六七八0-9]+[、.：:]\s*|关卡[0-9一二三四]?[：:]\s*|任务[0-9一二三四]?[：:]\s*/g, '').trim();
-    const rawWords = clean.split(/[·/、：:\s\-_——"“”'‘’（）()]+/g).map(s => s.trim()).filter(Boolean);
-    const keywords = new Set([raw, clean, ...rawWords]);
-    for (const w of rawWords) {
-      if (w.length >= 4) {
-        for (let i = 0; i <= w.length - 2; i += 2) {
-          keywords.add(w.slice(i, i + 2));
-        }
-      }
-    }
-    const cands = [...keywords].filter(k => k.length >= 2);
-    allKeywords.push(...cands);
-    const inLesson = cands.some(k => allText.includes(k) || (k.includes('AI') && allText.includes(k.replace(/AI/g, '人工智能'))));
-    requireThat(inLesson, '探究任务名未在教案、导学单、课件中共同出现：' + screen.sourceTask);
+    const parts = clean.split(/[·/、：:\s\-_——"“”'‘’（）()]+/g).map(s => s.trim()).filter(s => s.length >= 2);
+    const cands = [...new Set([raw, clean, ...parts])].filter(k => k.length >= 2);
+    const inEveryDoc = cands.length > 0 && docs.every(doc => cands.some(k => doc.includes(k)));
+    requireThat(inEveryDoc, '探究任务名未在教案、导学单、课件中共同出现：' + screen.sourceTask);
   }
-  for (const doc of docs) {
-    const hasAny = allKeywords.some(k => doc.includes(k) || (k.includes('AI') && doc.includes(k.replace(/AI/g, '人工智能'))));
-    requireThat(hasAny, '探究任务名未在教案、导学单、课件中共同出现：某份文稿未包含任何同源任务');
-  }
-}
-
-function trimToWords(text, maxWords) {
-  if (!text || maxWords <= 0) return '';
-  const chars = [...text];
-  let res = '';
-  for (const ch of chars) {
-    const next = res + ch;
-    if (words(next) > maxWords) break;
-    res = next;
-  }
-  return res.replace(/[，、；：,\s]+$/, '') + '。';
-}
-
-export function autoCompactV2Payload(payload, gradeNum) {
-  const limits = readHtmlLimits(gradeNum);
-  const max = limits.prose_per_screen;
-  if (!Array.isArray(payload?.screens)) return payload;
-  payload.screens.forEach(s => {
-    const combined = () => [s.prose, '目标：' + s.goal, '基础：' + s.basicCriterion, '挑战：' + s.starCriterion].join(' ');
-    if (words(combined()) <= max) return;
-    const budget = Math.max(10, max - 6);
-    const targetProse = Math.floor(budget * 0.36);
-    const targetGoal = Math.floor(budget * 0.20);
-    const targetBasic = Math.floor(budget * 0.22);
-    const targetStar = budget - targetProse - targetGoal - targetBasic;
-    s.prose = trimToWords(s.prose, targetProse);
-    s.goal = trimToWords(s.goal, targetGoal);
-    s.basicCriterion = trimToWords(s.basicCriterion, targetBasic);
-    s.starCriterion = trimToWords(s.starCriterion, targetStar);
-    while (words(combined()) > max) {
-      if (s.starCriterion.length > 5) s.starCriterion = trimToWords(s.starCriterion.slice(0, -2), words(s.starCriterion) - 1);
-      else if (s.prose.length > 5) s.prose = trimToWords(s.prose.slice(0, -2), words(s.prose) - 1);
-      else break;
-    }
-  });
-  return payload;
 }
 
 export function assembleClassworkV2(payload, { gradeNum, grade, lessonTitle }) {
-  autoCompactV2Payload(payload, gradeNum);
   validateV2Payload(payload, gradeNum);
   const h = escapeHtml;
   const panels = payload.screens.map((s, i) => `<section class="panel${i === 0 ? ' active' : ''}" data-step="${i}"${s.kind === 'hands-on' ? ' data-panel-type="hands-on"' : ''}>
@@ -216,7 +153,7 @@ export function assembleClassworkV2(payload, { gradeNum, grade, lessonTitle }) {
 <div class="task-tools"><button data-hint="${s.id}">需要一点提示</button><button data-reset="${s.id}">重置实验</button></div><p id="hint-${s.id}" class="hint" hidden></p>
 </section>`).join('\n');
   const labels = [...payload.screens.map(s => s.title), '评价与学习记录'];
-  const config = { title: lessonTitle, grade, screens: payload.screens.map(({ html, css, script, ...s }) => s), medals: payload.medals };
+  const config = { title: lessonTitle, grade, screens: payload.screens.map(({ html, css, script, ...s }) => s) };
   const mounts = payload.screens.map(s => `${safeJson(s.id)}: function(root, api) { "use strict";\n${s.script}\n}`).join(',\n');
   return `<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="lesson-grade" content="${gradeNum}"><meta name="lesson-engine" content="v2">
@@ -236,7 +173,6 @@ export function assembleClassworkV2(payload, { gradeNum, grade, lessonTitle }) {
 const stepLabels = ${safeJson(labels)};
 const quiz = ${safeJson(payload.quiz)};
 const lessonConfig = ${safeJson(config)};
-const medalDefs = ${safeJson(payload.medals)};
 const simulationMounts = {${mounts}};
 ${read('resources/classwork/v2/engine.js')}
 </script></body></html>`;
