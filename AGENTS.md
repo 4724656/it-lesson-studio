@@ -150,3 +150,12 @@ uv run python scripts/verify_layout.py examples/三年级上/第02课_了解智�
 # 3. 运行完整编译导出
 node scripts/export-lesson.mjs examples/三年级上/第02课_了解智能工具/
 ```
+
+## HTML V2 本分支工作约定（2026-10-21）
+
+- 开发只在 `feature/gpt-v2`；不修改/合并 main，不部署。
+- 用户已要求关闭 PR #2，先修改妥当等待审查；未经明确指示，不新建或重开 PR。
+- P0/P1 记录见 `docs/html-v2/p0-p1.md`；P2/P3 实验实现及限制见 `docs/html-v2/review/README.md`。
+- 上传的“模块四”是主 Skill 的一部分，不是完整独立 Skill；主入口引用 `modules/classwork.md`。
+- 默认 `AI_HTML_GENERATOR=v1` 使用冻结的 V1 提示词；v2 才启用教学差异 JSON 与公共引擎，不得用旧修正器删减或补标记。
+- 本阶段未实现 P4 自适应调度；不要把固定响应回归或工程样例当成真实模型生成质量证明。

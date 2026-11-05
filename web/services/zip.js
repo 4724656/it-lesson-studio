@@ -28,6 +28,9 @@ export function createZipArchive(sourceDir, zipFilePath) {
 
     const fourDeliverables = [planFile, worksheetFile, pptxFile, htmlFile].filter(Boolean);
 
+    // Optional teacher-only instructions accompany V2; student HTML remains standalone.
+    if (files.includes('HTML_V2_教师说明.txt')) fourDeliverables.push('HTML_V2_教师说明.txt');
+
     for (const file of fourDeliverables) {
       archive.file(path.join(sourceDir, file), { name: file });
     }

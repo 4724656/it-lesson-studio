@@ -91,7 +91,7 @@ test('Phase 2 仿真蓝图匹配器: 精准识别 12 册典型课型并尊重教
   assert.ok(bpKnn.archetypeName.includes('KNN'), '应命中 2D KNN 动态分类面原型');
 
   const limits3 = getGradeLimits(3);
-  assert.deepEqual(limits3, { screens: 4, handsOn: 1, quiz: 2, prosePerScreen: 60, quizStem: 30 });
+  assert.deepEqual(limits3, { screens: 5, handsOn: 2, quiz: 2, prosePerScreen: 60, quizStem: 30 });
 });
 
 test('Phase 2 HTML 合规微调器: 自动修正超标字数/多余hands-on/alert弹窗并通过 check_lesson.py 0 FAIL 0 WARN', async () => {

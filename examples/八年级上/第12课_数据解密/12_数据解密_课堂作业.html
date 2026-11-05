@@ -4,705 +4,388 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="lesson-grade" content="8">
-<title>第12课 数据解密 - 随堂互动作业</title>
+<meta name="lesson-book" content="浙教版2026版八年级上册·第12课 数据解密">
+<title>第12课 数据解密｜课堂作业</title>
 <style>
-:root {
-  --primary: #7c3aed;
-  --primary-light: #f5f3ff;
-  --primary-hover: #6d28d9;
-  --success: #10b981;
-  --success-light: #ecfdf5;
-  --danger: #ef4444;
-  --danger-light: #fef2f2;
-  --warning: #f59e0b;
-  --bg: #f8fafc;
-  --card-bg: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --radius: 12px;
-  --shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.06);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background-color: var(--bg);
-  color: var(--text-main);
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-header {
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 24px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-.header-wrap {
-  max-width: 900px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.title-area h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-.title-area p { font-size: 0.85rem; color: var(--text-muted); }
-.student-bar { display: flex; gap: 10px; align-items: center; }
-.student-bar input {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  outline: none;
-  width: 110px;
-}
-.student-bar input:focus { border-color: var(--primary); }
-.step-nav {
-  max-width: 900px;
-  margin: 16px auto 0;
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-.step-item {
-  flex: 1;
-  text-align: center;
-  padding: 8px 4px;
-  background: #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.step-item.active { background: var(--primary); color: #fff; }
-.step-item.completed { background: #ede9fe; color: var(--primary); }
-main { flex: 1; max-width: 900px; width: 100%; margin: 20px auto; padding: 0 16px; }
-.panel {
-  display: none;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 24px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-  animation: fadeIn 0.3s ease;
-}
-.panel.active { display: block; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.panel-tag {
-  display: inline-block;
-  padding: 4px 10px;
-  background: var(--primary-light);
-  color: var(--primary);
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.panel-title { font-size: 1.25rem; margin-bottom: 12px; color: var(--text-main); }
-.story-box {
-  background: #f1f5f9;
-  border-left: 4px solid var(--primary);
-  padding: 12px 16px;
-  border-radius: 0 8px 8px 0;
-  font-size: 0.95rem;
-  margin-bottom: 18px;
-}
-.console-box {
-  background: #0f172a;
-  color: #38bdf8;
-  border-radius: 8px;
-  padding: 16px;
-  font-family: Consolas, Monaco, "Courier New", monospace;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  min-height: 130px;
-  margin-bottom: 16px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-  overflow-x: auto;
-}
-.console-header {
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid #334155;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-  color: #94a3b8;
-  font-size: 0.8rem;
-}
-.console-content { white-space: pre-wrap; word-break: break-all; }
-.text-green { color: #4ade80; }
-.text-red { color: #f87171; }
-.text-yellow { color: #fde047; }
-.bug-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-.bug-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.bug-title { font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; }
-.bug-code {
-  background: #ffffff;
-  border: 1px dashed var(--border);
-  padding: 6px 10px;
-  font-family: monospace;
-  border-radius: 4px;
-  font-size: 0.88rem;
-}
-.bug-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.opt-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  background: #ffffff;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.opt-btn:hover { border-color: var(--primary); background: var(--primary-light); }
-.opt-btn.correct { background: var(--success-light); border-color: var(--success); color: #065f46; font-weight: bold; }
-.opt-btn.wrong { background: var(--danger-light); border-color: var(--danger); color: #991b1b; }
-.btn-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
-button.action-btn {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-button.action-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
-button.secondary-btn {
-  background: #e2e8f0;
-  color: var(--text-main);
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-.quiz-item { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px dashed var(--border); }
-.quiz-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
-.quiz-opts { display: flex; flex-direction: column; gap: 6px; }
-.quiz-opt {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-.quiz-opt:hover { background: #f8fafc; }
-.quiz-opt.selected { border-color: var(--primary); background: var(--primary-light); }
-.quiz-opt.is-correct { background: var(--success-light); border-color: var(--success); }
-.quiz-opt.is-wrong { background: var(--danger-light); border-color: var(--danger); }
-.certificate {
-  display: none;
-  border: 4px double #d97706;
-  background: #fffbeb;
-  border-radius: 12px;
-  padding: 24px;
-  text-align: center;
-  margin-top: 20px;
-  box-shadow: 0 8px 16px rgba(217, 119, 6, 0.15);
-}
-.cert-title { color: #b45309; font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
-.badge-wall { display: flex; justify-content: center; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
-.badge-chip {
-  padding: 8px 14px;
-  background: #ffffff;
-  border: 1px solid #fde68a;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #92400e;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-.sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.sim-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  background: #f8fafc;
-}
-.sim-card h3 { font-size: 1rem; margin-bottom: 10px; }
-.sim-card label { font-size: 0.85rem; color: var(--text-muted); display: block; margin: 8px 0 4px; }
-.sim-card input, .sim-card select {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.95rem;
-}
-.sim-out {
-  font-family: monospace;
-  font-size: 1.1rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  color: var(--primary);
-  background: #fff;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  padding: 10px;
-  margin-top: 10px;
-  min-height: 48px;
-  word-break: break-all;
-}
-.trace-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 0.9rem; }
-.trace-table th, .trace-table td {
-  border: 1px solid var(--border);
-  padding: 8px 10px;
-  text-align: center;
-}
-.trace-table th { background: var(--primary-light); color: var(--primary); }
-.trace-table td.filled { font-family: monospace; font-weight: bold; color: var(--primary); }
-@media (max-width: 640px) { .sim-grid { grid-template-columns: 1fr; } }
+:root{--bg-page:#F4F7F4;--card-bg:#fff;--primary:#1E5128;--primary-light:#EBF4EC;--accent:#4E9F3D;--gold:#F39C12;--blue:#2980B9;--text:#2C3E50;--sub:#576574;--danger:#E74C3C;--border:#DCDDE1;--radius:16px;--shadow:0 8px 24px rgba(30,81,40,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg-page);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;font-size:16px;padding-bottom:40px}
+button,input{font:inherit}
+header.top-bar{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#1E5128,#2D6A4F);color:#fff;padding:13px 18px;box-shadow:0 4px 16px #0002}
+.top-inner{max-width:1000px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}.brand-badge{background:var(--gold);padding:2px 8px;border-radius:6px;font-size:12px;font-weight:800}.brand h1{font-size:19px}
+.stepper{display:flex;gap:5px;flex-wrap:wrap}.step-node{display:flex;align-items:center;gap:5px;border:0;color:#fff;background:#ffffff17;border-radius:20px;padding:5px 9px;cursor:pointer;opacity:.7}.step-node.active{opacity:1;background:#ffffff38}.step-num{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:#204B35;font-size:12px;font-weight:bold}.step-node.active .step-num{background:var(--gold)}.step-node.done .step-num{background:var(--accent)}.step-title{font-size:12px;font-weight:700}
+main{max-width:900px;margin:24px auto;padding:0 16px}.panel{display:none;background:var(--card-bg);border-radius:var(--radius);padding:26px 30px;box-shadow:var(--shadow);border:1px solid #dcdde199}.panel.active{display:block}.panel-tag{display:inline-block;color:var(--accent);background:var(--primary-light);font-size:13px;font-weight:800;padding:3px 10px;border-radius:6px;margin-bottom:7px}h2.panel-title{font-size:24px;color:var(--primary);margin-bottom:12px}.story-box,.tip-box{padding:13px 16px;border-radius:11px;margin:14px 0}.story-box{background:#F4F8FA;border-left:4px solid var(--blue)}.tip-box{background:#FFF9E6;border:1px solid #FDE3A7;color:#785900;font-size:14px}.workspace{background:#233344;color:#fff;padding:20px;border-radius:14px;margin:16px 0}.workspace h3{margin-bottom:8px}.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer}.btn-green{background:var(--accent);color:#fff}.btn-gold{background:var(--gold);color:#fff}.btn-gray{background:#e2e8f0;color:#334155}.btn:disabled{opacity:.5;cursor:not-allowed}input[type=range]{accent-color:var(--gold);min-width:180px}.mono{font-family:Consolas,Monaco,"Courier New",monospace}.wheel{display:grid;grid-template-columns:repeat(13,minmax(28px,1fr));gap:5px;margin:14px 0}.wheel span{padding:5px 2px;text-align:center;border-radius:6px;background:#34495e;font-weight:700}.wheel .focus{background:var(--gold);color:#1d2935}.wheel-caption{font-size:13px;color:#dce6ed}.result{font-size:23px;font-weight:900;letter-spacing:3px;color:#f7d774;overflow-wrap:anywhere}.task-box{background:#f7faf8;color:var(--text);border-radius:10px;padding:13px;margin-top:12px}.task-box p{margin:5px 0}.codebox{background:#0f172a;color:#c5e6ff;padding:14px;border-radius:10px;overflow:auto;font-size:14px}.code-line{padding:3px 8px;border-radius:5px;white-space:pre-wrap}.code-line.hl{background:#f39c124a;color:white;font-weight:bold}.var-grid{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.var-card{background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:8px 16px;text-align:center;min-width:90px;color:var(--text)}.var-name{font-size:12px;color:var(--sub);font-weight:bold}.var-val{font-size:20px;font-weight:900;color:var(--blue);font-family:Consolas,monospace}.status{min-height:26px;font-weight:700;color:var(--primary);margin:8px 0}.challenge-card{background:#fffdf5;border:2px dashed var(--gold);border-radius:12px;padding:14px 16px;margin:15px 0;color:var(--text)}.challenge-card h4{color:#b85c00;margin-bottom:5px}.choice-list{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.choice{border:2px solid var(--border);background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer}.choice.selected{border-color:var(--blue);background:#edf4f9}.choice.good{border-color:var(--accent);background:#edf7ec}.choice.bad{border-color:var(--danger);background:#fdeDEC}.choice.locked{pointer-events:none}.option-list{display:grid;gap:8px;margin:10px 0 18px}.option-item{border:2px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;background:#fafafa}.option-item.picked{border-color:var(--blue);background:#edf4f9}.option-item.correct{border-color:var(--accent);background:#edf7ec;color:var(--primary);font-weight:800}.option-item.wrong{border-color:var(--danger);background:#fdeDEC;color:var(--danger)}.option-list.locked .option-item{pointer-events:none}.score-banner{display:none;background:#edf7ec;border:2px solid var(--accent);border-radius:12px;padding:14px;text-align:center;margin:14px 0}.score-banner.show{display:block}.score-val{font-size:32px;font-weight:900;color:var(--primary)}.check-item{display:flex;gap:9px;align-items:center;padding:6px 4px}.check-item input{width:18px;height:18px;accent-color:var(--accent)}.export-row{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.export-row label{display:flex;gap:6px;align-items:center}.export-row input{padding:8px;border:1px solid var(--border);border-radius:7px;width:150px}.footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding-top:16px;border-top:2px dashed #eceff1}.small{font-size:13px;color:var(--sub)}.modern-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.modern-card{border:1px solid var(--border);border-radius:12px;padding:14px;background:#fafcfb}.modern-card strong{color:var(--primary);font-size:18px}.progress{height:8px;background:#ffffff35;border-radius:9px;overflow:hidden;min-width:100px}.progress span{display:block;height:100%;background:#f3c64e;width:0;transition:width .2s}
+@media(max-width:650px){.panel{padding:20px 16px}.step-title{display:none}.modern-grid{grid-template-columns:1fr}.wheel{grid-template-columns:repeat(7,1fr)}.top-inner{align-items:flex-start}}
 </style>
 </head>
 <body>
-
-<header>
-  <div class="header-wrap">
-    <div class="title-area">
-      <h1>🔐 第12课 数据解密 · 课堂作业</h1>
-      <p>浙教版2026信息科技八年级上册 · 凯撒密码破译实战</p>
-    </div>
-    <div class="student-bar">
-      <input type="text" id="stuClass" placeholder="班级(如801)">
-      <input type="text" id="stuName" placeholder="学生姓名">
-    </div>
-  </div>
-  <div class="step-nav" id="stepNav">
-    <div class="step-item active" onclick="goStep(0)">1. 算法分析</div>
-    <div class="step-item" onclick="goStep(1)">2. 密钥探秘</div>
-    <div class="step-item" onclick="goStep(2)">3. 变量追踪</div>
-    <div class="step-item" onclick="goStep(3)">4. 逻辑排雷</div>
-    <div class="step-item" onclick="goStep(4)">5. 随堂测验</div>
-    <div class="step-item" onclick="goStep(5)">6. 学习凭单</div>
+<header class="top-bar">
+  <div class="top-inner">
+    <div class="brand"><span class="brand-badge">八年级</span><h1>第12课 数据解密</h1></div>
+    <div class="stepper" id="stepper"></div>
   </div>
 </header>
-
 <main>
-  <!-- 第1屏：算法分析 -->
-  <section class="panel active" data-step="0">
-    <div class="panel-tag">🔍 第一步 · 算法分析</div>
-    <h2 class="panel-title">看懂数据解密的四个步骤</h2>
-    <div class="story-box" data-prose>
-      <b>任务情境：</b>间谍发出密令 <code>KHOOR</code>，每个字母都按字母表往后挪了 3 位。解密是加密的逆过程：拿密文、取密钥、逆运算、还原文。先看懂这四步，再去动手破译。
-    </div>
+<section class="panel active" data-step="0">
+  <span class="panel-tag">情报破冰 · 约4分钟</span>
+  <h2 class="panel-title">一封被移位的密信</h2>
+  <p data-prose>收到一条神秘密文：KHOOR。它可能藏着一句简单问候。准备好用字母规律找回原文了吗？</p>
+  <div class="story-box"><strong>情报卡</strong><p class="mono" style="font-size:32px;letter-spacing:7px">KHOOR</p><p>线索：加密时，字母向后移动了相同格数。</p></div>
+  <div class="task-box"><strong>算力破冰：手动试算 vs 一键运行</strong><p>先在纸上试着把 K、H、O、O、R 各向前移 3 格，再到“任务一：密钥探秘”调节转盘核对。</p><p>想一想：如果密钥未知，逐个尝试会不会很快？</p></div>
+  <div class="tip-box">本课密信仅用于学习算法，不要把真实账号、口令或个人隐私放入课堂示例。</div>
+  <div class="footer-nav"><span></span><button class="btn btn-green next">开始探究 →</button></div>
+</section>
 
-    <div class="sim-grid">
-      <div class="sim-card">
-        <h3>🔒 加密（往后加）</h3>
-        <p style="font-size:0.9rem;">明文字母序号 <b>+ 密钥</b></p>
-        <p style="font-family:monospace; margin-top:6px;">HELLO，密钥 3 → <b>KHOOR</b></p>
-      </div>
-      <div class="sim-card">
-        <h3>🔓 解密（往前减）</h3>
-        <p style="font-size:0.9rem;">密文字母序号 <b>− 密钥</b></p>
-        <p style="font-family:monospace; margin-top:6px;">KHOOR，密钥 3 → <b>HELLO</b></p>
-      </div>
-    </div>
+<section class="panel" data-step="1" data-panel-type="hands-on">
+  <span class="panel-tag">任务一：密钥探秘 · 动手实操</span>
+  <h2 class="panel-title">拨动凯撒密码解密轮盘</h2>
+  <p data-prose>密文中的每个字母都向前移动密钥指定的格数。拖动密钥滑块，观察字母映射与明文如何同步变化。</p>
+  <div class="workspace">
+    <h3>解密工作台</h3>
+    <div class="controls"><label for="keyRange">密钥 Key：<strong id="keyValue">3</strong></label><input id="keyRange" type="range" min="1" max="25" value="3"><span class="small" style="color:#dce6ed">范围 1～25</span></div>
+    <div class="wheel-caption">密文字母</div><div class="wheel" id="cipherWheel"></div>
+    <div class="wheel-caption">向前移位后的明文字母</div><div class="wheel" id="plainWheel"></div>
+    <p>密文：<span class="mono" id="cipherText">KHOOR</span></p>
+    <p>实时解密结果：<span class="result mono" id="plainResult"></span></p>
+    <div class="status" id="wheelStatus" aria-live="polite"></div>
+  </div>
+  <div class="task-box"><strong>基础通关任务</strong><p>保持密文 KHOOR，找到能解出有意义问候语的密钥，并记录明文与密钥。</p><p>密钥从 3 改成 2 时，解密结果会：[ ] 不变　[ ] 改变</p><div class="choice-list" id="wheelChoices"><button class="choice" data-answer="wrong">不变</button><button class="choice" data-answer="right">改变</button></div><div class="status" id="wheelChoiceStatus" aria-live="polite"></div></div>
+  <div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>试试密文 A、密钥 3。字母表走到 A 前面时，转盘如何回到末尾？用一个字母映射验证你的想法。</p></div>
+  <div class="tip-box">避坑提示：字母表是循环的；密钥是移动格数，不是明文字符本身。</div>
+  <div class="footer-nav"><button class="btn btn-gray prev">← 上一屏</button><button class="btn btn-green next">完成任务一 →</button></div>
+</section>
 
-    <div class="story-box" style="border-left-color: var(--warning); background:#fffbeb;">
-      <b>⚠️ 越界口诀：</b>字母表到头就绕回开头（Z 用密钥 3 加密 → C）。程序里用"对 26 取余"实现。
-    </div>
+<section class="panel" data-step="2" data-panel-type="hands-on">
+  <span class="panel-tag">任务二：变量追踪 · 动手实操</span>
+  <h2 class="panel-title">人肉 CPU：逐步执行解密函数</h2>
+  <p data-prose>把程序当作一台每次只执行一行的机器。跟随代码高亮，观察字符编码、减去密钥和取模后的变量变化。</p>
+  <div class="task-box"><strong>追踪样例</strong><p>密文字符 <code>B</code>，密钥 <code>3</code>。字母 A 的序号按 0 计算。</p></div>
+  <div class="codebox mono" id="traceCode">
+    <div class="code-line" data-line="0">1  c = ord('B') - ord('A')       # 字母转为 0～25</div>
+    <div class="code-line" data-line="1">2  shifted = (c - key) % 26       # 反向移位并回到范围</div>
+    <div class="code-line" data-line="2">3  plain = chr(shifted + ord('A')) # 数字转回字母</div>
+    <div class="code-line" data-line="3">4  输出 plain</div>
+  </div>
+  <div class="var-grid">
+    <div class="var-card"><div class="var-name">字符 c</div><div class="var-val" id="vC">—</div></div>
+    <div class="var-card"><div class="var-name">密钥 key</div><div class="var-val" id="vKey">3</div></div>
+    <div class="var-card"><div class="var-name">shifted</div><div class="var-val" id="vShift">—</div></div>
+    <div class="var-card"><div class="var-name">plain</div><div class="var-val" id="vPlain">—</div></div>
+    <div class="var-card"><div class="var-name">当前输出</div><div class="var-val" id="vOut">—</div></div>
+  </div>
+  <div class="controls"><button class="btn btn-gray" id="tracePrev">← 上一步</button><button class="btn btn-green" id="traceNext">下一步 →</button><button class="btn btn-gold" id="tracePlay">▶ 连播</button><button class="btn btn-gray" id="traceReset">重置追踪</button></div>
+  <div class="status" id="traceStatus" aria-live="polite">点“下一步”，观察变量逐行变化。</div>
+  <div class="task-box"><strong>基础通关任务</strong><p>完成单步追踪后记录：<code>ord('B')-ord('A') = 1</code>；减去 3 得到 -2；<code>(-2)%26 = 24</code>，对应字母 Y。</p><p>为什么不是越界字符？程序把结果重新映射到 0～25。</p></div>
+  <div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>把密钥改为 1，追踪字符 A。预测并验证结果；比较普通减法与带 <code>% 26</code> 的表达式。</p><div class="controls"><label>追踪字符 <select id="traceChar"><option>A</option><option>B</option><option>K</option></select></label><label>密钥 <select id="traceKey"><option>1</option><option selected>3</option><option>5</option></select></label><button class="btn btn-gray" id="traceApply">应用并重置</button></div></div>
+  <div class="footer-nav"><button class="btn btn-gray prev">← 上一屏</button><button class="btn btn-green next">完成任务二 →</button></div>
+</section>
 
-    <div class="btn-row">
-      <button class="action-btn" onclick="nextStep(1)">进入密钥探秘 ➔</button>
-    </div>
-  </section>
+<section class="panel" data-step="3" data-panel-type="hands-on">
+  <span class="panel-tag">任务三：逻辑排雷 · 动手实操</span>
+  <h2 class="panel-title">修复越界 Bug</h2>
+  <p data-prose>检查解密表达式：当字符序号减去密钥得到负数时，必须让结果回到 0～25。选择正确运算符并用边界样例验证。</p>
+  <div class="task-box"><strong>待修复代码</strong><p class="mono" style="font-size:20px">(c - key) ____ 26</p><p>请选择能把结果映射回字母表范围的运算符：</p><div class="choice-list" id="bugChoices"><button class="choice" data-answer="wrong">+</button><button class="choice" data-answer="right">%</button><button class="choice" data-answer="wrong">*</button></div><div class="status" id="bugStatus" aria-live="polite">选择后会检查边界样例，不限次数。</div></div>
+  <div class="workspace">
+    <h3>边界测试台</h3>
+    <div class="controls"><label>字符序号 c <select id="bugC"><option value="0">0（A）</option><option value="1">1（B）</option><option value="25">25（Z）</option></select></label><label>密钥 key <select id="bugKey"><option value="1">1</option><option value="3" selected>3</option><option value="25">25</option></select></label><button class="btn btn-gold" id="testBug">运行边界测试</button></div>
+    <p>普通减法结果：<strong id="rawValue">—</strong>　取模结果：<strong id="modValue">—</strong>　对应字母：<strong id="modLetter">—</strong></p>
+    <div class="status" id="bugTestStatus" aria-live="polite"></div>
+  </div>
+  <div class="task-box"><strong>基础通关任务</strong><p>选出 <code>%</code>，运行 A、密钥 3 的边界测试，确认结果回到字母表范围。</p></div>
+  <div class="challenge-card"><h4>⭐ 进阶挑战星</h4><p>用 A 与密钥 25 测试极端边界。再试着说明：为什么密钥 0 或 26 不属于本课有效密钥？</p></div>
+  <div class="tip-box">排错顺序：检查括号、半角符号、变量名和取模；不要只用字母表中间的字符测试。</div>
+  <div class="footer-nav"><button class="btn btn-gray prev">← 上一屏</button><button class="btn btn-green next">完成任务三 →</button></div>
+</section>
 
-  <!-- 第2屏：密钥探秘（动手） -->
-  <section class="panel" data-step="1" data-panel-type="hands-on">
-    <div class="panel-tag">🔑 任务一 · 密钥探秘</div>
-    <h2 class="panel-title">亲手操作加解密仿真器</h2>
-    <div class="story-box" data-prose>
-      <b>动手任务：</b>在仿真器输入明文与密钥，点击加密生成密文；再用同一密钥逆向解密。验证口诀——加密往后加，解密往前减。
-    </div>
+<section class="panel" data-step="4">
+  <span class="panel-tag">迁移探究 · 约5分钟</span>
+  <h2 class="panel-title">暴力枚举：让计算机试出密钥</h2>
+  <p data-prose>凯撒密码只有 25 个有效密钥。计算机可以逐一尝试，把每个候选明文列出，再由人判断哪条有意义。</p>
+  <div class="task-box"><strong>密文 KHOOR 的 25 种候选解密结果</strong><p class="small">点击按钮启动枚举，观察机器重复执行同一规则的速度与结果。</p><div class="controls"><button class="btn btn-green" id="bruteRun">▶ 一键枚举 25 种密钥</button><span class="small" id="bruteCount">尚未开始</span></div><div id="bruteResults" class="modern-grid"></div></div>
+  <div class="tip-box">思考：暴力枚举不需要“猜中”密钥，但仍需结合语言和情境识别合理明文。简单移位密码不适合保护真实信息。</div>
+  <div class="task-box"><strong>巩固判断</strong><p>凯撒密码适合保护真实账号密码吗？</p><div class="choice-list" id="securityChoices"><button class="choice" data-answer="wrong">适合，字母移动后无法破解</button><button class="choice" data-answer="right">不适合，移位规律简单，容易枚举</button><button class="choice" data-answer="wrong">适合，只要不告诉同学就绝对安全</button></div><div class="status" id="securityStatus" aria-live="polite"></div></div>
+  <div class="footer-nav"><button class="btn btn-gray prev">← 上一屏</button><button class="btn btn-green next">了解现代密码 →</button></div>
+</section>
 
-    <div class="sim-grid">
-      <div class="sim-card">
-        <h3>🔒 加密仿真</h3>
-        <label>明文（英文字母）</label>
-        <input type="text" id="encPlain" value="HELLO" maxlength="24">
-        <label>密钥（1~25）</label>
-        <input type="number" id="encKey" value="3" min="1" max="25">
-        <div style="margin-top:10px;"><button class="action-btn" onclick="doEncrypt()">⚙️ 加密</button></div>
-        <div class="sim-out" id="encOut">—</div>
-      </div>
-      <div class="sim-card">
-        <h3>🔓 解密仿真</h3>
-        <label>密文（英文字母）</label>
-        <input type="text" id="decCipher" value="KHOOR" maxlength="24">
-        <label>密钥（1~25）</label>
-        <input type="number" id="decKey" value="3" min="1" max="25">
-        <div style="margin-top:10px;"><button class="action-btn" onclick="doDecrypt()">⚙️ 解密</button></div>
-        <div class="sim-out" id="decOut">—</div>
-      </div>
-    </div>
+<section class="panel" data-step="5">
+  <span class="panel-tag">安全责任 · 约4分钟</span>
+  <h2 class="panel-title">从课堂移位走向现代密码</h2>
+  <p data-prose>凯撒密码是便于理解的古典密码示例，不具备保护真实敏感信息的能力。现代密码技术服务于身份认证、数据完整性与信息保护。</p>
+  <div class="modern-grid">
+    <div class="modern-card"><strong>SM2</strong><p>我国商用密码算法中的公钥密码算法，可用于数字签名、密钥协商等场景。</p></div>
+    <div class="modern-card"><strong>SM3</strong><p>我国商用密码杂凑算法，可用于生成数据摘要、辅助完整性校验。</p></div>
+    <div class="modern-card"><strong>SM4</strong><p>我国商用密码分组密码算法，用于数据加密等应用场景。</p></div>
+  </div>
+  <div class="tip-box"><strong>安全提醒：</strong>算法名称只是认识密码技术的入口。真实系统还需要安全实现、密钥管理和规范使用；不要把课堂凯撒密码用于账号、隐私或重要文件保护。</div>
+  <div class="task-box"><strong>快速自检</strong><p>选择正确说法：</p><div class="choice-list" id="modernChoices"><button class="choice" data-answer="wrong">凯撒密码足够安全，可保护真实口令</button><button class="choice" data-answer="right">SM2、SM3、SM4属于我国商用密码算法体系</button></div><div class="status" id="modernStatus" aria-live="polite"></div></div>
+  <div class="footer-nav"><button class="btn btn-gray prev">← 上一屏</button><button class="btn btn-green next">进入终极关卡 →</button></div>
+</section>
 
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(0)">⬅️ 上一步</button>
-      <button class="action-btn" onclick="nextStep(2)">进入变量追踪 ➔</button>
-    </div>
-  </section>
-
-  <!-- 第3屏：变量追踪（动手） -->
-  <section class="panel" data-step="2" data-panel-type="hands-on">
-    <div class="panel-tag">🔍 任务二 · 变量追踪</div>
-    <h2 class="panel-title">单步盯住 key / ch / plain 的变化</h2>
-    <div class="story-box" data-prose>
-      <b>动手任务：</b>解密程序运行时，三个变量每轮都在变。点击"单步执行"，观察每轮循环后变量的值，回答追踪提问。
-    </div>
-
-    <div class="console-box">
-      <div class="console-header"><span>解密程序单步追踪（密文 KHOOR，密钥 key=3）</span><span id="traceStep">轮次: 0 / 5</span></div>
-      <div class="console-content" id="traceConsole">&gt;&gt;&gt; plain = ""   | key = 3   | 等待单步执行...</div>
-    </div>
-    <div style="text-align:center; margin-bottom:16px;">
-      <button class="action-btn" id="btnTrace" onclick="stepTrace()">⏭️ 单步执行</button>
-      <button class="secondary-btn" onclick="resetTrace()">↺ 重置</button>
-    </div>
-
-    <table class="trace-table">
-      <tr><th>追踪提问</th><th>你的回答</th></tr>
-      <tr><td>第 3 轮循环后，plain 的值是什么？</td><td><input type="text" id="traceQ1" placeholder="如 HEL" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; width:140px;"></td></tr>
-      <tr><td>5 轮全部跑完，key 的值变了吗？</td><td>
-        <select id="traceQ2" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px;">
-          <option value="">--请选择--</option>
-          <option value="no">没变，一直是 3</option>
-          <option value="yes">变了</option>
-        </select>
-      </td></tr>
-    </table>
-    <div style="text-align:center; margin-bottom:8px;">
-      <button class="action-btn" onclick="checkTrace()">✅ 提交追踪答案</button>
-    </div>
-    <div id="traceFeedback" style="text-align:center; font-weight:bold; min-height:24px;"></div>
-
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(1)">⬅️ 上一步</button>
-      <button class="action-btn" onclick="nextStep(3)">进入逻辑排雷 ➔</button>
-    </div>
-  </section>
-
-  <!-- 第4屏：逻辑排雷 -->
-  <section class="panel" data-step="3">
-    <div class="panel-tag">🛠️ 任务三 · 逻辑排雷</div>
-    <h2 class="panel-title">找出解密程序中的 3 处逻辑 bug</h2>
-    <div class="story-box" data-prose>
-      <b>排雷任务：</b>这段解密程序藏着 3 处逻辑错误——加减方向写反、越界未取余、大小写丢失。逐个诊断，选择正确的修复方案。
-    </div>
-
-    <div class="bug-list">
-      <div class="bug-card">
-        <div class="bug-title">💥 故障一：解密结果比密文"更乱"</div>
-        <div class="bug-code">n = 字母序号(ch) + key&nbsp;&nbsp;# 解密步骤</div>
-        <div class="bug-options" data-qid="bug1">
-          <button class="opt-btn" onclick="checkBug(this, 'bug1', false)">A. 把 key 改成 26</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug1', true)">B. 把加法改回减法：序号(ch) − key</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug1', false)">C. 删掉这一行</button>
-        </div>
-      </div>
-      <div class="bug-card">
-        <div class="bug-title">💥 故障二：解密字母 Z 时程序崩溃</div>
-        <div class="bug-code">n = 序号(ch) - key&nbsp;&nbsp;# ch='C', key=5 时 n=-2，无对应字母</div>
-        <div class="bug-options" data-qid="bug2">
-          <button class="opt-btn" onclick="checkBug(this, 'bug2', false)">A. 限定密钥只能为 1</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug2', false)">B. 遇到 Z 就跳过不解密</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug2', true)">C. 越界时对 26 取余，绕回字母表开头</button>
-        </div>
-      </div>
-      <div class="bug-card">
-        <div class="bug-title">💥 故障三：解密出的明文大小写全丢了</div>
-        <div class="bug-code">plain = plain + 序号转字母(n).lower()&nbsp;&nbsp;# 强制转小写</div>
-        <div class="bug-options" data-qid="bug3">
-          <button class="opt-btn" onclick="checkBug(this, 'bug3', true)">A. 去掉 .lower()，保留原始大小写</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug3', false)">B. 全部转成大写更整齐</button>
-          <button class="opt-btn" onclick="checkBug(this, 'bug3', false)">C. 大小写不影响，无需修复</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(2)">⬅️ 上一步</button>
-      <button class="action-btn" onclick="nextStep(4)">进入随堂测验 ➔</button>
-    </div>
-  </section>
-
-  <!-- 第5屏：随堂测验 -->
-  <section class="panel" data-step="4">
-    <div class="panel-tag">📝 第五步 · 随堂测验</div>
-    <h2 class="panel-title">3 道选择题检验本课核心概念</h2>
-    <div class="story-box" data-prose>
-      <b>测验说明：</b>3 道选择题检验本课核心概念，提交后统一判分。请诚实完成自我评价——选择"还没完全懂"同样光荣，老师会再讲一遍。
-    </div>
-
-    <div id="quizContainer">
-      <div class="quiz-item">
-        <div class="quiz-title">1. 凯撒密码中，明文字母 A 用密钥 3 加密后变成哪个字母？</div>
-        <div class="quiz-opts">
-          <div class="quiz-opt" onclick="pickQuiz(0, 0, this)">A. C</div>
-          <div class="quiz-opt" onclick="pickQuiz(0, 1, this)">B. D</div>
-          <div class="quiz-opt" onclick="pickQuiz(0, 2, this)">C. F</div>
-        </div>
-      </div>
-      <div class="quiz-item">
-        <div class="quiz-title">2. 收到密文 KHOOR（密钥为 3），解密还原后的明文是什么？</div>
-        <div class="quiz-opts">
-          <div class="quiz-opt" onclick="pickQuiz(1, 0, this)">A. HELLO</div>
-          <div class="quiz-opt" onclick="pickQuiz(1, 1, this)">B. KHOOR</div>
-          <div class="quiz-opt" onclick="pickQuiz(1, 2, this)">C. EBIIL</div>
-        </div>
-      </div>
-      <div class="quiz-item">
-        <div class="quiz-title">3. 我国自主研发、在银行与政务系统广泛应用的商用密码是？</div>
-        <div class="quiz-opts">
-          <div class="quiz-opt" onclick="pickQuiz(2, 0, this)">A. 凯撒密码</div>
-          <div class="quiz-opt" onclick="pickQuiz(2, 1, this)">B. 摩斯电码</div>
-          <div class="quiz-opt" onclick="pickQuiz(2, 2, this)">C. SM 系列国密算法</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin: 20px 0; padding: 14px; background: #f8fafc; border-radius: 8px;">
-      <div style="font-weight:bold; margin-bottom:8px;">🎯 学习体验与自我评价：</div>
-      <label style="margin-right:16px; cursor:pointer;"><input type="radio" name="selfEval" value="完全掌握" checked> ⭐⭐⭐ 熟练通关（会加解密、追踪变量、排雷）</label><br>
-      <label style="margin-right:16px; cursor:pointer;"><input type="radio" name="selfEval" value="基本掌握"> ⭐⭐ 基本掌握（能看懂步骤，排雷需提示）</label><br>
-      <label style="cursor:pointer;"><input type="radio" name="selfEval" value="还没完全懂"> 💡 还没完全懂（需要老师进一步点拨指导）</label>
-    </div>
-
-    <div style="text-align: center; margin-top: 20px;">
-      <button class="action-btn" onclick="submitLesson()">🎯 提交测评并生成通关凭单</button>
-    </div>
-
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(3)">⬅️ 上一步</button>
-      <button class="action-btn" onclick="nextStep(5)">查看学习凭单 ➔</button>
-    </div>
-  </section>
-
-  <!-- 第6屏：学习凭单 -->
-  <section class="panel" data-step="5">
-    <div class="panel-tag">🏆 第六步 · 学习凭单</div>
-    <h2 class="panel-title">导出你的破译通关凭单</h2>
-    <div class="story-box" data-prose>
-      <b>凭单说明：</b>填写班级姓名，点击下载保存你的 txt 学习凭单，交给老师即完成本课闯关。凭单首行可被平台自动识别汇总。
-    </div>
-
-    <div class="certificate" id="certBox" style="display:block;">
-      <div class="cert-title">🎖️ 数据解密小卫士荣誉证书</div>
-      <p id="certDesc" style="font-size: 1.05rem; margin-bottom: 12px;">完成随堂测验后，这里将生成你的专属证书。</p>
-      <div class="badge-wall medal-wall">
-        <span class="badge-chip medal-chip">🔑 密钥探秘先锋勋章 (Medal)</span>
-        <span class="badge-chip medal-chip">🔍 变量追踪达人勋章 (Medal)</span>
-        <span class="badge-chip medal-chip">🛠️ 逻辑排雷专家勋章 (Medal)</span>
-      </div>
-      <div style="margin-top: 16px;">
-        <button class="action-btn" style="background:#b45309;" onclick="exportVoucher()">
-          📥 一键下载学习凭单 (.txt)
-        </button>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button class="secondary-btn" onclick="prevStep(4)">⬅️ 返回测验</button>
-    </div>
-  </section>
+<section class="panel" data-step="6">
+  <span class="panel-tag">终极关卡 · 达标测验与评价</span>
+  <h2 class="panel-title">完成测验，带走学习凭单</h2>
+  <p data-prose>回顾密钥移位、变量追踪与取模排错，独立完成三道单选题，再进行自我评价并导出学习凭单。</p>
+  <div id="quizContainer"></div>
+  <button class="btn btn-green" id="submitQuiz">✍️ 提交测验并判分</button>
+  <div class="status" id="quizStatus" aria-live="polite"></div>
+  <div class="score-banner" id="scoreBanner"><div class="score-val" id="scoreValue">0 / 3</div><div class="score-desc">测验完成，继续检查自己的探究记录。</div></div>
+  <div class="task-box"><strong>自我评价打卡</strong>
+    <label class="check-item"><input type="checkbox"> 我能用密钥解释字母如何还原。</label>
+    <label class="check-item"><input type="checkbox"> 我能跟踪变量并修复取模问题。</label>
+    <label class="check-item"><input type="checkbox"> 我能用边界样例验证程序。</label>
+    <label class="check-item"><input type="checkbox"> 我还没完全懂，需要老师或同伴帮助。</label>
+  </div>
+  <div class="task-box"><strong>学习凭单导出</strong><p class="small">班级与姓名可选填；留空将使用默认信息。点击按钮即可保存 TXT 凭单。</p>
+    <div class="export-row"><label>班级 <input id="inputClass" type="text" placeholder="选填"></label><label>姓名 <input id="inputName" type="text" placeholder="选填"></label></div>
+    <button class="btn btn-gold" id="downloadReceipt">📥 保存学习记录凭单 (.txt)</button>
+    <div class="status" id="downloadStatus" aria-live="polite"></div>
+  </div>
+  <div class="footer-nav"><button class="btn btn-gray prev">← 上一屏</button><span class="small">下课前：整理工位，规范关机。</span></div>
+</section>
 </main>
-
 <script>
-const grade = 8;
-const stepLabels = ["1. 算法分析", "2. 密钥探秘", "3. 变量追踪", "4. 逻辑排雷", "5. 随堂测验", "6. 学习凭单"];
+"use strict";
+const stepLabels = ["情报破冰","密钥探秘","变量追踪","逻辑排雷","暴力枚举","现代密码","达标测验"];
+const panels = Array.from(document.querySelectorAll(".panel"));
+const stepper = document.getElementById("stepper");
 let currentStep = 0;
-const totalSteps = stepLabels.length;
-
-function goStep(idx) {
-  if (idx < 0 || idx >= totalSteps) return;
-  document.querySelectorAll('.panel').forEach((p, i) => {
-    p.classList.toggle('active', i === idx);
+stepLabels.forEach((label, i) => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "step-node";
+  button.innerHTML = '<span class="step-num">' + (i + 1) + '</span><span class="step-title">' + label + '</span>';
+  button.addEventListener("click", () => showStep(i));
+  stepper.appendChild(button);
+});
+function showStep(index) {
+  currentStep = Math.max(0, Math.min(panels.length - 1, index));
+  panels.forEach((panel, i) => panel.classList.toggle("active", i === currentStep));
+  Array.from(stepper.children).forEach((node, i) => {
+    node.classList.toggle("active", i === currentStep);
+    node.classList.toggle("done", i < currentStep);
   });
-  document.querySelectorAll('.step-item').forEach((s, i) => {
-    s.classList.toggle('active', i === idx);
-    if (i < idx) s.classList.add('completed');
-  });
-  currentStep = idx;
+  window.scrollTo({top: 0, behavior: "smooth"});
 }
-function nextStep(idx) { goStep(idx); }
-function prevStep(idx) { goStep(idx); }
+document.querySelectorAll(".next").forEach(button => button.addEventListener("click", () => showStep(currentStep + 1)));
+document.querySelectorAll(".prev").forEach(button => button.addEventListener("click", () => showStep(currentStep - 1)));
+showStep(0);
 
-// 凯撒密码核心算法：key 可正可负，只处理 A-Z / a-z
-function caesarShift(text, key) {
-  key = ((key % 26) + 26) % 26;
-  let out = "";
-  for (const ch of text) {
-    const code = ch.charCodeAt(0);
-    if (code >= 65 && code <= 90) out += String.fromCharCode(65 + (code - 65 + key) % 26);
-    else if (code >= 97 && code <= 122) out += String.fromCharCode(97 + (code - 97 + key) % 26);
-    else out += ch;
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const cipher = "KHOOR";
+const keyRange = document.getElementById("keyRange");
+function decode(text, key) {
+  return text.replace(/[A-Z]/g, ch => alphabet[(alphabet.indexOf(ch) - key + 26) % 26]);
+}
+function renderWheel() {
+  const key = Number(keyRange.value);
+  document.getElementById("keyValue").textContent = key;
+  document.getElementById("plainResult").textContent = decode(cipher, key);
+  const cipherWheel = document.getElementById("cipherWheel");
+  const plainWheel = document.getElementById("plainWheel");
+  cipherWheel.innerHTML = "";
+  plainWheel.innerHTML = "";
+  for (let i = 0; i < 26; i++) {
+    const c = document.createElement("span");
+    const p = document.createElement("span");
+    c.textContent = alphabet[i];
+    p.textContent = alphabet[(i - key + 26) % 26];
+    if (i === 10) c.classList.add("focus");
+    if (i === 10) p.classList.add("focus");
+    cipherWheel.appendChild(c);
+    plainWheel.appendChild(p);
   }
-  return out;
+  document.getElementById("wheelStatus").textContent = key === 3 ? "找到有意义的明文了吗？记录密钥与结果。" : "当前密钥 " + key + "：观察明文随移位变化。";
 }
+keyRange.addEventListener("input", renderWheel);
+renderWheel();
 
-// 任务一：密钥探秘仿真器
-function doEncrypt() {
-  const plain = document.getElementById('encPlain').value.trim();
-  const key = parseInt(document.getElementById('encKey').value, 10) || 0;
-  document.getElementById('encOut').textContent = plain ? caesarShift(plain, key) : "请先输入明文";
+function setCorrectChoice(containerId, statusId, successMessage) {
+  const container = document.getElementById(containerId);
+  const status = document.getElementById(statusId);
+  container.querySelectorAll(".choice").forEach(button => {
+    button.addEventListener("click", () => {
+      if (container.dataset.locked === "true") return;
+      container.querySelectorAll(".choice").forEach(item => item.classList.remove("selected", "good", "bad"));
+      button.classList.add("selected");
+      if (button.dataset.answer === "right") {
+        button.classList.remove("selected");
+        button.classList.add("good");
+        container.dataset.locked = "true";
+        container.querySelectorAll(".choice").forEach(item => item.classList.add("locked"));
+        status.textContent = successMessage;
+      } else {
+        button.classList.add("bad");
+        status.textContent = "再想一想，检查字母移动规律或表达式作用后重选。";
+      }
+    });
+  });
 }
-function doDecrypt() {
-  const cipher = document.getElementById('decCipher').value.trim();
-  const key = parseInt(document.getElementById('decKey').value, 10) || 0;
-  document.getElementById('decOut').textContent = cipher ? caesarShift(cipher, -key) : "请先输入密文";
-}
+setCorrectChoice("wheelChoices","wheelChoiceStatus","正确：密钥改变，逐字母解密结果也会改变。");
+setCorrectChoice("bugChoices","bugStatus","修复成功：取模能将结果映射回 0～25。");
+setCorrectChoice("securityChoices","securityStatus","正确：密钥少、规律固定，简单移位可被枚举破解。");
+setCorrectChoice("modernChoices","modernStatus","正确：SM2、SM3、SM4属于我国商用密码算法体系。");
 
-// 任务二：变量追踪单步执行（密文 KHOOR，key=3 → HELLO）
-const traceRounds = [
-  { ch: "K", plain: "H" },
-  { ch: "H", plain: "HE" },
-  { ch: "O", plain: "HEL" },
-  { ch: "O", plain: "HELL" },
-  { ch: "R", plain: "HELLO" }
+let traceIdx = -1;
+let traceDoneEver = false;
+let traceTimer = null;
+function getTraceSteps() {
+  const ch = document.getElementById("traceChar").value;
+  const key = Number(document.getElementById("traceKey").value);
+  const c = alphabet.indexOf(ch);
+  const shifted = (c - key + 26) % 26;
+  const plain = alphabet[shifted];
+  return [
+    {line:0,c:"" + c,key:"" + key,shift:"—",plain:"—",out:"—",msg:"ord('"+ch+"') - ord('A')：字符 "+ch+" 转为序号 "+c+"。"},
+    {line:1,c:"" + c,key:"" + key,shift:"" + shifted,plain:"—",out:"—",msg:"("+c+" - "+key+") % 26 = "+shifted+"；负数绕回字母表末尾。"},
+    {line:2,c:"" + c,key:"" + key,shift:"" + shifted,plain:plain,out:"—",msg:"chr("+shifted+" + ord('A'))：序号 "+shifted+" 转回字母 "+plain+"。"},
+    {line:3,c:"" + c,key:"" + key,shift:"" + shifted,plain:plain,out:plain,msg:"输出解密结果 "+plain+"。"}
+  ];
+}
+function renderTrace() {
+  const steps = getTraceSteps();
+  document.querySelectorAll("#traceCode .code-line").forEach((line, i) => line.classList.toggle("hl", i === traceIdx));
+  const current = steps[traceIdx];
+  document.getElementById("vC").textContent = current ? current.c : "—";
+  document.getElementById("vKey").textContent = current ? current.key : document.getElementById("traceKey").value;
+  document.getElementById("vShift").textContent = current ? current.shift : "—";
+  document.getElementById("vPlain").textContent = current ? current.plain : "—";
+  document.getElementById("vOut").textContent = current ? current.out : "—";
+  document.getElementById("traceStatus").textContent = current ? current.msg : "点“下一步”，观察变量逐行变化。";
+  document.getElementById("tracePrev").disabled = traceIdx <= 0;
+  document.getElementById("traceNext").disabled = traceIdx >= steps.length - 1;
+  if (traceIdx === steps.length - 1) traceDoneEver = true;
+}
+function stepCpu(steps, dir) {
+  traceIdx = Math.max(-1, Math.min(steps.length - 1, traceIdx + dir));
+  if (traceIdx === steps.length - 1) traceDoneEver = true;
+  renderTrace();
+}
+document.getElementById("traceNext").addEventListener("click", () => stepCpu(getTraceSteps(), 1));
+document.getElementById("tracePrev").addEventListener("click", () => stepCpu(getTraceSteps(), -1));
+document.getElementById("traceReset").addEventListener("click", () => {clearInterval(traceTimer);traceTimer=null;traceIdx=-1;renderTrace();});
+document.getElementById("tracePlay").addEventListener("click", function() {
+  if (traceTimer) {clearInterval(traceTimer);traceTimer=null;this.textContent="▶ 连播";return;}
+  if (traceIdx >= 3) traceIdx=-1;
+  this.textContent="Ⅱ 暂停";
+  traceTimer=setInterval(() => {
+    if (traceIdx >= 3) {clearInterval(traceTimer);traceTimer=null;document.getElementById("tracePlay").textContent="▶ 连播";return;}
+    stepCpu(getTraceSteps(),1);
+  },850);
+});
+document.getElementById("traceApply").addEventListener("click", () => {traceIdx=-1;renderTrace();});
+renderTrace();
+
+document.getElementById("testBug").addEventListener("click", () => {
+  const c = Number(document.getElementById("bugC").value);
+  const key = Number(document.getElementById("bugKey").value);
+  const raw = c - key;
+  const mod = ((raw % 26) + 26) % 26;
+  document.getElementById("rawValue").textContent = raw;
+  document.getElementById("modValue").textContent = mod;
+  document.getElementById("modLetter").textContent = alphabet[mod];
+  document.getElementById("bugTestStatus").textContent = raw < 0 ? "观察：普通减法得到负数；取模后回到合法序号 " + mod + "。" : "结果处于可检查范围；再试 A 与较大的密钥，检验绕回。";
+});
+
+document.getElementById("bruteRun").addEventListener("click", () => {
+  const target = document.getElementById("bruteResults");
+  target.innerHTML = "";
+  let key = 1;
+  const count = document.getElementById("bruteCount");
+  const timer = setInterval(() => {
+    const card = document.createElement("div");
+    card.className = "modern-card";
+    card.innerHTML = "<strong>Key " + key + "</strong><p class='mono'>" + decode(cipher,key) + "</p>";
+    if (decode(cipher,key) === "HELLO") card.style.border = "2px solid #4E9F3D";
+    target.appendChild(card);
+    count.textContent = "已尝试 " + key + " / 25 种密钥";
+    key++;
+    if (key > 25) {clearInterval(timer);count.textContent = "完成：25 种候选结果已列出。";}
+  },35);
+});
+
+const quiz = [
+  { q: "密文 KHOOR 若由字母向后移动3格加密，解密时应如何移动？", options: ["A. 每个字母向前移动3格", "B. 每个字母向后移动3格", "C. 把字母全部改成小写"], correct: 0 },
+  { q: "表达式 (c - key) % 26 在解密中的主要作用是什么？", options: ["A. 把字母变成大写", "B. 将移位结果绕回0～25范围", "C. 增加密钥长度"], correct: 1 },
+  { q: "关于凯撒密码和我国商用密码算法，哪项说法正确？", options: ["A. 凯撒密码适合保护真实账号口令", "B. SM2、SM3、SM4属于我国商用密码算法体系", "C. 所有密码都只需隐藏算法就安全"], correct: 1 }
 ];
-let traceIdx = 0;
-function stepTrace() {
-  const c = document.getElementById('traceConsole');
-  const label = document.getElementById('traceStep');
-  if (traceIdx >= traceRounds.length) {
-    c.innerHTML += '\n<span class="text-green">&gt;&gt;&gt; [追踪完成] plain = "HELLO"，key 恒为 3（密钥在循环中不变）</span>';
-    document.getElementById('btnTrace').disabled = true;
+const quizContainer = document.getElementById("quizContainer");
+const quizAnswers = Array(quiz.length).fill(null);
+quiz.forEach((item, qIndex) => {
+  const block = document.createElement("div");
+  block.className = "task-box";
+  const title = document.createElement("strong");
+  title.textContent = (qIndex + 1) + ". " + item.q;
+  block.appendChild(title);
+  const list = document.createElement("div");
+  list.className = "option-list";
+  item.options.forEach((option, optionIndex) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "option-item";
+    button.textContent = option;
+    button.addEventListener("click", () => {
+      if (document.getElementById("quizContainer").dataset.locked === "true") return;
+      list.querySelectorAll(".option-item").forEach(node => node.classList.remove("picked"));
+      button.classList.add("picked");
+      quizAnswers[qIndex] = optionIndex;
+      document.getElementById("quizStatus").textContent = "已选择第 " + (qIndex + 1) + " 题；提交后统一判分。";
+    });
+    list.appendChild(button);
+  });
+  block.appendChild(list);
+  quizContainer.appendChild(block);
+});
+document.getElementById("submitQuiz").addEventListener("click", () => {
+  const status = document.getElementById("quizStatus");
+  if (quizAnswers.some(answer => answer === null)) {
+    status.textContent = "还有题目未选择，请完成三题后再提交。";
     return;
   }
-  const r = traceRounds[traceIdx];
-  traceIdx++;
-  c.innerHTML += '\n&gt;&gt;&gt; 第' + traceIdx + '轮: ch="' + r.ch + '" → plain="' + r.plain + '" ｜ key=3';
-  label.textContent = '轮次: ' + traceIdx + ' / 5';
-}
-function resetTrace() {
-  traceIdx = 0;
-  document.getElementById('traceConsole').innerHTML = '&gt;&gt;&gt; plain = ""   | key = 3   | 等待单步执行...';
-  document.getElementById('traceStep').textContent = '轮次: 0 / 5';
-  document.getElementById('btnTrace').disabled = false;
-  document.getElementById('traceFeedback').textContent = '';
-}
-function checkTrace() {
-  const a1 = document.getElementById('traceQ1').value.trim().toUpperCase();
-  const a2 = document.getElementById('traceQ2').value;
-  const fb = document.getElementById('traceFeedback');
-  if (a1 === "HEL" && a2 === "no") {
-    fb.innerHTML = '<span class="text-green">✅ 追踪正确！plain 逐轮累加，key 是循环不变量。</span>';
-  } else {
-    fb.innerHTML = '<span class="text-red">❌ 再想想：点"单步执行"看到第 3 轮 plain 的值；key 在循环里被赋值过吗？</span>';
-  }
-}
-
-// 任务三：逻辑排雷
-const bugAnswers = { bug1: null, bug2: null, bug3: null };
-function checkBug(btn, qid, isRight) {
-  const p = btn.parentElement;
-  p.querySelectorAll('.opt-btn').forEach(b => b.className = 'opt-btn');
-  if (isRight) {
-    btn.classList.add('correct');
-    bugAnswers[qid] = true;
-  } else {
-    btn.classList.add('wrong');
-    bugAnswers[qid] = false;
-  }
-}
-
-// 随堂测验
-const quiz = [
-  { q: "凯撒密码中，明文字母 A 用密钥 3 加密后变成哪个字母？", ans: 1 },
-  { q: "收到密文 KHOOR（密钥为 3），解密还原后的明文是什么？", ans: 0 },
-  { q: "我国自主研发、在银行与政务系统广泛应用的商用密码是？", ans: 2 }
-];
-const picks = [null, null, null];
-
-function pickQuiz(qIdx, optIdx, el) {
-  picks[qIdx] = optIdx;
-  const parent = el.parentElement;
-  parent.querySelectorAll('.quiz-opt').forEach(opt => opt.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
-let lastScore = 0;
-function submitLesson() {
-  const name = document.getElementById('stuName').value.trim() || '信息科技探索者';
-  const cls = document.getElementById('stuClass').value.trim() || '八年级';
-
-  let correctCount = 0;
-  quiz.forEach((item, idx) => {
-    const parent = document.querySelectorAll('.quiz-opts')[idx];
-    const opts = parent.querySelectorAll('.quiz-opt');
-    opts.forEach((opt, oIdx) => {
-      opt.classList.remove('is-correct', 'is-wrong');
-      if (oIdx === item.ans) opt.classList.add('is-correct');
-      if (picks[idx] === oIdx && oIdx !== item.ans) opt.classList.add('is-wrong');
+  let score = 0;
+  quiz.forEach((item, qIndex) => {
+    const list = quizContainer.children[qIndex].querySelector(".option-list");
+    list.classList.add("locked");
+    list.querySelectorAll(".option-item").forEach((button, optionIndex) => {
+      if (optionIndex === item.correct) button.classList.add("correct");
+      if (optionIndex === quizAnswers[qIndex] && optionIndex !== item.correct) button.classList.add("wrong");
     });
-    if (picks[idx] === item.ans) correctCount++;
+    if (quizAnswers[qIndex] === item.correct) score++;
   });
+  quizContainer.dataset.locked = "true";
+  document.getElementById("scoreValue").textContent = score + " / " + quiz.length;
+  document.getElementById("scoreBanner").classList.add("show");
+  status.textContent = "测验已完成。复盘错题，并结合自己的自评打卡整理收获。";
+  document.getElementById("submitQuiz").disabled = true;
+  window.lessonScore = score + "/" + quiz.length;
+});
 
-  lastScore = Math.round((correctCount / quiz.length) * 100);
-  const selfChoice = document.querySelector('input[name="selfEval"]:checked').value;
-
-  const certDesc = document.getElementById('certDesc');
-  certDesc.innerHTML = '祝贺 <strong>' + cls + ' 班 ' + name + '</strong> 同学完成本课学习！<br>随堂测验得分：<strong>' + lastScore + ' 分</strong>（答对 ' + correctCount + '/' + quiz.length + ' 题）<br>自我评价：<strong>' + selfChoice + '</strong>';
-  goStep(5);
-  document.getElementById('certBox').scrollIntoView({ behavior: 'smooth' });
-}
-
-function exportVoucher() {
-  const name = document.getElementById('stuName').value.trim() || '匿名学生';
-  const cls = document.getElementById('stuClass').value.trim() || '801';
-  const selfChoice = document.querySelector('input[name="selfEval"]:checked').value;
-  const timeStr = new Date().toLocaleString('zh-CN');
-
-  // 首行结构化可 grep 标准行：#GRADE8_CLASSWORK_VOUCHER|班级|姓名|得分|自评|时间戳
-  const content = `#GRADE8_CLASSWORK_VOUCHER|${cls}|${name}|${lastScore}|${selfChoice}|${timeStr}
-============================================================
-      浙江省中小学信息科技课堂实训通关凭单 (浙教版2026)
-============================================================
-学生班级: ${cls}
-学生姓名: ${name}
-实训课程: 第12课 数据解密 (初中八年级上册)
-测验得分: ${lastScore} 分
-自我评价: ${selfChoice}
-通关项目: 密钥探秘先锋、变量追踪达人、逻辑排雷专家
-导出时间: ${timeStr}
-验证状态: 单文件免部署 · 互联网机房开箱即用
-============================================================`;
-
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${cls}_${name}_第12课数据解密_${lastScore}分.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+document.getElementById("downloadReceipt").addEventListener("click", () => {
+  const className = document.getElementById("inputClass").value.trim() || "八年级上册";
+  const studentName = document.getElementById("inputName").value.trim() || "小极客";
+  const score = window.lessonScore || "未提交";
+  const now = new Date();
+  const time = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0") + " " + String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0");
+  const lines = [
+    "# 班级|姓名|第12课 数据解密|得分|时间",
+    className + "|" + studentName + "|第12课 数据解密|" + score + "|" + time,
+    "",
+    "探究记录：任务一 密钥探秘；任务二 变量追踪；任务三 逻辑排雷。",
+    "请勿将课堂凯撒密码用于真实账号、口令或敏感信息保护。"
+  ];
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], {type:"text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const safeClass = className.replace(/[\\/:*?"<>|]/g,"_");
+  const safeName = studentName.replace(/[\\/:*?"<>|]/g,"_");
+  link.href = url;
+  link.download = safeClass + "_" + safeName + "_第12课数据解密_" + score.replace("/","-") + ".txt";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url),1000);
+  document.getElementById("downloadStatus").textContent = "学习凭单已生成；请检查下载文件并按课堂要求提交。";
+});
 </script>
 </body>
 </html>

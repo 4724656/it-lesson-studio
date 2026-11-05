@@ -8,15 +8,15 @@
 ## 一、数字化探究舱总体架构与设计铁律
 
 ### 1. 支撑 40 分钟课堂运转的闯关主线结构
-根据学段屏数上限（3~4 年级 ≤4 屏，5~6 年级 ≤5 屏，7~8 年级 ≤6 屏），标准课堂探究舱遵循以下递进式认知主线：
+根据学段屏数上限（3~4 年级 ≤5 屏，5~6 年级 ≤6 屏，7~8 年级 ≤7 屏），标准课堂探究舱遵循以下递进式认知主线：
 
 | 阶段 | 核心作用 | 典型交互与分层设计 | 门禁属性标记 |
 |:---|:---|:---|:---|
-| **Stage 1：破冰痛点 / 感知配对** | 创设真实生活情境，让学生先“手动尝试”感受痛点，或建立概念直觉 | 人工闪现计数、双列点击/SVG连线配对、真假工具辨析 | `<section class="panel active" data-step="0">` + `<p data-prose>` |
+| **Stage 1：破冰痛点 / 感知配对** | 创设真实生活情境，让学生先“手动尝试”感受痛点，或建立概念直觉 | 人工闪现计数、SVG场景热点寻宝、两步点击配对、真假工具辨析 | `<section class="panel active" data-step="0">` + `<p data-prose>` |
 | **Stage 2：核心解剖 / 建模分析** | 拆解系统内部机理、提取关键数据要素或建立算法模型 | 部件点击高亮解剖台、要素提取卡片、流程图拼图槽 + 随堂即时巩固小问（答错可无限重选，答对锁定） | `<section class="panel" data-step="1">` + `<p data-prose>` |
 | **Stage 3：深度仿真沙箱（核心实操）** | 亲手调节参数、运行仿真、观察规律，完成从“看懂”到“做通”的跨越 | **基础通关任务**（全员必达）+ **⭐ 进阶挑战星**（防快学生早退无所事事，提供极限参数/边界条件深挖） | `data-panel-type="hands-on"` + `<p data-prose>` |
 | **Stage 4：迁移排雷 / 逻辑调优** *(中高段)* | 换情境迁移、排查代码/配置故障、验证算法鲁棒性 | 代码 Bug 排雷侦探、无解/异常分支补全、多组测试用例验证 | `data-panel-type="hands-on"`（注意年级动手屏上限） |
-| **Stage Final：达标测验 & 评价凭单闭环** | 检验核心素养达成度，生成可直传平台的 `.txt` 凭单与荣誉奖状 | 先选后判 Quiz + 累计点亮徽章墙 (Medal) + 含“还没完全懂”自评 + 零弹窗秒下凭单 + 电子奖状卡 | 终极屏 `data-step="N-1"` + `<p data-prose>` |
+| **Stage Final：达标测验 & 评价凭单闭环** | 检验核心素养达成度，生成可直传平台的 `.txt` 凭单 | 先选后判 Quiz + 含“还没完全懂”自评 + 学习单预览与零弹窗秒下凭单 | 终极屏 `data-step="N-1"` + `<p data-prose>` |
 
 ### 2. 教师设想绝对优先原则 (Teacher Customization First)
 - **最高优先级**：当授课教师在“教学设想与特别说明”中指定了特色生活情境（如校园测温、智能垃圾桶、自动售货机、运动会记分牌）、特定案例或机房环境限制时，**必须 100% 优先围绕教师设想量身定制关卡情境与微型仿真器**，严禁机械照搬教材默认案例。
@@ -29,18 +29,18 @@
 - **初中阶段（7~8 年级）**：聚焦 IP 地址段（如 `192.168.1.10`）、传感器告警阈值、加密偏移密钥（Key）、单行关键代码表达式或机器学习超参数（如 `K=3`）调节。
 
 ### 4. 学段难度与 `output-spec.md` 门禁硬指标速查
-| 年级 | 屏数上限 (`screens`) | 动手屏上限 (`hands_on`) | 测验题数 (`quiz`) | 每屏 `data-prose` 上限 | 测验题干 `q:` 上限 |
+| 年级 | 屏数上限 (`screens`) | 动手屏上限 (`hands_on`) | 测验题数上限 (`quiz`) | 每屏 `data-prose` 上限 | 测验题干 `q:` 上限 |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| **3 年级** | ≤ 4 屏 | ≤ 1 个 | 严格 2 题 | ≤ 60 字 | ≤ 30 字 |
-| **4 年级** | ≤ 4 屏 | ≤ 1 个 | 严格 2 题 | ≤ 80 字 | ≤ 34 字 |
-| **5 年级** | ≤ 5 屏 | ≤ 2 个 | 严格 3 题 | ≤ 100 字 | ≤ 40 字 |
-| **6 年级** | ≤ 5 屏 | ≤ 2 个 | 严格 3 题 | ≤ 120 字 | ≤ 44 字 |
-| **7 年级** | ≤ 6 屏 | ≤ 2 个 | 严格 3 题 | ≤ 140 字 | ≤ 50 字 |
-| **8 年级** | ≤ 6 屏 | ≤ 2 个 | 严格 3 题 | ≤ 160 字 | ≤ 54 字 |
+| **3 年级** | ≤ 5 屏 | ≤ 2 个 | ≤ 2 题 | ≤ 60 字 | ≤ 30 字 |
+| **4 年级** | ≤ 5 屏 | ≤ 2 个 | ≤ 2 题 | ≤ 80 字 | ≤ 34 字 |
+| **5 年级** | ≤ 6 屏 | ≤ 3 个 | ≤ 3 题 | ≤ 100 字 | ≤ 40 字 |
+| **6 年级** | ≤ 6 屏 | ≤ 3 个 | ≤ 3 题 | ≤ 120 字 | ≤ 44 字 |
+| **7 年级** | ≤ 7 屏 | ≤ 3 个 | ≤ 3 题 | ≤ 140 字 | ≤ 50 字 |
+| **8 年级** | ≤ 7 屏 | ≤ 3 个 | ≤ 3 题 | ≤ 160 字 | ≤ 54 字 |
 
 > **关键防踩坑提示**：
 > 1. 每屏必须有且仅保留精炼的 `<p data-prose>...</p>` 核心导语（严格控制在对应年级字数上限内）；详细的操作提示、比喻说明请放在不带 `data-prose` 的 `.tip-box` 或卡片内部，避免触发 `第 X 屏正文超标` FAIL。
-> 2. `data-panel-type="hands-on"` 仅标记在最核心的 1~2 个动手仿真屏上（3~4 年级严格标记 1 个，5~8 年级标记 1~2 个），切勿每屏都加，否则触发 `动手环节超标` FAIL。
+> 2. `data-panel-type="hands-on"` 仅标记在最核心的 1~3 个动手仿真屏上（3~4 年级 ≤2 个，5~8 年级 ≤3 个），切勿每屏都加，否则触发 `动手环节超标` FAIL。
 > 3. 测验数组必须严格写作 `const quiz = [ { q: "...", options: [...], correct: 0 }, ... ];`（注意整条语句末尾分号 `;` 必填，但数组内部各项之间必须用逗号 `,` 分隔，严禁在 options 后误加分号，题干属性名必须为 `q`）。
 
 ---
@@ -240,27 +240,241 @@ function classifyKnnPoint(px, py, kVal, samples, svgEl) {
 
 ---
 
-## 三、终极关卡与平台评价闭环标准状态机骨架
+## 三、随堂作业内置标准微引擎与通用交互底座（开箱即用原生代码）
 
-终极关卡（第 `maxScreens` 屏）必须 100% 闭环包含以下五件套，且**全程严禁使用 `alert()` 弹窗阻断学生操作**：
+在 `<script>` 开头或独立模块中内联以下标准底座，实现音效、存盘、Toast、两步点击与 SVG 场景联动：
+
+### 1. Web Audio 原生合成音效引擎与静音开关
+零外部音频文件，机房断网即开即响：
+```javascript
+let soundOn = true, ac = null;
+function beep(f, d) {
+  if (!soundOn) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.15, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d);
+    o.start(); o.stop(ac.currentTime + d);
+  } catch(e) {}
+}
+function good() { beep(880, 0.12); setTimeout(() => beep(1320, 0.14), 110); }
+function bad() { beep(220, 0.22); }
+
+function toggleSound() {
+  soundOn = !soundOn;
+  const btn = document.getElementById('btnSound');
+  if (btn) btn.textContent = soundOn ? '🔊' : '🔇';
+  toast(soundOn ? '声音已开启' : '已静音');
+}
+```
+
+### 2. LocalStorage 自动存盘与无弹窗 Toast
+学生误按 F5 刷新页面进度不丢失，全流程无阻塞弹窗：
+```javascript
+const STORAGE_KEY = "lesson_state_" + (document.title.split('｜')[0] || "classwork");
+let S = {};
+try { S = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch(e) { S = {}; }
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
+  renderStars();
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 1900);
+}
+
+function addStars(num) {
+  S.stars = (S.stars || 0) + num;
+  save();
+  good();
+  toast(`⭐ +${num}！已收集 ${S.stars} 颗星`);
+}
+
+function renderStars() {
+  const el = document.getElementById('starCount');
+  if (el) el.textContent = `⭐ ${S.stars || 0}`;
+}
+```
+
+### 3. “先点选、再落位、后检查”两步点击交互组件（机房防手滑）
+替代易误触的 HTML5 原生拖拽，低龄友好：
+
+#### A. 左右配对组件（Match）
+```javascript
+let selectedLeft = null;
+function onSelectLeft(el, id) {
+  document.querySelectorAll('.match-left').forEach(i => i.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedLeft = { el, id };
+  beep(520, 0.08);
+}
+
+function onSelectRight(rightEl, targetId) {
+  if (!selectedLeft) {
+    toast('请先点击左侧项目！');
+    return;
+  }
+  const isRight = (selectedLeft.id === targetId);
+  if (isRight) {
+    selectedLeft.el.classList.remove('sel');
+    selectedLeft.el.classList.add('right');
+    rightEl.classList.add('right');
+    good();
+    toast('配对成功！✨');
+    S['match_' + selectedLeft.id] = true;
+    selectedLeft = null;
+    save();
+  } else {
+    bad();
+    toast('还不太对，再想一想？');
+  }
+}
+```
+
+#### B. 收纳盒归类组件（Sort）
+```javascript
+let activeChip = null;
+function pickChip(chipEl, type) {
+  if (chipEl.classList.contains('placed')) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  chipEl.classList.add('sel');
+  activeChip = { el: chipEl, type: type, text: chipEl.textContent };
+  beep(600, 0.08);
+}
+
+function placeIntoBox(boxEl, boxType) {
+  if (!activeChip) {
+    toast('请先点击上方的卡片！');
+    return;
+  }
+  const correct = (activeChip.type === boxType);
+  if (correct) {
+    activeChip.el.classList.remove('sel');
+    activeChip.el.classList.add('placed');
+    const badge = document.createElement('span');
+    badge.className = 'chip right';
+    badge.textContent = activeChip.text;
+    boxEl.querySelector('.box-content').appendChild(badge);
+    good();
+    toast('归类正确！📦');
+    activeChip = null;
+    save();
+  } else {
+    bad();
+    toast('这个分类不适合它哦，换个盒子试试？');
+  }
+}
+```
+
+### 4. 原生 SVG 640x360 场景寻宝与脉冲热点骨架
+第一关破冰探秘标准模板：
+```html
+<div class="scene-wrap" style="position:relative; max-width:640px; margin:0 auto;">
+  <svg viewBox="0 0 640 360" class="scene-svg" style="width:100%; border-radius:14px; background:#EAF2F8;">
+    <!-- 1. 背景与道路 -->
+    <rect x="0" y="0" width="640" height="240" fill="#E8F4F8"/>
+    <rect x="0" y="240" width="640" height="120" fill="#D5DBDB"/>
+    <!-- 2. 标志性建筑与生活设施矢量元素（至少20~25个矢量元素） -->
+    <rect x="40" y="80" width="180" height="160" rx="8" fill="#FADBD8" stroke="#E74C3C" stroke-width="2"/>
+    <polygon points="30,80 130,20 230,80" fill="#E74C3C"/>
+    <text x="130" y="60" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">智能校门</text>
+    <!-- 闸机与摄像头细节 -->
+    <rect x="80" y="160" width="30" height="60" fill="#BDC3C7"/>
+    <circle cx="95" cy="150" r="10" fill="#3498DB"/>
+  </svg>
+  
+  <!-- 3. 绝对定位热点按钮（百分比坐标与 SVG 元素中心对齐） -->
+  <button class="hs" style="left:15%; top:42%;" onclick="findHotspot(this, 'cam1', '智能闸机摄像头', '它是校门的人脸识别眼睛，刷脸放行！')">👁️</button>
+  <button class="hs" style="left:55%; top:60%;" onclick="findHotspot(this, 'cam2', '测温小眼睛', '红外热成像仪，进校自动测温！')">🌡️</button>
+</div>
+
+<div id="foundCard" class="card" style="margin-top:14px; min-height:60px;">
+  <p id="foundDesc" style="color:var(--text-sub);">👉 点击上面画面的小圆点，寻找藏在身边的智能设备！</p>
+</div>
+```
+
+```javascript
+function findHotspot(btn, id, name, desc) {
+  if (btn.classList.contains('found')) return;
+  btn.classList.add('found');
+  document.getElementById('foundDesc').innerHTML = `<b>【找到设备】${name}</b>：${desc}`;
+  addStars(2);
+  S['hs_' + id] = true;
+  save();
+}
+
+function giveHint() {
+  const notFound = [...document.querySelectorAll('.hs:not(.found)')];
+  if (notFound.length === 0) {
+    toast('太棒了！所有热点已经全部找到！🎉');
+    return;
+  }
+  const pick = notFound[Math.floor(Math.random() * notFound.length)];
+  pick.classList.add('hint');
+  setTimeout(() => pick.classList.remove('hint'), 1500);
+  beep(440, 0.1);
+  toast('仔细看！有个热点在晃动哦 👀');
+}
+```
+
+### 5. 全量学习单汇总与 `.txt` 导出标准实现
+带 `\uFEFF` UTF-8 BOM，首两行兼容平台标准，后续追加完整学习单详情：
+```javascript
+function exportReport(lessonTitle) {
+  const cls = (document.getElementById('inputClass')?.value || '本班').trim();
+  const name = (document.getElementById('inputName')?.value || '小极客').trim();
+  const score = S.quizScore !== undefined ? S.quizScore : '未测';
+  const now = new Date().toLocaleString('zh-CN', { hour12: false });
+  
+  const lines = [
+    `# 班级|姓名|课题|得分|时间`,
+    `${cls}|${name}|${lessonTitle}|${score}|${now}`,
+    ``,
+    `================ 课堂探究学习单详情 ===============`,
+    `获得星星：⭐ ${S.stars || 0} 颗`,
+    `【一、探究寻宝】${S.hotspotsFound || '已探索场景'}`,
+    `【二、动手实验】${S.handsOnDone ? '已完成核心仿真实验' : '已进行实验'}`,
+    `【三、随堂测验】得分：${score} 分`,
+    `【四、自我评价】${S.selfEval || '自主完成学习'}`
+  ];
+  
+  const content = "\\uFEFF" + lines.join("\\r\\n");
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${cls}_${name}_${lessonTitle}_${score}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast("学习凭单导出成功！📥");
+}
+```
+---
+
+## 四、终极关卡（第 maxScreens 屏）评价闭环三件套
 
 1. **随堂测验 (`const quiz = [...];`) —— 严格先选后判**：
    - 点击选项时仅切换 `.picked` 高亮选中态，**绝不提前暴露红绿对错**；
    - 点击【提交测验并判分】按钮后：若仍有未选题，在按钮下方状态栏温和提示“还有题目未选择哦”（**不用 `alert`**）；全部选完后统一标出 `.correct`（绿）与 `.wrong`（红），给 `.option-list` 加上 `.locked` 锁定，并展示总分横幅。
-2. **动态通关徽章墙 (`medalDefs`) —— 绑定累计状态防重置丢失**：
-   - 必须包含 `medal` 标识（如 `class="badge-grid medal-wall"`），声明 4 枚与本课关卡强关联的专属徽章；
-   - 徽章解锁条件必须绑定 `xxxEver` 累计布尔变量（一旦达成永久点亮，防止学生回看重置沙箱时徽章熄灭）。
-3. **自我评价打卡 —— 必留心理安全出口**：
+2. **自我评价打卡 —— 必留心理安全出口**：
    - 3~4 项复选/单选清单，**必须包含一条含“我还没完全懂”字样的选项**（如：`我还没完全懂，需要老师或同伴帮助`），通过 `check_lesson.py` 门禁检查。
-4. **极简无感 `.txt` 学习凭单导出 (`exportReport()`) —— 零弹窗一键秒下**：
-   - 提供班级、姓名输入框（选填），**当学生未填写姓名或班级时，自动使用 `'本班'` / `'小极客'`（或 `'同学'`）兜底，严禁弹 `alert()` 逼迫学生打字**！
-   - 凭单文件首行必须为结构化标准格式：`# 班级|姓名|课题|得分|时间`，随后列出各关卡探究数据、徽章解锁情况与自评结果，通过 `Blob` + `<a download="班级_姓名_课题_得分.txt">` 一键秒下，直接供“中小学信息科技与人工智能平台”上传汇聚。
-5. **现场电子通关奖状卡 (`#certModal`)**：
-   - 点击【🎖️ 生成电子通关奖状】直接弹出精美奖状模态框（未填姓名自动显示“小极客 / 优秀学员”），给予学生即时的课堂成就感。
+3. **所见即所得学习单与极简 `.txt` 凭单导出 —— 零弹窗一键秒下**：
+   - 凭单首两行必须满足标准格式：`# 班级|姓名|课题|得分|时间`，随后列出完整探究细节；
+   - 姓名班级选填，未填使用默认值，带 BOM 头直接通过 `Blob` 下载。
 
 ---
 
-## 四、交付前自动化门禁与真机自检清单
+## 五、交付前自动化门禁与真机自检清单
 
 1. **静态门禁检查（必跑，0 FAIL / 0 WARN）**：
    ```bash
@@ -268,9 +482,9 @@ function classifyKnnPoint(px, py, kVal, samples, svgEl) {
    ```
 2. **核心自检核对项**：
    - `<meta charset="UTF-8">` 与 `<meta name="lesson-grade" content="3~8">` 齐全；
-   - 无任何外部 HTTP/HTTPS 资源引用（100% 断网机房可用）；
+   - 无任何外部 HTTP/HTTPS 资源引用（断网机房可用）；
    - `stepLabels.length === document.querySelectorAll('section.panel').length`，且 `data-step` 从 `0` 连续递增；
-   - `data-panel-type="hands-on"` 屏数 `>= 1` 且不超过该年级上限（3~4 年级 ≤1，5~8 年级 ≤2）；
+   - `data-panel-type="hands-on"` 屏数 `>= 1` 且不超过该年级上限（3~4 年级 ≤2，5~8 年级 ≤3）；
    - 每屏 `<p data-prose>` 有效字数不超过该年级上限（60~160 字）；
-   - `const quiz = [...];` 题数等于该年级上限（3~4 年级 2 题，5~8 年级 3 题），且每道 `q:` 题干字数不超限（30~54 字）；
-   - 全流程零 `alert()` 拦截，不填姓名点击导出凭单和生成奖状均可一键秒出。
+   - `const quiz = [...];` 题数不超过该年级上限（3~4 年级 ≤2 题，5~8 年级 ≤3 题），且每道 `q:` 题干字数不超限（30~54 字）；
+   - 全流程无 `alert()` 拦截，不填姓名点击导出凭单可一键下载。

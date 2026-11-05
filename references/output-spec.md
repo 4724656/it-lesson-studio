@@ -34,12 +34,12 @@
 
 | 年级 | 屏数上限 | 动手环节上限 | 测验题数上限 | 每屏正文上限 | 题干字数上限 |
 |---|---|---|---|---|---|
-| 3 | 4 | 1 | 2 | 60 字 | 30 字 |
-| 4 | 4 | 1 | 2 | 80 字 | 34 字 |
-| 5 | 5 | 2 | 3 | 100 字 | 40 字 |
-| 6 | 5 | 2 | 3 | 120 字 | 44 字 |
-| 7 | 6 | 2 | 3 | 140 字 | 50 字 |
-| 8 | 6 | 2 | 3 | 160 字 | 54 字 |
+| 3 | 5 | 2 | 2 | 60 字 | 30 字 |
+| 4 | 5 | 2 | 2 | 80 字 | 34 字 |
+| 5 | 6 | 3 | 3 | 100 字 | 40 字 |
+| 6 | 6 | 3 | 3 | 120 字 | 44 字 |
+| 7 | 7 | 3 | 3 | 140 字 | 50 字 |
+| 8 | 7 | 3 | 3 | 160 字 | 54 字 |
 
 - **屏数**：`<section class="panel" data-step="N">` 从 0 连续编号，数量即屏数。
 - **动手环节**：指学生亲手完成一项可验证的操作任务的屏
@@ -81,12 +81,12 @@ worksheet:
   grades_3_4: { target_min: 350, target_max: 520, warn_max: 520, fail_max: 550, layout: single }
   grades_5_8: { target_min: 300, target_max: 550, duplex_max: 1100, fail_max: 1200, layout: single_preferred }
 html_grades:
-  3: { screens: 4, hands_on: 1, quiz: 2, prose_per_screen: 60, quiz_stem: 30 }
-  4: { screens: 4, hands_on: 1, quiz: 2, prose_per_screen: 80, quiz_stem: 34 }
-  5: { screens: 5, hands_on: 2, quiz: 3, prose_per_screen: 100, quiz_stem: 40 }
-  6: { screens: 5, hands_on: 2, quiz: 3, prose_per_screen: 120, quiz_stem: 44 }
-  7: { screens: 6, hands_on: 2, quiz: 3, prose_per_screen: 140, quiz_stem: 50 }
-  8: { screens: 6, hands_on: 2, quiz: 3, prose_per_screen: 160, quiz_stem: 54 }
+  3: { screens: 5, hands_on: 2, quiz: 2, prose_per_screen: 60, quiz_stem: 30 }
+  4: { screens: 5, hands_on: 2, quiz: 2, prose_per_screen: 80, quiz_stem: 34 }
+  5: { screens: 6, hands_on: 3, quiz: 3, prose_per_screen: 100, quiz_stem: 40 }
+  6: { screens: 6, hands_on: 3, quiz: 3, prose_per_screen: 120, quiz_stem: 44 }
+  7: { screens: 7, hands_on: 3, quiz: 3, prose_per_screen: 140, quiz_stem: 50 }
+  8: { screens: 7, hands_on: 3, quiz: 3, prose_per_screen: 160, quiz_stem: 54 }
 markers:
   panel_type_attr: data-panel-type
   hands_on_value: hands-on

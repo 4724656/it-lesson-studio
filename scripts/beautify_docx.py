@@ -102,7 +102,7 @@ def replace_checkboxes(p):
 def beautify_lesson_plan_docx(docx_path):
     doc = docx.Document(docx_path)
     
-    # 1. 页面设置：标准 A4，优雅边距 (上下 20mm, 左右 22mm)
+    # 1. 页面设置：标准 A4，页边距 (上下 20mm, 左右 22mm)
     for section in doc.sections:
         section.page_width = Inches(8.27)   # 210 mm
         section.page_height = Inches(11.69) # 297 mm

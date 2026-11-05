@@ -7,14 +7,41 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..', '..');
 
 import { dbService } from '../db.js';
+import { callLlmApi } from './llm.js';
+import { buildV2Prompt, parseV2Payload, assembleClassworkV2, publishClassworkV2, validateSourceTasks } from './classwork-v2.js';
+import { createDiagnostics, assertFileMarkers, assertCompleteFiles, auditClasswork } from './generation-diagnostics.js';
 
-// 加载项目 Master Skill 作为大模型核心系统提示词
-function loadSystemPrompt() {
-  const skillPath = path.join(rootDir, 'skills', 'it-lesson-studio', 'SKILL.md');
-  if (fs.existsSync(skillPath)) {
-    return fs.readFileSync(skillPath, 'utf-8');
-  }
-  return '你是一位中小学信息科技特级教师，擅长设计教案、导学单、课件和随堂作业。';
+function readSkillFile(...relParts) {
+  const fullPath = path.join(rootDir, ...relParts);
+  return fs.existsSync(fullPath) ? fs.readFileSync(fullPath, 'utf-8').trim() : '';
+}
+
+function loadGlobalRules() {
+  const text = readSkillFile('skills', 'it-lesson-studio', 'SKILL.md');
+  if (!text) return '你是一位中小学信息科技教师，负责设计教案、导学单、课件和随堂作业。';
+  const start = text.indexOf('## 🎯');
+  const end = text.indexOf('## ⚙️');
+  return start !== -1 && end !== -1 ? text.slice(start, end).trim() : text;
+}
+
+// 阶段 1：加载全局总则 + 模块 1~3（教案、导学单、课件），不混入 HTML 随堂作业规则
+export function loadDocumentsSystemPrompt() {
+  const parts = [
+    loadGlobalRules(),
+    readSkillFile('skills', '1-lesson-plan', 'SKILL.md'),
+    readSkillFile('skills', '2-worksheet', 'SKILL.md'),
+    readSkillFile('skills', '3-slides', 'SKILL.md')
+  ].filter(Boolean);
+  return parts.join('\n\n');
+}
+
+// 阶段 2：加载全局总则 + 模块 4（随堂互动作业），不混入 Word/Marp 排版规则
+export function loadClassworkSystemPrompt() {
+  const parts = [
+    loadGlobalRules(),
+    readSkillFile('skills', '4-classwork', 'SKILL.md')
+  ].filter(Boolean);
+  return parts.join('\n\n');
 }
 
 /**
@@ -36,12 +63,12 @@ export function extractGradeNum(gradeStr) {
  */
 export function getGradeLimits(gradeNum) {
   const specMap = {
-    3: { screens: 4, handsOn: 1, quiz: 2, prosePerScreen: 60, quizStem: 30 },
-    4: { screens: 4, handsOn: 1, quiz: 2, prosePerScreen: 80, quizStem: 34 },
-    5: { screens: 5, handsOn: 2, quiz: 3, prosePerScreen: 100, quizStem: 40 },
-    6: { screens: 5, handsOn: 2, quiz: 3, prosePerScreen: 120, quizStem: 44 },
-    7: { screens: 6, handsOn: 2, quiz: 3, prosePerScreen: 140, quizStem: 50 },
-    8: { screens: 6, handsOn: 2, quiz: 3, prosePerScreen: 160, quizStem: 54 }
+    3: { screens: 5, handsOn: 2, quiz: 2, prosePerScreen: 60, quizStem: 30 },
+    4: { screens: 5, handsOn: 2, quiz: 2, prosePerScreen: 80, quizStem: 34 },
+    5: { screens: 6, handsOn: 3, quiz: 3, prosePerScreen: 100, quizStem: 40 },
+    6: { screens: 6, handsOn: 3, quiz: 3, prosePerScreen: 120, quizStem: 44 },
+    7: { screens: 7, handsOn: 3, quiz: 3, prosePerScreen: 140, quizStem: 50 },
+    8: { screens: 7, handsOn: 3, quiz: 3, prosePerScreen: 160, quizStem: 54 }
   };
   return specMap[gradeNum] || specMap[3];
 }
@@ -54,7 +81,7 @@ export function getSemesterSimulationHint(gradeStr) {
   const map = {
     '三年级上册': '部件高亮解剖台、虚拟浏览器下载排雷沙箱、文件分类拖拽/点选箱（侧重感知智能与在线入门，大触控、强正向反馈）',
     '三年级下册': '图片滤镜裁剪滑块、音频波形淡入淡出调节、AI提示词联想生成台（侧重多媒体处理与AI初体验）',
-    '四年级上册': '二进制开关灯泡阵列、条形码/编码生成器、动态统计图表调节（侧重数据表示与生活编码）',
+    '四年级上册': '生活数据调查问卷与动态统计图表、生活编码规则定制器（侧重生活数据收集、整理与编码体验，生动图表、强正向反馈）',
     '四年级下册': '像素点阵取色板、ASCII 编码对照转盘、奇偶校验排雷矩阵（侧重数字化底层与校验）',
     '五年级上册': '流程图卡片拼图槽、红绿灯/道闸分支条件切换器、生活决策树（侧重算法思维与流程图分支结构）',
     '五年级下册': '恒温箱/自动浇花阈值仿真沙箱、循环计数累加步进器（侧重控制系统与循环结构）',
@@ -104,7 +131,24 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
         }`
     },
     {
-      match: /编码|二进制|有序|数据计算|图表|图标呈现|数据整理|数据获取/i,
+      match: /数据获取|数据采集|问卷|调查|数据整理|图表|图标呈现|身边的数据|多样的数据/i,
+      archetypeName: '生活数据调查采集与动态统计图表沙箱',
+      interactiveDesign: `
+        - 关卡1（生活观察）：发现身边的生活数据（文字、数字、图片）与采集方式（问卷、观察、测量、搜索）；
+        - 关卡2（核心实操 · data-panel-type="hands-on"）：【模拟校园数据采集与问卷统计板】点击不同选项进行模拟投票/测温记录，右侧实时生成彩色动态统计柱状图，直观展现数据高低对比；
+        - 关卡3（数据发现与分析）：通过图表一秒看懂“哪个最多/最少”，包含基础任务（完成数据录入并读取最高项）与 ⭐进阶挑战星（排查异常数据，比如把体温填成了 80 度的错误数据并纠正）。`,
+      codePatternHint: `
+        // 动态统计柱状图与计数状态机示例
+        const counts = { A: 0, B: 0, C: 0 };
+        let surveyDoneEver = false;
+        function recordData(cat) {
+          counts[cat] = (counts[cat] || 0) + 1;
+          const total = Object.values(counts).reduce((a, b) => a + b, 0);
+          if (total >= 5) surveyDoneEver = true;
+        }`
+    },
+    {
+      match: /编码|二进制|8421|数制|有序的世界|从数据到编码/i,
       archetypeName: '二进制灯泡权值阵列与生活编码定制沙箱',
       interactiveDesign: `
         - 关卡1（痛点体验）：杂乱无序数据 vs 规范编码检索效率对比配对；
@@ -292,39 +336,6 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
 }
 
 /**
- * 通用 LLM 请求封装（支持 AbortSignal 取消与超时控制）
- */
-async function callLlmApi({ apiBase, apiKey, model, messages, temperature = 0.3, signal }) {
-  const endpoint = `${apiBase.replace(/\/+$/, '')}/chat/completions`;
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature
-    }),
-    signal
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`AI 服务请求失败 [HTTP ${response.status}]: ${errText}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || '';
-  if (!content) {
-    throw new Error('AI 未返回有效内容');
-  }
-  return content;
-}
-
-/**
  * 标杆级单文件课堂作业完整 CSS 样式库（直接内嵌，涵盖通用布局 + 12册微型仿真器高频UI组件）
  */
 const CLASSWORK_BENCHMARK_CSS = `
@@ -508,21 +519,6 @@ const CLASSWORK_BENCHMARK_CSS = `
   }
   .score-val { font-size: 38px; font-weight: 900; color: #1E5128; }
   .score-desc { font-size: 16px; font-weight: 700; color: #2D6A4F; margin-top: 4px; }
-  .badge-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 12px; margin: 16px 0;
-  }
-  .badge-card {
-    background: #F8F9FA; border: 2px dashed #DCDDE1; border-radius: 12px;
-    padding: 12px; text-align: center; transition: all 0.2s ease;
-  }
-  .badge-card.unlocked {
-    background: #FFFDF5; border: 2px solid #F39C12; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.15);
-  }
-  .badge-icon { font-size: 32px; filter: grayscale(100%); opacity: 0.4; }
-  .badge-card.unlocked .badge-icon { filter: none; opacity: 1; }
-  .badge-name { font-size: 14px; font-weight: 800; margin-top: 4px; color: var(--text-main); }
-  .badge-card.unlocked .badge-name { color: #D35400; }
   .check-item {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px;
     border-radius: 8px; font-size: 15px; cursor: pointer;
@@ -547,17 +543,65 @@ const CLASSWORK_BENCHMARK_CSS = `
   .btn-gray { background: #E2E8F0; color: #475569; }
   .btn-gray:hover { background: #CBD5E1; }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-  /* 奖状卡片模态 */
-  .cert-modal {
-    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px;
+  /* 顶部集星器与声音控制 */
+  .h-star { color: #F1C40F; font-size: 15px; font-weight: 800; margin-left: 10px; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-sound { background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 2px 6px; }
+  /* 页面浮动 Toast 提示 */
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: rgba(30, 41, 59, 0.92); color: #fff; padding: 8px 22px; border-radius: 30px;
+    font-size: 14px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 9999;
+    pointer-events: none; opacity: 0; transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
   }
-  .cert-card {
-    background: #FFFDF9; border: 8px solid #F1C40F; border-radius: 20px;
-    max-width: 500px; width: 100%; padding: 30px; text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.4); animation: zoomCert 0.3s ease; position: relative;
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* SVG 场景寻宝与脉冲热点 */
+  .scene-wrap { position: relative; max-width: 640px; margin: 16px auto; }
+  .scene-svg { width: 100%; border-radius: 14px; display: block; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .hs {
+    position: absolute; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%;
+    background: #FF7675; border: 2px solid #fff; color: #fff; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.7); animation: pulse 1.8s infinite; transition: all 0.2s; z-index: 10;
   }
-  @keyframes zoomCert { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .hs.found { background: #00B894; animation: none; box-shadow: 0 2px 8px rgba(0, 184, 148, 0.4); transform: translate(-50%, -50%) scale(0.92); }
+  .hs.hint { animation: shake 0.5s ease-in-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(255, 118, 117, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0); } }
+  @keyframes shake { 0%, 100% { transform: translate(-50%, -50%) rotate(0deg); } 25% { transform: translate(-50%, -50%) rotate(-12deg); } 75% { transform: translate(-50%, -50%) rotate(12deg); } }
+  /* 悬浮小助手吉祥物 */
+  .mascot {
+    position: fixed; right: 20px; bottom: 20px; width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, #6C5CE7, #a29bfe); color: #fff; font-size: 24px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4); z-index: 100; transition: transform 0.2s; border: none;
+  }
+  .mascot:hover { transform: scale(1.1); }
+  .mascot-bub {
+    position: fixed; right: 78px; bottom: 25px; background: #fff; border: 2px solid #6C5CE7;
+    border-radius: 14px; padding: 12px 16px; max-width: 260px; font-size: 13px; color: #2D3436;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: none; z-index: 100;
+  }
+  .mascot-bub.on { display: block; animation: slideUp 0.25s ease; }
+  /* 两步点击配对与收纳盒 */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px;
+    background: #fff; border: 2px solid var(--border); font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; user-select: none;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.sel { border-color: #E67E22; background: #FEF9E7; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(230, 126, 34, 0.25); }
+  .chip.placed { opacity: 0.35; pointer-events: none; border-style: dashed; }
+  .chip.right { border-color: #27AE60; background: #EAFAF1; color: #1E8449; }
+  .chip.wrong { border-color: #E74C3C; background: #FDEDEC; color: #C0392B; }
+  .box { background: #F8F9FA; border: 2px dashed #BDC3C7; border-radius: 14px; padding: 14px; min-height: 110px; transition: border-color 0.2s; cursor: pointer; }
+  .box:hover { border-color: #3498DB; }
+  .box-title { font-size: 15px; font-weight: 800; color: #2C3E50; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .box-content { display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px; }
+  /* 全量学习单预览报告框 */
+  .report-box {
+    background: #FDFEFE; border: 2px solid #D5D8DC; border-radius: 12px; padding: 14px 18px;
+    font-family: Consolas, monospace; font-size: 13px; line-height: 1.6; color: #34495E;
+    margin: 16px 0; max-height: 200px; overflow-y: auto; white-space: pre-wrap;
+  }
 `;
 
 /**
@@ -712,6 +756,10 @@ export function sanitizeGeneratedClassworkHtml(rawHtml, gradeNum, grade, lessonT
   // 8. 彻底消除阻塞学生的 alert(...) 弹窗（转为 console.info 非阻塞提示）
   html = html.replace(/\balert\s*\(/g, 'console.info(');
 
+  // 9. 确保步进节点序号从 1 开始（严禁一线学生看到 0 开头的步进序号）
+  html = html.replace(/(<span\s+class=["']step-num["']>\s*(?:'|")?\s*\+\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*\+\s*(?:'|")?\s*<\/span>)/g, '$1($2 + 1)$3');
+  html = html.replace(/(<span\s+class=["']step-num["']>\s*\$\{)([a-zA-Z_$][a-zA-Z0-9_$]*)(\}\s*<\/span>)/g, '$1$2 + 1$3');
+
   return html;
 }
 
@@ -737,64 +785,86 @@ export async function generateLessonFiles({
     throw new Error('未配置 AI API Key！请联系管理员在【管理后台 -> AI 接口与系统设置】中填入有效的 API Key 后再开始备课。');
   }
 
-  const systemPrompt = loadSystemPrompt();
+  const useV2 = process.env.AI_HTML_GENERATOR === 'v2';
+  const diagnostics = useV2 || process.env.AI_GENERATION_DIAGNOSTICS === '1' ? createDiagnostics(targetDir) : null;
+  const validate = (files, phase) => {
+    if (!diagnostics) return;
+    try {
+      assertCompleteFiles(files, phase);
+      diagnostics({ type: 'integrity', phase, status: 'passed' });
+    } catch (error) {
+      diagnostics({ type: 'integrity', phase, status: 'failed' });
+      throw error;
+    }
+  };
+  const parsePhase = (raw, phase) => {
+    try {
+      if (diagnostics) assertFileMarkers(raw, phase);
+      return parseDelimitedFiles(raw, grade, lessonTitle);
+    } catch (error) {
+      if (diagnostics) diagnostics({ type: 'integrity', phase, status: 'parse_failed' });
+      throw error;
+    }
+  };
+  const documentsSystemPrompt = loadDocumentsSystemPrompt();
+  const classworkSystemPrompt = loadClassworkSystemPrompt();
   const gradeNum = extractGradeNum(grade);
   const limits = getGradeLimits(gradeNum);
   const simBlueprint = resolveSimulationBlueprint(grade, lessonTitle, requirements);
 
   let requirementsPrompt = '';
   if (requirements && requirements.trim()) {
-    requirementsPrompt = `\n【🚨 教师教学设想与特别说明（最高优先级，必须100%优先遵循）】：\n${requirements.trim()}\n(特别声明：教师输入的特色情境、专属案例或机房特别要求拥有最高优先级，所有任务关卡与微型仿真器必须以此为主导量身定制，严禁机械套用教材默认情境！)\n`;
+    requirementsPrompt = `\n【教师教学设想与特别说明（最高优先级，优先遵循）】：\n${requirements.trim()}\n(注：教师输入的特色情境、案例或机房要求拥有最高优先级，任务关卡与仿真器以此为主导设计，不机械套用教材默认情境。)\n`;
   }
 
   let materialsPrompt = '';
   if (materialsText && materialsText.trim()) {
-    materialsPrompt = `\n【教师自主上传/提供的课本教材与知识点参考资料】：\n${materialsText.trim()}\n(请务必参考并吸收上述教材知识点与案例，融入到教学任务与活动设计中)\n`;
+    materialsPrompt = `\n【教师提供的课本教材与知识点参考资料】：\n${materialsText.trim()}\n(请参考上述教材知识点与案例，融入教学任务与活动设计中。)\n`;
   }
 
   // =========================================================================
   // 阶段 1：生成教学文稿三件套（教案.md、导学案.md、课件.md）
   // =========================================================================
   if (onProgress) {
-    onProgress({ progress: 20, progressText: '教学引擎正在构思教案、导学单与演示课件...' });
+    onProgress({ progress: 20, progressText: '正在生成教案、导学单与演示课件...' });
   }
 
   const promptPhase1 = `
 请为以下中小学信息科技课程设计前三件套教学资料（教案、导学单、课件）：
 - 授课年级：${grade}（${gradeNum}年级）
 - 课程课题：${lessonTitle}
-${requirementsPrompt || '- 教师补充要求 / 教学意图：无特殊补充，请严格紧扣浙教版 2026 最新教材体系与 2022 义务教育信息科技新课标。'}
-- 配套随堂互动作业（数字化探究舱）仿真蓝图（请确保教案、导学单、课件的任务设计与该仿真主线 100% 同源呼应）：
+${requirementsPrompt || '- 教师补充要求 / 教学意图：无特殊补充，请紧扣浙教版 2026 教材体系与 2022 义务教育信息科技新课标。'}
+- 配套随堂互动作业仿真蓝图（请确保教案、导学单、课件的任务名称与该主线保持一致）：
   【推荐仿真器原型】：${simBlueprint.archetypeName}
   【闯关任务设计】：
   ${simBlueprint.interactiveDesign}
 ${materialsPrompt}
-【输出格式与门禁强制要求】：
-必须严格按照以下三个文件标记完整输出，严禁省略，保证四位一体任务同源呼应：
+【输出格式与门禁要求】：
+请按照以下三个文件标记完整输出，不要省略，保持四份材料任务同源对应：
 
 ===FILE: 教案.md===
-(严格遵循教案规范：
-1. 正文字数严格控制在 2000~2800 字（绝对不超过 3200 字，确保 <=4页A4）；彻底取消板书设计与 Mermaid 代码块；
-2. 顶部必须包含 2行4列 课题元数据表（| 课题 | ... | 教材版本 | 浙教版2026 |）；
-3. 必须完整包含八大标准公文二级标题：## 一、教材分析 / ## 二、学情分析 / ## 三、教学目标 / ## 四、教学重点 / ## 五、教学难点 / ## 六、教学过程 / ## 七、作业 / ## 八、教学反思；
-4. 含生活通俗比喻（用“比作”等词）、真实启发设问、实操避坑锦囊三大支架；
-5. 【六、教学过程】必须使用四列精排表格（| 教学环节 | 教师活动 | 学生活动 | 设计意图 |）；
-6. 【七、作业】明确包含 1. 导学单 2. 随堂作业 3. 课后探究；【八、教学反思】各设问下方只留1条适度手写横线如 ____________________________________________________，严禁超长折行)
+(遵循教案规范：
+1. 正文字数控制在 2000~2800 字（不超过 3200 字，确保 <=4页A4）；取消板书设计与 Mermaid 代码块；
+2. 顶部包含 2行4列 课题元数据表（| 课题 | ... | 教材版本 | 浙教版2026 |）；
+3. 包含八大公文二级标题：## 一、教材分析 / ## 二、学情分析 / ## 三、教学目标 / ## 四、教学重点 / ## 五、教学难点 / ## 六、教学过程 / ## 七、作业 / ## 八、教学反思；
+4. 含生活通俗比喻（用“比作”等词）、启发设问、实操避坑提示；
+5. 【六、教学过程】使用四列表格（| 教学环节 | 教师活动 | 学生活动 | 设计意图 |）；
+6. 【七、作业】明确包含 1. 导学单 2. 随堂作业 3. 课后探究；【八、教学反思】各设问下方留1条适度手写横线如 ____________________________________________________，不超长折行)
 
 ===FILE: 导学案.md===
-(严格遵循导学单规范：
-1. 字数门禁：${gradeNum <= 4 ? '小学低年级严格单面 A4，总有效字数控制在 350~500 字（绝不超过 520 字！）' : '中高年级单面 A4 优先，总有效字数控制在 320~520 字'}；
-2. 抬头必须包含“**班级：**________ **姓名：**________”，取消机房座号；
-3. 纯净学生第一人称趣味语境（含“🎯 今日通关目标”、关卡任务与末尾“📊 星级自评打卡”），**绝对严禁出现“四维素养/信息意识/计算思维/数字化学习与创新/信息社会责任/教材分析/学情分析”等教案学术套话**！
-4. 【选择题铁律】：题干后留出【我的选择是：(     )】，每个选项独立空行成段，严格使用 [ ] A. / [ ] B. / [ ] C. 格式；填空横线严禁超过 20 个下划线字符)
+(遵循导学单规范：
+1. 字数门禁：${gradeNum <= 4 ? '小学低年级单面 A4，总有效字数控制在 350~500 字（不超过 520 字）' : '中高年级单面 A4 优先，总有效字数控制在 320~520 字'}；
+2. 抬头包含“**班级：**________ **姓名：**________”，取消机房座号；
+3. 学生第一人称口语（含“🎯 今日通关目标”、关卡任务与末尾“📊 星级自评打卡”），**严禁出现“四维素养/信息意识/计算思维/数字化学习与创新/信息社会责任/教材分析/学情分析”等教案术语**；
+4. 【选择题格式】：题干后留出【我的选择是：(     )】，每个选项独立空行成段，使用 [ ] A. / [ ] B. / [ ] C. 格式；填空横线不超过 20 个下划线字符)
 
 ===FILE: 课件.md===
-(Marp 16:9 主题 edu-lesson。严禁大白屏与干瘪文字！必须达到省特级教师大屏课件视觉水准：
+(Marp 16:9 主题 edu-lesson，保持版面清爽、重点突出：
 1. 头部 YAML 声明 marp: true, theme: edu-lesson, paginate: true, size: "16:9"；
-2. 封面页必须声明 <!-- _class: lead -->，包含 <span class="tag">年级单元</span>、大标题与副标题；
-3. 内容页全量采用卡片式大屏布局（<div class="grid-2">、<div class="card">、<div class="card card-highlight">、<div class="card card-warm">、<div class="callout">）；
-4. 卡片内层次分明（含 <h3> 标题、<ul><li> 条目列表），严禁裸露未转义的 ** 语法；
-5. 纯净学生第一视角，**绝对严禁出现“广播听讲/建议用时/教师备注/授课提示”等教师后台台词**！)
+2. 封面页声明 <!-- _class: lead -->，包含 <span class="tag">年级单元</span>、大标题与副标题；
+3. 内容页采用卡片布局（<div class="grid-2">、<div class="card">、<div class="card card-highlight">、<div class="card card-warm">、<div class="callout">）；
+4. 卡片内层次清晰（含 <h3> 标题、<ul><li> 条目列表），不裸露未转义的 ** 语法；
+5. 保持学生第一视角，**严禁出现“广播听讲/建议用时/教师备注/授课提示”等教师后台台词**)
 `;
 
   // 构建多模态或纯文本消息体
@@ -817,15 +887,17 @@ ${materialsPrompt}
     apiKey,
     model,
     messages: [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: documentsSystemPrompt },
       { role: 'user', content: userMessagePhase1 }
     ],
     temperature: 0.3,
+    onMetadata: diagnostics ? metadata => diagnostics({ type: 'api', phase: 'documents', ...metadata }) : undefined,
     signal
   });
 
   // 解析并落盘前三件套
-  const filesPhase1 = parseDelimitedFiles(rawPhase1, grade, lessonTitle);
+  const filesPhase1 = parsePhase(rawPhase1, 'documents');
+  validate(filesPhase1, 'documents');
   if (!fs.existsSync(targetDir)) {
     fs.mkdirSync(targetDir, { recursive: true });
   }
@@ -838,6 +910,7 @@ ${materialsPrompt}
   // 读取已生成的教案或导学单概要，作为阶段 2 HTML 生成的强咬合上下文
   const planContent = Object.values(filesPhase1).find((_, idx) => Object.keys(filesPhase1)[idx].includes('教案')) || '';
   const worksheetContent = Object.values(filesPhase1).find((_, idx) => Object.keys(filesPhase1)[idx].includes('导学')) || '';
+  const slidesContent = Object.values(filesPhase1).find((_, idx) => Object.keys(filesPhase1)[idx].includes('课件')) || '';
 
   // =========================================================================
   // 阶段 2：基于教案与导学单，专门深度生成“课堂作业.html”（数字化探究舱）
@@ -846,17 +919,43 @@ ${materialsPrompt}
     onProgress({ progress: 45, progressText: '正在基于教案关卡深度定制微型仿真器与单文件课堂作业...' });
   }
 
+  if (useV2) {
+    const prompt = buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, planContent, worksheetContent, slidesContent, simBlueprint });
+    const raw = await callLlmApi({ apiBase, apiKey, model,
+      messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
+      temperature: 0.2, signal,
+      onMetadata: metadata => diagnostics({ type: 'api', phase: 'classwork-v2', ...metadata })
+    });
+    try {
+      const payload = parseV2Payload(raw);
+      const html = assembleClassworkV2(payload, { gradeNum, grade, lessonTitle });
+      validateSourceTasks(payload, { planContent, worksheetContent, slidesContent });
+      const htmlName = Object.keys(filesPhase1).find(name => name.endsWith('_教案.md')).replace(/_教案\.md$/, '_课堂作业.html');
+      // Prepare teacher notes first; an I/O failure must not follow HTML replacement.
+      // Plain text does not enter the mature Markdown -> Word compilation path.
+      fs.writeFileSync(path.join(targetDir, 'HTML_V2_教师说明.txt'), payload.teacherNotes.join('\n') + '\n', 'utf8');
+      const audit = publishClassworkV2(html, path.join(targetDir, htmlName), { signal });
+      diagnostics({ type: 'audit', phase: 'classwork-v2', ...audit, legacySanitizerUsed: false });
+      return [...Object.keys(filesPhase1), htmlName];
+    } catch (error) {
+      if (raw) {
+        try { fs.writeFileSync(path.join(targetDir, 'HTML_V2_RAW_ERROR.json'), String(raw), 'utf8'); } catch {}
+      }
+      diagnostics?.({ type: 'integrity', phase: 'classwork-v2', status: 'failed' });
+      throw error;
+    }
+  }
+
   const { screens: maxScreens, handsOn: maxHandsOn, quiz: maxQuiz, prosePerScreen: maxProse, quizStem: maxQuizStem } = limits;
 
   const promptPhase2 = `
-你现在需要为本课专门编写配套的【课堂作业.html】单文件离线“数字化探究舱 (Inquiry Workspace)”应用。
-必须支撑机房课堂 35~40 分钟学生动手探究，并与刚才生成的教案、导学单实现 100% 任务同源咬合！
+请为本课编写配套的【课堂作业.html】单文件离线互动网页，支撑机房课堂 35~40 分钟学生自主动手探究，并与刚才生成的教案、导学单保持任务名称一致。
 
 【课程基本信息】：
 - 授课年级：${grade}（${gradeNum}年级）
 - 课程课题：${lessonTitle}
 ${requirementsPrompt}
-- 本课专属仿真器蓝图与分层关卡设计（当教师未指定特定仿真形式时以此为准）：
+- 本课推荐仿真器蓝图与分层关卡设计（当教师未指定特定仿真形式时以此为准）：
   * 原型名称：${simBlueprint.archetypeName}
   * 本学期能力定位：${simBlueprint.semesterHint}
   * 关卡设计要求：
@@ -870,13 +969,13 @@ ${planContent.slice(0, 1800)}
 【导学单任务情境】：
 ${worksheetContent.slice(0, 1000)}
 
-【🚨 课堂作业.html 核心规范与 check_lesson.py 自动化门禁硬指标（必须 100% 遵守！）】：
-0. **教师个性化教学设想绝对优先**：
-   - 若上方存在【教师教学设想与特别说明】，必须 100% 优先围绕教师设想的特色情境、案例与交互需求量身定制仿真沙箱！
-   - 若无特殊说明，则严格按照上方【本课专属仿真器蓝图】实现高可玩性的原生 JS 微型仿真器。
-1. **单文件纯原生断网运行**：
-   - 严禁任何外部网络资源链接（严禁 http://、https://、// 外链 CSS/JS/图片/字体，全部内嵌）；
-   - 头部必须包含：
+【课堂作业.html 规范与 check_lesson.py 门禁指标】：
+0. **教师教学设想优先**：
+   - 若上方存在【教师教学设想与特别说明】，优先围绕教师设想的情境、案例与交互需求定制仿真任务；
+   - 若无特殊说明，则按照上方【本课推荐仿真器蓝图】实现原生 JS 微型仿真器。
+1. **单文件纯原生断网运行与页面头部**：
+   - 严禁外部网络资源链接（严禁 http://、https://、// 外链 CSS/JS/图片/字体，全部内嵌）；
+   - 头部包含：
      <!DOCTYPE html>
      <html lang="zh-CN">
      <head>
@@ -890,33 +989,54 @@ ${worksheetContent.slice(0, 1000)}
      /* 可在此追加本课微型仿真器所需的专有样式 */
      </style>
      </head>
-2. **顶栏导航与闯关步进器（严格 ${maxScreens} 屏）**：
-   - 必须使用 <header class="top-bar">，内部包含 <div class="brand"> 和 <div class="stepper" id="stepper"></div>；
-   - JS 必须声明：const stepLabels = [...]; 且数组元素个数**必须严格等于 ${maxScreens} 项**！
-3. **关卡容器 DOM 结构与门禁属性（极其重要！）**：
-   - 必须严格使用 ${maxScreens} 个 <section class="panel" data-step="i">（i 从 0 到 ${maxScreens - 1} 严格连续递增，第 0 屏带 active 类）；
-   - **动手实操屏标记 (data-panel-type="hands-on")**：在最核心的动手仿真关卡 section 标签上添加 \`data-panel-type="hands-on"\`，${gradeNum}年级**最少标记 1 个、最多绝不超过 ${maxHandsOn} 个**！
+2. **顶栏导航与闯关步进器（最多 ${maxScreens} 屏，建议设计 ${maxScreens} 屏）**：
+   - 使用 <header class="top-bar">，内部包含：
+     <div class="brand">
+       <h1>${lessonTitle}</h1>
+       <span class="h-star" id="starCount">⭐ 0</span>
+       <button id="btnSound" class="btn-sound" onclick="toggleSound()">🔊</button>
+     </div>
+     <div class="stepper" id="stepper"></div>
+   - JS 声明：const stepLabels = [...]; 数组元素个数必须与 <section class="panel"> 数量一致（≤ ${maxScreens} 项）；
+   - 步进序号从 1 开始编号（1~N），不得显示 0 开头（序号渲染写 (i + 1) 或 index + 1）。
+3. **关卡容器 DOM 结构与门禁属性**：
+   - 使用 <section class="panel" data-step="i">（i 从 0 连续递增，第 0 屏带 active 类）；
+   - **动手实操屏标记 (data-panel-type="hands-on")**：在核心动手仿真关卡 section 标签上添加 \`data-panel-type="hands-on"\`，${gradeNum}年级**最少标记 1 个、最多不超过 ${maxHandsOn} 个**；
    - **每屏正文导语字数门禁 (data-prose)**：
-     * 每一屏（从 data-step="0" 到 data-step="${maxScreens - 1}"）内部必须有且仅有 1 个核心导语段落标记 \`<p data-prose>...简短导语...</p>\`；
-     * 🚨 字数红线：${gradeNum}年级每屏 \`<p data-prose>\` 内的文字**必须严格 ≤ ${maxProse} 字**！详细的操作提示、故事细节请放在不带 data-prose 属性的 \`<div class="tip-box">\` 或卡片内，绝不可让 data-prose 超字数！
-4. **支撑 40 分钟课堂的仿真设计与学科精准输入**：
-   - 杜绝要求学生输入长篇文字小作文！采用点击配对、部件解剖、参数滑块、开关翻转、代码单步追踪、下拉/词块拼装等精准学科交互；
-   - 在核心仿真屏内设置**“基础通关任务”**与 \`<div class="challenge-card"><h4>⭐ 进阶挑战星</h4>...</div>\`，让快学生有深度探究空间，慢学生稳步达标；
-   - 关卡内的随堂巩固单选题必须支持**“答错温和提示可无限重选，答对后变绿锁定”**。
-5. **终极关卡（第 ${maxScreens} 屏，data-step="${maxScreens - 1}"）：达标测验与收尾五件套（100% 闭环，零 alert 弹窗！）**：
+     * 每一屏内部有且仅有 1 个核心导语段落标记 \`<p data-prose>...简短导语...</p>\`；
+     * ${gradeNum}年级每屏 \`<p data-prose>\` 内的文字**严格 ≤ ${maxProse} 字**；详细的操作提示、故事细节放在不带 data-prose 属性的 \`<div class="tip-box">\` 或卡片内。
+4. **学段认知适配与常用交互组件**：
+   - **低年级（3~4年级）**：
+     * 首关优先采用【原生内联 SVG 640x360 场景寻宝】：使用 \`<div class="scene-wrap"><svg viewBox="0 0 640 360" class="scene-svg">...绘制生活/校园场景矢量元素...</svg><button class="hs" style="left:..%; top:..%;">...</button></div>\` 叠加带呼吸脉冲的热点，点击发现设备加星（\`findHotspot()\`），并配备【💡 给我一点提示】按钮（\`giveHint()\` 抖动热点）；
+     * 采用【两步点击法配对与归类（禁止仅靠拖拽）】：左右点击连线配对（\`.sel\` 选中，\`.right\`/\`.wrong\` 反馈）、卡片入箱分类（点卡片 \`.chip.sel\` 再点大盒子 \`.box\`）；
+     * 少打字：提供词块选填或单行简短感受，不要求小学生打字写长句子。
+   - **中高年级（5~8年级）**：
+     * 采用代码单步追踪器（人肉 CPU）、流程图词块插槽、参数滑块阈值调试、密码轮盘或拓扑连线实验台；
+   - 核心动手仿真屏内设置**“基础通关任务”**与 \`<div class="challenge-card"><h4>⭐ 进阶挑战星</h4>...</div>\`；
+   - 关卡内的随堂巩固单选题支持**“答错温和提示可重选，答对后变绿锁定”**。
+5. **交互底座（音效 + 存盘 + Toast + 小助手）**：
+   - 在 \`<script>\` 开头内联标准底座：
+     * **原生 Web Audio 音效**：\`beep(f, d)\`、\`good()\`、\`bad()\`、\`toggleSound()\`，右上角带声音开关；
+     * **LocalStorage 自动存盘**：使用 \`STORAGE_KEY\` 保存学生进度、星星数、测验得分（加 try/catch 容错）；
+     * **顶部非阻断 Toast 提示**：页面内置 \`<div id="toast" class="toast"></div>\`，提示调用 \`toast(msg)\`，**全流程严禁调用 alert() / confirm() / prompt()**；
+     * **右下角悬浮小助手**：预埋 \`<button class="mascot" onclick="toggleMascot()">🤖</button><div id="mascotBub" class="mascot-bub"></div>\`，点击轮播 5~6 条操作提示。
+6. **终极关卡（最后一屏）：达标测验与学习单导出**：
    - **① 随堂测验 (Quiz)**：
-     * JS 必须严格声明：\`const quiz = [ { q: "题干", options: ["A. ...", "B. ...", "C. ..."], correct: 0 }, ... ];\`（整条语句末尾必须带分号 \`;\`，但数组内部各项之间必须用逗号 \`,\` 分隔，严禁在 options 数组后误写分号！）；
-     * 🚨 题数与题干字数铁律：${gradeNum}年级**严格只能有 ${maxQuiz} 道题**！每道题 \`q:\` 题干字数**必须严格 ≤ ${maxQuizStem} 字**！
-     * 规则：**先选后判**！点击选项只加 \`.picked\` 高亮，绝不提前标红绿；点击【✍️ 提交测验并判分】后统一标出 \`.correct\` / \`.wrong\`、锁定列表并展示得分横幅（若未答完在页面状态栏温和提示，**严禁调用 alert()**）。
-   - **② 通关徽章墙 (medal)**：
-     * 包含 \`<div class="badge-grid medal-wall" id="badgeGrid"></div>\`，声明 \`const medalDefs = [...] \`（4 枚本课专属徽章，卡片 class 含 \`badge-card medal\`），绑定各关卡 \`xxxEver\` 累计达成变量动态点亮。
-   - **③ 自我评价打卡**：
-     * 包含 3~4 项复选框，**其中最后一项必须包含“我还没完全懂，需要老师或同伴帮助”字样**！
-   - **④ 极简无感导出学习凭单 (.txt)**：
-     * 提供班级 \`#inputClass\` 与姓名 \`#inputName\` 选填框，但**绝不强制填写，严禁任何 alert() 弹窗拦截**！未填时默认使用 \`'${grade}'\` 与 \`'小极客'\` 兜底，点击【📥 保存学习记录凭单 (.txt)】直接通过 \`Blob\` 和 \`a.download\` 一键秒下！
-     * 凭单首行必须严格为：\`# 班级|姓名|${lessonTitle}|得分|时间\`。
-   - **⑤ 现场电子通关奖状卡**：
-     * HTML 末尾内嵌 \`<div class="cert-modal" id="certModal">\` 模态框（含 🏆、学生姓名、课程名称、四星满级成就赞词、关闭按钮），点击【🎖️ 生成电子通关奖状】直接弹出展示（零 alert 拦截）。
+     * JS 声明：\`const quiz = [ { q: "题干", options: ["A. ...", "B. ...", "C. ..."], correct: 0, explain: "解析" }, ... ];\`（语句末尾带分号 \`;\`，数组内部各项用逗号 \`,\` 分隔，不在 options 数组后误写分号）；
+     * 题数与题干字数：${gradeNum}年级**最多 ${maxQuiz} 道题（建议 ${maxQuiz} 题）**，每道题 \`q:\` 题干字数**严格 ≤ ${maxQuizStem} 字**；
+     * 规则：**先选后判**，点击选项只加 \`.picked\` 高亮，点击【✍️ 提交测验并判分】后统一标出 \`.correct\` / \`.wrong\`、锁定列表并展示得分横幅。
+   - **② 自我评价打卡**：
+     * 包含 3~4 项复选框，**最后一项必须包含“我还没完全懂，需要老师或同伴帮助”字样**。
+   - **③ 学习单预览与导出 (.txt)**：
+     * 界面提供 \`<div class="report-box" id="reportPreview"></div>\` 预览探究记录；
+     * 提供班级 \`#inputClass\` 与姓名 \`#inputName\` 选填框（未填默认使用 \`'${grade}'\` 与 \`'小极客'\`）；
+     * 点击【📥 保存学习记录凭单 (.txt)】，通过带 \`\\uFEFF\` BOM 头的 Blob 下载；
+     * 凭单首两行满足平台格式：
+       \`# 班级|姓名|${lessonTitle}|得分|时间\`
+       \`\${cls}|\${name}|${lessonTitle}|\${score}|\${now}\`
+       随后追加探究记录（获得的星星数、实验完成情况、测验得分、自评结果）。
+7. **代码完整性要求**：
+   - 完整 HTML 源码总行数一般为 **550 ~ 900 行**，禁止使用 \`// ...其余同上\` 占位符或省略逻辑。
 
 【输出格式要求】：
 请只输出完整的 HTML 代码，直接包含在 ===FILE: 课堂作业.html=== 标记中：
@@ -924,7 +1044,7 @@ ${worksheetContent.slice(0, 1000)}
 ===FILE: 课堂作业.html===
 <!DOCTYPE html>
 <html lang="zh-CN">
-...完整的HTML、样式和脚本，100%可直接在浏览器运行并通过 check_lesson.py 零错误零警告检测...
+...完整的HTML、样式和脚本...
 </html>
 `;
 
@@ -933,19 +1053,26 @@ ${worksheetContent.slice(0, 1000)}
     apiKey,
     model,
     messages: [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: classworkSystemPrompt },
       { role: 'user', content: promptPhase2 }
     ],
     temperature: 0.2,
+    onMetadata: diagnostics ? metadata => diagnostics({ type: 'api', phase: 'classwork', ...metadata }) : undefined,
     signal
   });
 
-  const filesPhase2 = parseDelimitedFiles(rawPhase2, grade, lessonTitle);
+  const filesPhase2 = parsePhase(rawPhase2, 'classwork');
+  validate(filesPhase2, 'classwork');
   for (const [filename, fileContent] of Object.entries(filesPhase2)) {
     const filePath = path.join(targetDir, filename);
     const finalContent = filename.endsWith('.html')
       ? sanitizeGeneratedClassworkHtml(fileContent, gradeNum, grade, lessonTitle)
       : fileContent.trim();
+    if (diagnostics) {
+      diagnostics({ type: 'audit', phase: 'classwork', before: auditClasswork(fileContent),
+        after: auditClasswork(finalContent), changedByLegacySanitizer: finalContent !== fileContent });
+      validate({ [filename]: finalContent }, 'classwork');
+    }
     filesPhase2[filename] = finalContent;
     fs.writeFileSync(filePath, finalContent, 'utf-8');
   }
