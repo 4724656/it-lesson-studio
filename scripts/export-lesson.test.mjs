@@ -95,6 +95,7 @@ test('Phase 2 仿真蓝图匹配器: 精准识别 12 册典型课型并尊重教
   assert.equal(bpG5Algo.gradeNum, 5);
   assert.ok(bpG5Algo.archetypeName.includes('自然语言算法步骤拼图'), '五上第2课应命中自然语言算法步骤拼图');
   assert.ok(!bpG5Algo.archetypeName.includes('KNN') && !bpG5Algo.interactiveDesign.includes('KNN'), '五上第2课严禁误中八下KNN');
+  assert.ok(bpG5Algo.interactiveDesign.includes('关卡1') && bpG5Algo.interactiveDesign.includes('关卡2') && bpG5Algo.interactiveDesign.includes('关卡3'), '应具备完整三关卡递进结构');
 
   const bpG3Trace = resolveSimulationBlueprint('三年级上册', '第14课 关注网络痕迹', '');
   assert.ok(!bpG3Trace.archetypeName.includes('IP/DHCP'), '三上网络痕迹严禁误中七上IP/DHCP');

@@ -110,15 +110,17 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
   const req = (requirements || '').trim();
 
   // 课型特征匹配库：每条规则绑定严格年级列表 grades，仅在对应年级匹配课题，杜绝低年级误中初高中高深概念
+  // 每个原型包含完整的 关卡1（感知/配对）➔ 关卡2（基础核心实操 hands-on）➔ 关卡3（进阶排错/迁移应用 hands-on），支撑 35~40 分钟课堂容量
   const archetypes = [
-    // ==================== 三年级（3年级） ====================
+    // ==================== 三年级（3年级 · 标准 5 屏，含 2 个 hands-on） ====================
     {
       grades: [3],
       match: /小眼睛|小耳朵|小搭档|智能生活|智能工具/i,
       archetypeName: '生活智能设备寻宝与本领配对台',
       interactiveDesign: `
-        - 关卡1（场景寻宝与配对）：在生活/校园场景中点选寻找智能设备，将设备与它的感知本领（看、听、说）两步点击配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【智能小助手体验台】点击切换不同生活任务卡片，观察智能工具如何帮忙完成任务，包含基础通关与 ⭐进阶挑战星（辨别哪些事仍需人工确认）。`,
+        - 关卡1（场景寻宝与配对）：在生活/校园 SVG 场景中点选寻找智能设备，将设备与它的感知本领（看、听、说）两步点击配对；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【智能小部件解剖与体验台】点击智能设备的“小眼睛/小耳朵/小大脑”部位高亮发光，观察拟人化工作过程并完成随堂问答；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【智能小助手任务派单台】为不同生活场景（如进校门、超市结账、语音提问）选派合适的智能工具并填写生活观察卡，包含基础通关与 ⭐进阶挑战星（辨别哪些事仍需人工确认）。`,
       codePatternHint: `
         let foundCount = 0, handsOnEver = false;
         function pickSmartTool(id) { foundCount++; if (foundCount >= 2) handsOnEver = true; }`
@@ -128,8 +130,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /在线|平台|下载|查看资源|分类整理|共享|网络痕迹|数字身份|分解问题|协作|分享/i,
       archetypeName: '在线安全小卫士与数字文件分类整理箱',
       interactiveDesign: `
-        - 关卡1（火眼金睛辨安全）：区分正规下载按钮/安全身份习惯与弹窗广告/风险行为；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【文件夹分类整理/问题步骤排序箱】通过“先点卡片、再点盒子”将不同文件归入对应文件夹（或按先后顺序排好做事步骤），包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡1（火眼金睛辨安全）：在生活上网情境中区分正规操作/安全身份习惯与弹窗广告/风险行为；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【虚拟浏览器安全下载与文件查看台】在模拟网页中避开伪装广告按钮、点选正规下载入口并查看文件信息；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【数字文件夹分类整理与步骤排序箱】通过“先点卡片、再点盒子”将不同文件归入对应文件夹（或按先后顺序排好做事步骤），包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let sortedCount = 0, boxDoneEver = false;
         function placeIntoBox(ok) { if (ok) sortedCount++; if (sortedCount >= 3) boxDoneEver = true; }`
@@ -140,20 +143,22 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '多媒体参数调节台与 AI 提示词（Prompt）词块合成器',
       interactiveDesign: `
         - 关卡1（媒体类型分类箱）：将图片、声音、视频、文字素材归入对应数字资源分类箱；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【多媒体小工坊 / AI 提示词词块生成台】拖动亮度、裁剪或音量滑块预览变化（或点击组合【主角 + 动作 + 风格】词块生成作品），包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【图像/音频直观调节小工坊】拖动亮度、裁剪比例或音量淡入淡出滑块，实时预览多媒体素材的变化效果；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【AI 提示词词块合成台】点击组合【主角 + 场景动作 + 画面风格】词块生成数字作品，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let mediaEditedEver = false;
         function applyMediaParams(val) { if (val !== 50) mediaEditedEver = true; }`
     },
 
-    // ==================== 四年级（4年级） ====================
+    // ==================== 四年级（4年级 · 标准 5 屏，含 2 个 hands-on） ====================
     {
       grades: [4],
       match: /数据的安全|数据需要保护/i,
       archetypeName: '生活数据安全防护与口令健康检测台',
       interactiveDesign: `
         - 关卡1（风险识别配对）：将生活中的个人信息泄露风险与正确的保护做法两步点击配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【口令安全检测与备份策略沙箱】点击组合不同字符卡片测试口令安全星级，并选择合理的数据备份方式，包含基础通关与 ⭐进阶挑战星（识别钓鱼信息）。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【口令安全强度检测台】点击组合不同长度与字符类型的卡片，实时点亮口令安全星级指示灯；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【生活数据备份与防骗排雷箱】为重要学习照片和文档选择稳妥的备份方案并排查风险链接，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let safetyCheckedEver = false;
         function checkPasswordStrength(len, hasMix) { safetyCheckedEver = true; return len >= 8 && hasMix; }`
@@ -163,8 +168,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /数据解码|数据校验|奇偶/i,
       archetypeName: '数字化编码点阵与奇偶校验排雷沙箱',
       interactiveDesign: `
-        - 关卡1（编码与图案配对）：观察简单的 0/1 编码如何对应黑白方格图案；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【奇偶校验排雷矩阵】数一数每行每列“1”的个数是单数还是双数，定位传输中变错的那一个格子并点击修好，包含基础通关与 ⭐进阶挑战星（为一行数据补上正确的校验格）。`,
+        - 关卡1（编码与图案配对）：观察简单的 0/1 编码如何对应黑白方格图案并完成配对；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【0/1 点阵解码画板】根据给定的 0/1 数字串点击方格涂色解码，还原隐藏的图案；
+        - 关卡3（进阶排错应用 · data-panel-type="hands-on"）：【奇偶校验排雷矩阵】数一数每行每列“1”的个数是单数还是双数，定位传输中变错的那一个格子并点击修好，包含基础通关与 ⭐进阶挑战星（为一行数据补上正确的校验格）。`,
       codePatternHint: `
         let gridFixedEver = false;
         function toggleGridCell(r, c, targetR, targetC, el) {
@@ -177,8 +183,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /初探数字化|图像编码|字符编码|点阵|手写数字|识花|成语/i,
       archetypeName: '黑白像素点阵画板与字符编码对照沙箱',
       interactiveDesign: `
-        - 关卡1（生活中的数字化配对）：将文字、黑白图案与对应的数字编码卡片配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【5×5 像素点阵涂色板】点击方格切换黑白（0和1），实时生成右侧的 0/1 编码串并识别出隐藏的数字或笑脸图案，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡1（生活中的数字化配对）：将文字、黑白图案与对应的数字编码卡片两步点击配对；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【5×5 像素点阵涂色板】点击方格切换黑白（0和1），实时生成右侧的 0/1 编码串并绘制指定数字或符号图案；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【字符编码查表译码器】对照编码表将一串数字编码翻译成汉字或字母口令，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let pixelDrawnEver = false;
         function flipPixel(idx) { pixelDrawnEver = true; }`
@@ -188,8 +195,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /声音编码|视频编码|人机编码/i,
       archetypeName: '声音视频数字化体验与人机编码对比沙箱',
       interactiveDesign: `
-        - 关卡1（人读编码 vs 机读编码）：将门牌号、商品条形码、二维码与各自的使用场景配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【数字化清晰度与编码体验台】切换不同精细度的采样格或画面帧率，直观观察声音波形/连续画面的清楚程度变化，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡1（人读编码 vs 机读编码配对）：将门牌号、商品条形码、二维码与各自的使用场景配对；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【数字化采样与帧率体验台】切换不同精细度的采样格或画面张数，直观观察声音波形与连续动画的流畅度变化；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【校园物品人机编码方案设计台】为班级图书或设备同时设计便于同学看懂的文字码和便于机器扫描的条码，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let sampleTriedEver = false;
         function changeSampleLevel(level) { if (level >= 2) sampleTriedEver = true; }`
@@ -199,8 +207,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /从数据到编码|有序的世界|编码长度|数据有关联|编码的规则|编码的验证|编码|二进制|8421|数制/i,
       archetypeName: '生活编码规则定制与二进制灯泡体验沙箱',
       interactiveDesign: `
-        - 关卡1（杂乱 vs 有序对比）：体验按编码整理前后找物品的速度差异；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【班级学号/图书编码生成器】通过分段下拉框（年级码+班级码+序号）拼装唯一编码并检测重号冲突，包含基础通关与 ⭐进阶挑战星（当人数超过 99 人时如何扩充编码位数）。`,
+        - 关卡1（杂乱 vs 有序对比配对）：体验按编码整理前后找物品的速度差异，配对常见生活编码；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【编码位数与容量实验室】点击切换不同位数的数字牌或灯泡开关，观察能表示的编号数量如何变化；
+        - 关卡3（进阶排错应用 · data-panel-type="hands-on"）：【班级学号/图书编码生成器】通过分段下拉框（年级码+班级码+序号）拼装唯一编码并排查重号冲突，包含基础通关与 ⭐进阶挑战星（当人数超过 99 人时扩充编码位数）。`,
       codePatternHint: `
         let codeBuiltEver = false;
         function buildLifeCode(partA, partB, seq) { codeBuiltEver = true; return String(partA) + String(partB) + String(seq); }`
@@ -210,8 +219,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /身边的数据|多样的数据|数据的价值|数据获取|数据整理|数据计算|图标呈现|图表|数据解读|记录身边的数据|设计统计表|数据可视化|规律与预测|数据分析|数据故事/i,
       archetypeName: '生活数据调查采集与动态统计图表沙箱',
       interactiveDesign: `
-        - 关卡1（生活数据寻宝）：区分身边的数字、文字、图片数据与获取方法（观察、测量、问卷）；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【校园小调查与彩色统计图】点击记录不同选项的票数，右侧实时长出彩色柱状图，一眼看出哪项最多/最少，包含基础通关与 ⭐进阶挑战星（找出记录表里明显填错的异常数据并修正）。`,
+        - 关卡1（生活数据寻宝配对）：区分身边的数字、文字、图片数据与获取方法（观察、测量、问卷）；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【校园小调查数据采集板】点击记录不同选项的票数，右侧实时长出彩色柱状图，直观对比数据高低；
+        - 关卡3（进阶排错与解读 · data-panel-type="hands-on"）：【统计表异常数据排雷与规律发现】找出记录表里明显填错的异常数据（如体温填成 85℃）并修正，根据图表得出结论，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         const counts = { A: 0, B: 0, C: 0 };
         let surveyDoneEver = false;
@@ -221,14 +231,15 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
         }`
     },
 
-    // ==================== 五年级（5年级 · 全学年无编程语言代码） ====================
+    // ==================== 五年级（5年级 · 标准 6 屏，含 2~3 个 hands-on，全学年无编程代码） ====================
     {
       grades: [5],
       match: /身边的算法|自然语言描述算法|算法中的数据|算法的特征|问题的分解|问题的抽象|模型的建立|算法的设计|算法的.*验证|算法的应用/i,
       archetypeName: '自然语言算法步骤拼图与漏步排错沙箱',
       interactiveDesign: `
-        - 关卡1（清楚步骤 vs 笼统说法）：对比“先洗水果、再切块、最后装盘”与“随便做一下”，分辨哪句指令清楚可执行；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【自然语言步骤卡排序与补全】通过两步点击排列生活任务的步骤词块（如整理书包、自助借书、做水果沙拉），找出顺序颠倒或遗漏的关键步骤并补齐，看清“输入—步骤—输出”（本课只练用日常语言说清做事步骤，不涉及编程代码与复杂公式），包含基础通关与 ⭐进阶挑战星（给关键一步补上“如果……就……”的清楚条件）。`,
+        - 关卡1（清楚步骤 vs 笼统说法配对）：对比“先洗水果、再切块、最后装盘”与“随便做一下”，分辨哪句指令清楚可执行；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【生活任务自然语言步骤卡排序台】通过两步点击排列生活任务的步骤词块（如整理书包、自助借书、做水果沙拉），理清“输入什么 ➔ 逐步怎么做 ➔ 输出什么”；
+        - 关卡3（进阶排错应用 · data-panel-type="hands-on"）：【算法说明书找茬与漏步补全器】找出步骤颠倒（如先穿鞋再穿袜子）或遗漏关键条件的地方并补上准确的步骤词块（本课只练用日常语言说清做事步骤，不涉及编程代码与复杂公式），包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let stepsOrderedEver = false;
         function checkStepOrder(arr) {
@@ -243,7 +254,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '顺序结构流程图符号配对与词块拼图槽',
       interactiveDesign: `
         - 关卡1（流程图框图认一认）：将起止框（圆角矩形）、处理框（矩形）、输入输出框（平行四边形）、流程线与对应的生活步骤配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【顺序结构流程图拼图槽】点击备选步骤词块填入流程图框中，验证按先后顺序逐步执行的过程，包含基础通关与 ⭐进阶挑战星（观察如果把两步顺序颠倒会造成什么搞笑后果）。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【顺序结构流程图拼图槽】点击备选步骤词块填入流程图框中，点击“单步演示”观察按先后顺序逐步点亮执行的过程；
+        - 关卡3（进阶排错应用 · data-panel-type="hands-on"）：【流程顺序颠倒排雷台】找出流程图中顺序装反的两个步骤框并交换修复，观察顺序变化对结果的影响，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let flowFilledEver = false;
         function verifyFlowSlots(slots) {
@@ -258,7 +270,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '流程图词块拼图槽与分支条件（如果…否则…）仿真器',
       interactiveDesign: `
         - 关卡1（判断条件配对）：认识菱形判断框，把生活中的判断条件（如“身高满120cm吗？”“下雨了吗？”）与对应结果配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【分支路径点亮仿真台】拖动生活数值滑块（如体温、身高、借书数量），实时高亮流程图【是 / 否】走哪条分支路线，包含基础通关（两条分支路线都试通一次）与 ⭐进阶挑战星（测试刚好卡在分界线数值时的判断结果）。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【分支流程图词块拼装槽】将判断条件词块和两个分支动作词块填入流程图的菱形框与左右处理框中；
+        - 关卡3（进阶调试应用 · data-panel-type="hands-on"）：【分支路径点亮仿真台】拖动生活数值滑块（如体温、身高、借书数量），实时高亮流程图【是 / 否】走哪条分支路线，包含基础通关（两条分支路线都试通一次）与 ⭐进阶挑战星（测试刚好卡在分界线数值时的判断结果）。`,
       codePatternHint: `
         let branchTrueEver = false, branchFalseEver = false, branchAllEver = false;
         function testBranchInput(val, threshold) {
@@ -272,7 +285,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '生活中的系统与子部件拆解拼装台',
       interactiveDesign: `
         - 关卡1（系统与部件配对）：认识自行车、校园广播、自动门等日常系统分别由哪些关键部件配合组成；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【系统部件拼装与缺件实验台】将子部件安装到对应位置让系统运转起来，并试着关掉其中某一个部件观察整体功能受什么影响，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【系统与子系统拆解拼装台】点击将各个子部件安装到对应位置，让整个系统顺利运转起来；
+        - 关卡3（进阶排障应用 · data-panel-type="hands-on"）：【系统缺件影响实验室】试着关掉或拆下其中某一个部件，观察整个系统功能受什么影响并完成修复，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let sysAssembledEver = false;
         function checkSystemParts(parts) { if (parts.every(Boolean)) sysAssembledEver = true; }`
@@ -283,7 +297,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '循环重复执行步进观察与计数沙箱',
       interactiveDesign: `
         - 关卡1（寻找重复规律）：区分“只做一次的事”与“按条件重复多次的事”（如跑操绕圈、每天定时浇水）；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【循环步进计数器】设定目标圈数或次数，点击“走一步”观察流程图如何回到判断框重复执行、计数卡片如何加 1 直至满足停止条件，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【循环流程图拼装与步进器】拼好循环体与判断框，点击“走一步”观察流程图如何回到判断框重复执行、计数卡如何每次加 1；
+        - 关卡3（进阶调试应用 · data-panel-type="hands-on"）：【循环停止条件调试台】调节目标圈数或停止条件，修复“停不下来”或“少算一次”的问题，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let loopCount = 0, loopDoneEver = false;
         function stepLoop(target) { loopCount++; if (loopCount >= target) loopDoneEver = true; }`
@@ -294,7 +309,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '初识神经网络：外观特征卡片与三层连线体验台',
       interactiveDesign: `
         - 关卡1（特征认一认）：找出区分不同水果或动物的明显外观特点（颜色、形状、大小）；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【输入层—隐藏层—输出层点亮体验台】点击勾选待测物品的特征卡片（输入层），观察连线如何点亮中间节点（隐藏层）并汇总得出分类结果（输出层），直观感受三层结构（小学阶段不涉及数学公式与权重调参），包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【输入层—隐藏层—输出层点亮体验台】点击勾选待测物品的特征卡片（输入层），观察连线如何点亮中间节点（隐藏层）并汇总得出分类结果（输出层）；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【多特征组合分类与预测挑战】更换不同特征组合的待测卡片，观察识别结果如何变化（小学阶段不涉及数学公式与权重调参），包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let nnTriedEver = false;
         function activateFeatures(selected) { if (selected.length >= 2) nnTriedEver = true; }`
@@ -305,7 +321,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '输入-计算-输出三环节与恒温阈值控制沙箱',
       interactiveDesign: `
         - 关卡1（三环节对号入座）：将生活中的感应部件（输入）、控制核心（计算）、动作设备（输出）两步点击配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【恒温箱/智能风扇阈值仿真台】设定目标温度，拖动环境温度滑块，实时观察“输入数值 ➔ 比较计算 ➔ 开启或关闭设备”三个环节的状态灯变化，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【控制系统三环节连线拼装台】为自动干手器、智能路灯或温室风扇选配正确的输入与输出部件并点亮工作链路；
+        - 关卡3（进阶调试应用 · data-panel-type="hands-on"）：【恒温箱/智能风扇阈值仿真台】设定目标温度，拖动环境温度滑块，实时观察“输入数值 ➔ 比较计算 ➔ 开启或关闭设备”三个环节的状态灯变化，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let ctrlHighEver = false, ctrlLowEver = false, ctrlDoneEver = false;
         function runControlLoop(envVal, limitVal) {
@@ -314,14 +331,15 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
         }`
     },
 
-    // ==================== 六年级（6年级） ====================
+    // ==================== 六年级（6年级 · 标准 6 屏，含 2~3 个 hands-on） ====================
     {
       grades: [6],
       match: /程序设计语言|算法的执行|猜数字|韩信点兵|人工智能辅助算法/i,
       archetypeName: '人肉 CPU 单步代码追踪器与猜数字/枚举实验台',
       interactiveDesign: `
         - 关卡1（流程图与代码语句配对）：将直观的自然语言/流程图步骤与对应的简短 Python 语句配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【人肉 CPU 单步追踪 / 猜数字对战台】点击“下一步”逐行高亮代码（.code-line.hl）并观察变量记事卡（.var-card）数值变化（或对比逐个枚举与折半猜数字的步数差异），包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【人肉 CPU 单步代码追踪器】点击“下一步”逐行高亮代码（.code-line.hl），实时观察变量记事卡（.var-card）数值变化与控制台输出；
+        - 关卡3（进阶排错与对比 · data-panel-type="hands-on"）：【代码小排雷 / 猜数字与枚举步数对战台】修正关键条件表达式中的小错误（或对比顺序枚举与折半猜数字的查找次数），包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let traceIdx = 0, traceDoneEver = false;
         function stepCpu(steps, dir) {
@@ -335,7 +353,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '方格地图路线规划与最短步数对比沙箱',
       interactiveDesign: `
         - 关卡1（寻路要素识别）：认识地图中的起点、终点、障碍物与可通行路口；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【校园寻路步数对比台】在方格地图上点击测试不同可行路线，自动统计并对比哪条路线转弯少、总步数最短，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【校园方格地图路线搜索台】点击路口节点逐格探索从起点到终点的可行路线，自动记录行进轨迹；
+        - 关卡3（进阶对比应用 · data-panel-type="hands-on"）：【多条路线步数对比与优化台】对比不同走法的总步数与耗时，找出绕开障碍的最短路线，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let routeFoundEver = false;
         function evaluateRoute(steps) { if (steps > 0) routeFoundEver = true; }`
@@ -345,8 +364,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /算法与问题解决|抽象与建模|算法设计|算法的多样性|算法的评价|在线生活中的算法|推荐算法|算法对生活的影响|人机对话|对话机器人/i,
       archetypeName: '问题关键信息建模与多方案算法效率对比台',
       interactiveDesign: `
-        - 关卡1（去粗取精建模型）：从生活情境中剔除无关细节、选出解决问题必需的关键数据；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【算法方案对比实验台】运行两种不同的解决步骤方案，直观对比所需步数与结果准确性，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡1（去粗取精建模型）：从生活情境中剔除无关细节、选出解决问题必需的关键数据完成建模；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【算法步骤设计与单步推演台】按“输入—处理—输出”组装解决问题的算法步骤并逐步运行检验结果；
+        - 关卡3（进阶对比应用 · data-panel-type="hands-on"）：【多方案算法效率对比实验台】对同一组数据运行方案A与方案B，直观对比两种方案的步数与适用场景，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let modelComparedEver = false;
         function comparePlans(planA, planB) { modelComparedEver = true; }`
@@ -357,7 +377,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '双开关串并联逻辑门电路（AND/OR）与状态表沙箱',
       interactiveDesign: `
         - 关卡1（与/或规则配对）：区分生活中“两个条件同时满足才动作（与）”和“满足任一条件就动作（或）”的场景；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【双开关串并联逻辑门电路与真值状态表】点击切换开关 A（0/1）与开关 B（0/1），实时高亮电流路径并自动点亮右侧 4 种开关组合状态行，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【双开关串并联逻辑门电路与真值状态表】点击切换开关 A（0/1）与开关 B（0/1），实时高亮电流路径并自动点亮右侧 4 种开关组合状态行；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：【校园安全联锁控制拼装台】根据任务要求选择“与运算”或“或运算”组装自动报警/门禁控制规则并完成全部测试，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let swA = 0, swB = 0, comboSet = new Set(), gateAllEver = false;
         function toggleSwitch(which, isAnd) {
@@ -372,7 +393,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '连续量与开关量（0/1）阈值转换实验台',
       interactiveDesign: `
         - 关卡1（连续量 vs 开关量分类箱）：将温度具体读数、音量强弱（连续量）与红绿灯亮灭、门禁开闭（开关量）分类入箱；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【阈值转换体验台】拖动光线或温度滑块并设置分界阈值，观察连续变化的数值越过分界线时如何生成“开(1) / 关(0)”信号，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【连续量波形与阈值分界观察台】拖动光线或温度滑块，观察连续变化的数值曲线；
+        - 关卡3（进阶调试应用 · data-panel-type="hands-on"）：【阈值转开关量（0/1）生成器】设定合理的分界阈值，验证当连续量跨过阈值时如何触发“开(1) / 关(0)”控制动作，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let switchGenEver = false;
         function checkThreshold(val, limit) { switchGenEver = true; return val >= limit ? 1 : 0; }`
@@ -382,21 +404,23 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /自动控制系统|控制的形态|反馈与控制|反馈的实现|控制系统中的数据|扩音系统|控制系统的安全|智能控制系统|智能体/i,
       archetypeName: '开环与闭环反馈控制（水位/扩音调节）仿真沙箱',
       interactiveDesign: `
-        - 关卡1（有无反馈辨析）：对比“只管定时执行”与“边看结果边自动微调”两种控制方式；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【闭环反馈调节仿真台】设定目标水位或理想音量，点击施加外部干扰，观察系统如何检测偏差并自动调节恢复稳定，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡1（开环 vs 闭环反馈辨析）：对比“只管定时执行”与“边检测结果边自动微调”两种控制方式；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【闭环反馈回路拼装与水位/音量调节台】设定目标水位或理想扩音音量，观察检测端如何把当前偏差传回控制端；
+        - 关卡3（进阶抗干扰应用 · data-panel-type="hands-on"）：【外部干扰测试与安全保护沙箱】点击施加环境干扰或异常输入，观察反馈控制系统如何自动修正恢复稳定，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let feedbackTestedEver = false;
         function adjustFeedback(current, target) { feedbackTestedEver = true; return target - current; }`
     },
 
-    // ==================== 七年级（7年级） ====================
+    // ==================== 七年级（7年级 · 标准 7 屏，含 3 个 hands-on） ====================
     {
       grades: [7],
       match: /介绍我的学校/i,
       archetypeName: '校园网页结构规划与 HTML 标签实时预览台',
       interactiveDesign: `
         - 关卡1（网页栏目与元素配对）：将标题、导航、正文介绍、图片与对应的网页区域配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【HTML 校园名片实时预览台】点选或微调标题、段落与版式标签，右侧预览窗实时渲染网页效果，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【校园网页版面结构拼装台】点选组合网页头部、图文卡片与超链接模块，搭建清晰的页面骨架；
+        - 关卡3（进阶实操应用 · data-panel-type="hands-on"）：【HTML 标签微调与实时预览台】切换或编辑标题、段落与图片属性，右侧预览窗实时渲染网页效果，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let pagePreviewedEver = false;
         function renderPreview() { pagePreviewedEver = true; }`
@@ -406,8 +430,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /人工智能的发展|生成式人工智能|智能体的搭建|人工智能的影响|人工智能的技术基础|人工智能中的神经网络/i,
       archetypeName: '生成式 AI 提示词实验与智能体/神经网络流程观察台',
       interactiveDesign: `
-        - 关卡1（AI 发展阶段与典型应用配对）：梳理人工智能关键要素与日常应用场景；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【智能体工作流与提示词调优台】组合不同具体程度的指令卡片对比输出质量（或观察输入特征经多层节点传递得出识别结果的过程），包含基础通关与 ⭐进阶挑战星（识别生成内容中的事实偏差）。`,
+        - 关卡1（AI 发展阶段与三要素配对）：梳理数据、算法、算力三要素与典型应用场景；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【生成式 AI 提示词优化 / 神经网络三层特征传递台】对比模糊提示词与结构化提示词的输出差异（或观察输入特征经隐藏层传递到输出层的点亮过程）；
+        - 关卡3（进阶实践应用 · data-panel-type="hands-on"）：【智能体工作流搭建与事实核查沙箱】按“感知输入 ➔ 知识检索 ➔ 生成回复 ➔ 人工核查”组装智能体并排查错误信息，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let aiWorkflowEver = false;
         function runAiPipeline(stepCount) { if (stepCount >= 3) aiWorkflowEver = true; }`
@@ -418,7 +443,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '有序序列二分搜索（折半查找）步进实验台',
       interactiveDesign: `
         - 关卡1（顺序查找 vs 二分搜索对比）：体会“为什么要先排序才能折半查找”；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【二分搜索步进追踪器】在有序数字阵列中点击“下一步”，实时高亮左边界、中间点与右边界的收缩过程，对比查找步数，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【二分搜索步进追踪器】在有序数字阵列中点击“下一步”，实时高亮左边界、中间点与右边界的收缩过程；
+        - 关卡3（进阶对比应用 · data-panel-type="hands-on"）：【不同数据规模查找效率对比台】测试目标值在头部、中间、尾部或不存在时，顺序查找与二分搜索的步数差异，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let binarySearchEver = false;
         function stepBinarySearch(low, high) { binarySearchEver = true; return Math.floor((low + high) / 2); }`
@@ -428,8 +454,9 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       match: /深度优先|DFS|搜索算法/i,
       archetypeName: '网格迷宫深度优先搜索（DFS）步进与回溯观察台',
       interactiveDesign: `
-        - 关卡1（探路规则理解）：認識“一路向前探、遇死胡同退回上一岔口”的搜索策略；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【迷宫 DFS 步进回溯动画器】点击“单步前进”观察岔路探索染色与死胡同回退过程，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡1（探路规则理解）：认识“一路向前探、遇死胡同退回上一岔口”的搜索策略；
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【迷宫岔路探索与路径记录台】在分支节点图上手动体验按约定方向探索并标记已访问节点；
+        - 关卡3（进阶仿真应用 · data-panel-type="hands-on"）：【迷宫 DFS 步进回溯动画器】点击“单步前进”观察岔路探索染色与死胡同回退重选过程，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let dfsStep = 0, dfsCompleteEver = false;
         function nextDfsFrame(frames) {
@@ -443,7 +470,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '物联网三层架构与传感器折线监控联动台',
       interactiveDesign: `
         - 关卡1（感知层-网络层-应用层配对）：将温湿度、光照、红外传感器及通信方式与智慧生活场景配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【传感器数据实时折线图与阈值联动台】模拟采集环境数据绘制动态折线，设定告警阈值自动触发风扇或补光灯动作（专注物联感知与控制，不混入迷宫搜索算法），包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【传感器数据实时折线监控台】模拟环境温湿度/光照变化，实时绘制动态波动折线并读取峰值与均值；
+        - 关卡3（进阶联调应用 · data-panel-type="hands-on"）：【物联阈值告警与执行器反馈沙箱】设定告警阈值并测试当传感器读数超标时自动开启风扇或补光灯的完整闭环（不混入迷宫搜索算法），包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let iotLinkedEver = false;
         function updateSensorChart(val, threshold) { iotLinkedEver = true; return val > threshold; }`
@@ -454,7 +482,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '小型局域网拓扑 IP/DHCP 分配器与数据包路由沙箱',
       interactiveDesign: `
         - 关卡1（网络设备与协议配对）：光猫、路由器、交换机、终端及 HTTP/TCP/IP 职责配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【IP 地址与 DHCP 分配排障台】为局域网终端配置 192.168.1.x 网段 IP（实时检测 IP 冲突与 >255 越界错误），对比手动配置与 DHCP 自动分配并发送测试包，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【IP 地址与 DHCP 分配排障台】为局域网终端配置 192.168.1.x 网段 IP（实时检测 IP 冲突与 >255 越界错误），对比手动配置与 DHCP 自动分配；
+        - 关卡3（进阶路由应用 · data-panel-type="hands-on"）：【数据包逐跳传输与连通测试台】点击发送 Ping 测试包观察数据包经过交换机、路由器的逐跳状态反馈，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let netConfigEver = false;
         function verifyHostIp(lastOctet, usedOctets) {
@@ -465,14 +494,15 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
         }`
     },
 
-    // ==================== 八年级（8年级） ====================
+    // ==================== 八年级（8年级 · 标准 7 屏，含 3 个 hands-on） ====================
     {
       grades: [8],
       match: /网页的数据组织|网页的数据呈现|网页的数据编码|网页的编辑与发布|DOM/i,
       archetypeName: '网页 DOM 树结构探针与 HTML/CSS 实时预览实验台',
       interactiveDesign: `
         - 关卡1（网页元素与 DOM 节点配对）：将网页标题、段落、链接、样式属性与对应的 HTML/CSS 代码配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【DOM 树节点与样式实时实验台】点击切换标签节点、字符编码或 CSS 样式参数，右侧预览区同步展示网页呈现变化，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【网页 DOM 树节点层级探针】点击展开网页节点树，高亮查看 head、body、div、p 之间的父子嵌套关系与数据编码；
+        - 关卡3（进阶编辑应用 · data-panel-type="hands-on"）：【HTML/CSS 样式实时预览实验台】调整文字内容、颜色、字号与布局属性，右侧预览区同步展示网页呈现变化，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let domEditedEver = false;
         function updateDomPreview(tag, styleVal) { domEditedEver = true; }`
@@ -483,7 +513,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '凯撒密码移位加密转盘与身份认证安全实验室',
       interactiveDesign: `
         - 关卡1（明文-密钥-密文与安全防护配对）：古典密码要素与现代网络身份认证手段配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【凯撒密码移位转盘与破译台】调节偏移密钥 Key (1~25)，实时观察明文字母与密文字母映射轮盘，亲手解密截获的密文情报，包含基础通关与 ⭐进阶挑战星（体验穷举测试不同密钥）。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【凯撒密码移位加密/解密转盘】调节偏移密钥 Key (1~25)，实时观察明文字母与密文字母映射轮盘，亲手加密或解密情报；
+        - 关卡3（进阶破译与防护 · data-panel-type="hands-on"）：【密钥穷举破译与多因素认证沙箱】一键遍历测试候选密钥找出可读明文，并配置双因素身份核验防线，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let cipherCrackedEver = false;
         function caesarShift(str, shift) {
@@ -499,7 +530,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: 'AI 感知技术（语音/图像/文本/多模态）流水线体验台',
       interactiveDesign: `
         - 关卡1（AI 感知技术与应用配对）：将语音识别、语音合成、图像识别、自然语言处理、多模态融合与典型场景配对；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【信号输入 ➔ 特征提取 ➔ 识别输出实验台】切换不同环境噪音/清晰度的样本或文本分词卡片，观察识别结果与置信度变化，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【信号输入 ➔ 特征提取 ➔ 识别输出实验台】切换不同样本或文本分词卡片，分步观察特征提取与模型识别过程；
+        - 关卡3（进阶鲁棒性测试 · data-panel-type="hands-on"）：【环境干扰对比与多模态互补沙箱】调节背景噪音或画面模糊度，对比单模态识别与多模态联合判断的准确率变化，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let perceptionRunEver = false;
         function testSampleRecognition(clarity) { perceptionRunEver = true; return clarity >= 60; }`
@@ -510,7 +542,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '2D 平面 KNN 动态分类画布与机器学习范式体验台',
       interactiveDesign: `
         - 关卡1（监督学习 vs 无监督学习配对）：区分“有标签样本训练”与“无标签相似聚类”的典型应用；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【2D 平面 KNN 动态分类面】点击坐标平面放置待测样本点，切换 K=1、3、5，实时绘制最近 K 个邻居连线并按多数投票给出分类结果（聚焦近邻投票思想，不混入神经网络权重调参），包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【2D 平面 KNN 动态分类面】点击坐标平面放置待测样本点，切换 K=1、3、5，实时绘制最近 K 个邻居连线并按多数投票给出分类结果；
+        - 关卡3（进阶边界探究 · data-panel-type="hands-on"）：【样本分布与 K 值边界实验台】在两类样本交界处放置测试点，对比 K 值过小或过大时分类结果的变化（聚焦近邻投票思想，不混入神经网络权重调参），包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let knnRunEver = false;
         function runKnnVote(px, py, k, points) {
@@ -526,7 +559,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '人工神经网络三层结构与卷积/权重特征观察台',
       interactiveDesign: `
         - 关卡1（神经元与网络层职责配对）：认识输入层、隐藏层、输出层及连接权重的作用；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【神经元权重调节 / 卷积滤波观察台】拖动特征重要度滑块（或切换边缘提取滤波核），直观观察输出分类得分或图像特征轮廓的变化，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【神经元加权汇总观察台】调节不同输入特征的重要度权重滑块，实时观察节点汇总得分与分类输出；
+        - 关卡3（进阶特征提取应用 · data-panel-type="hands-on"）：【图像局部特征滤波 / 阈值激活实验台】切换边缘提取窗口或判定阈值，直观观察特征轮廓提取与分类准确率变化，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let nnCalcEver = false;
         function updateNeuronScore(x1, w1, x2, w2) { nnCalcEver = true; return x1 * w1 + x2 * w2; }`
@@ -537,7 +571,8 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: '智能物联系统感知-决策-控制综合联调沙箱',
       interactiveDesign: `
         - 关卡1（物联感知—AI分析—执行控制配对）：梳理智能物联系统的软硬件协同链路；
-        - 关卡2（核心实操 · data-panel-type="hands-on"）：【智能物联联调控制台】模拟多传感器数据输入，设置联动判断规则并验证执行器响应，包含基础通关与 ⭐进阶挑战星。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：【智能物联硬件接线与传感器采集台】连接传感器与主控板端口，实时读取多路环境时序数据；
+        - 关卡3（进阶联调应用 · data-panel-type="hands-on"）：【智能物联规则配置与故障调试台】设置多条件联动控制规则，模拟异常数据输入并验证执行器响应，包含基础通关与 ⭐进阶挑战星。`,
       codePatternHint: `
         let smartIotEver = false;
         function runSmartIotRule(temp, hum) { smartIotEver = true; }`
@@ -554,9 +589,10 @@ export function resolveSimulationBlueprint(gradeStr, lessonTitle, requirements) 
       archetypeName: `${gradeStr}核心概念体验与交互式探究沙箱`,
       interactiveDesign: `
         - 关卡1（情境探索与概念配对）：紧扣《${title}》生活情境设计两步点击配对；
-        - 关卡2（核心动手探究 · data-panel-type="hands-on"）：结合本学期能力定位（${semesterHint}），提供贴合当前年级的直观参数调节、步骤排序或情景实验，包含基础通关与 ⭐进阶挑战星（聚焦本课单一核心概念，不超纲拔高）。`,
+        - 关卡2（基础核心实操 · data-panel-type="hands-on"）：结合本学期能力定位（${semesterHint}），提供核心概念直观剖析与基础动手操作；
+        - 关卡3（进阶迁移应用 · data-panel-type="hands-on"）：提供贴合当前年级的参数调节、步骤排错或情景实验，包含基础通关与 ⭐进阶挑战星（聚焦本课核心主题，不跨年级超纲）。`,
       codePatternHint: `
-        let stage1Ever = false, handsOnEver = false;`
+        let stage1Ever = false, stage2Ever = false, handsOnEver = false;`
     };
   }
 
@@ -1243,7 +1279,7 @@ ${worksheetContent.slice(0, 1000)}
      /* 可在此追加本课微型仿真器所需的专有样式 */
      </style>
      </head>
-2. **顶栏导航与闯关步进器（建议精简为 4 屏：任务导入与配对 ➔ 核心动手探究 ➔ 迁移巩固 ➔ 测验与凭单导出；最多不超过 ${maxScreens} 屏，严禁为凑满上限屏数而堆砌多套复杂仿真器）**：
+2. **顶栏导航与闯关步进器（最多 ${maxScreens} 屏，建议设计 ${maxScreens} 屏：3~4年级5屏、5~6年级6屏、7~8年级7屏）**：
    - 使用 <header class="top-bar">，内部包含：
      <div class="brand">
        <h1>${lessonTitle}</h1>
@@ -1251,11 +1287,11 @@ ${worksheetContent.slice(0, 1000)}
        <button id="btnSound" class="btn-sound" onclick="toggleSound()">🔊</button>
      </div>
      <div class="stepper" id="stepper"></div>
-   - JS 声明：const stepLabels = [...]; 数组元素个数必须与 <section class="panel"> 数量一致（建议 4 项，上限 ≤ ${maxScreens} 项）；
+   - JS 声明：const stepLabels = [...]; 数组元素个数必须与 <section class="panel"> 数量一致（设计 ${maxScreens} 项，上限 ≤ ${maxScreens} 项）；
    - 步进序号从 1 开始编号（1~N），不得显示 0 开头（序号渲染写 (i + 1) 或 index + 1）。
 3. **关卡容器 DOM 结构与门禁属性**：
    - 使用 <section class="panel" data-step="i">（i 从 0 连续递增，第 0 屏带 active 类）；
-   - **动手实操屏标记 (data-panel-type="hands-on")**：在核心动手仿真关卡 section 标签上添加 \`data-panel-type="hands-on"\`，${gradeNum}年级**最少标记 1 个、最多不超过 ${maxHandsOn} 个（推荐聚焦打造 1~2 个精品动手屏，不要每屏都塞复杂控件）**；
+   - **动手实操屏标记 (data-panel-type="hands-on")**：在核心动手仿真关卡 section 标签上添加 \`data-panel-type="hands-on"\`，${gradeNum}年级**最少标记 ${gradeNum >= 5 ? 2 : 2} 个、最多不超过 ${maxHandsOn} 个（3~4年级 2 个 hands-on，5~6年级 2~3 个 hands-on，7~8年级 3 个 hands-on）**；
    - **每屏正文导语字数门禁 (data-prose)**：
      * 每一屏内部有且仅有 1 个核心导语段落标记 \`<p data-prose>...简短导语...</p>\`；
      * ${gradeNum}年级每屏 \`<p data-prose>\` 内的文字**严格 ≤ ${maxProse} 字**；详细的操作提示、故事细节放在不带 data-prose 属性的 \`<div class="tip-box">\` 或卡片内。
