@@ -12,76 +12,83 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 const DB_PATH = path.join(DATA_DIR, 'studio.db');
-const db = new DatabaseSync(DB_PATH);
+const db = new DatabaseSync(DB_PATH, { timeout: 10000 });
 
-// 初始化数据库表结构
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role TEXT DEFAULT 'teacher', -- 'admin' | 'teacher'
-    school TEXT,
-    real_name TEXT,
-    phone TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+// 初始化数据库表结构与迁移（带并发锁重试保护，防止多进程并发测试时触发 database is locked）
+for (let attempt = 0; attempt < 5; attempt++) {
+  try {
+    db.exec('PRAGMA busy_timeout = 10000;');
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'teacher', -- 'admin' | 'teacher'
+        school TEXT,
+        real_name TEXT,
+        phone TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
 
-  CREATE TABLE IF NOT EXISTS settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT PRIMARY KEY_VAL NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `.replace('PRIMARY KEY_VAL', ''));
 
-  CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    grade TEXT NOT NULL,
-    lesson_title TEXT NOT NULL,
-    requirements TEXT,
-    materials_text TEXT,
-    status TEXT NOT NULL, -- pending, generating, compiling, completed, failed
-    progress INTEGER DEFAULT 0,
-    progress_text TEXT,
-    error_msg TEXT,
-    output_dir TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    completed_at DATETIME,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  );
-`);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        grade TEXT NOT NULL,
+        lesson_title TEXT NOT NULL,
+        requirements TEXT,
+        materials_text TEXT,
+        status TEXT NOT NULL, -- pending, generating, compiling, completed, failed
+        progress INTEGER DEFAULT 0,
+        progress_text TEXT,
+        error_msg TEXT,
+        output_dir TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+    `);
 
-// 动态兼容迁移老数据字段
-try {
-  const tableInfo = db.prepare('PRAGMA table_info(users)').all();
-  const colNames = tableInfo.map(c => c.name);
-  if (!colNames.includes('role')) {
-    db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'teacher'");
-  }
-  if (!colNames.includes('school')) {
-    db.exec("ALTER TABLE users ADD COLUMN school TEXT");
-  }
-  if (!colNames.includes('real_name')) {
-    db.exec("ALTER TABLE users ADD COLUMN real_name TEXT");
-  }
-  if (!colNames.includes('phone')) {
-    db.exec("ALTER TABLE users ADD COLUMN phone TEXT");
-  }
+    const tableInfo = db.prepare('PRAGMA table_info(users)').all();
+    const colNames = tableInfo.map(c => c.name);
+    if (!colNames.includes('role')) {
+      db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'teacher'");
+    }
+    if (!colNames.includes('school')) {
+      db.exec("ALTER TABLE users ADD COLUMN school TEXT");
+    }
+    if (!colNames.includes('real_name')) {
+      db.exec("ALTER TABLE users ADD COLUMN real_name TEXT");
+    }
+    if (!colNames.includes('phone')) {
+      db.exec("ALTER TABLE users ADD COLUMN phone TEXT");
+    }
 
-  // 保证系统中最早注册的第 1 位用户一定是 admin
-  const adminCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'admin'").get();
-  if (adminCount && adminCount.count === 0) {
-    db.exec("UPDATE users SET role = 'admin' WHERE id = (SELECT id FROM users ORDER BY id ASC LIMIT 1)");
-  }
+    const adminCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'admin'").get();
+    if (adminCount && adminCount.count === 0) {
+      db.exec("UPDATE users SET role = 'admin' WHERE id = (SELECT id FROM users ORDER BY id ASC LIMIT 1)");
+    }
 
-  // 任务表动态迁移 materials_text 字段
-  const taskTableInfo = db.prepare('PRAGMA table_info(tasks)').all();
-  const taskColNames = taskTableInfo.map(c => c.name);
-  if (!taskColNames.includes('materials_text')) {
-    db.exec("ALTER TABLE tasks ADD COLUMN materials_text TEXT");
+    const taskTableInfo = db.prepare('PRAGMA table_info(tasks)').all();
+    const taskColNames = taskTableInfo.map(c => c.name);
+    if (!taskColNames.includes('materials_text')) {
+      db.exec("ALTER TABLE tasks ADD COLUMN materials_text TEXT");
+    }
+    break;
+  } catch (e) {
+    if (attempt < 4 && /locked|busy/i.test(String(e && e.message))) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60 * (attempt + 1));
+      continue;
+    }
+    console.error('Database migration note:', e.message);
   }
-} catch (e) {
-  console.error('Database migration note:', e.message);
 }
 
 export const dbService = {
