@@ -26,16 +26,16 @@
 1. [references/curriculum-standard-2022.md](references/curriculum-standard-2022.md)：教育部《义务教育信息科技课程标准（2022年版）》。
 2. [references/textbook-zj2026.md](references/textbook-zj2026.md)：浙教版 2026 新课标教材目录（3~8 年级，共 240 课时）。
 3. [references/output-spec.md](references/output-spec.md)：字数、页数、屏数、题数阈值与排版规格。
-4. [references/worksheet-patterns.md](references/worksheet-patterns.md) 与 [references/patterns.md](references/patterns.md)：导学单与互动作业交互题型库。
 
 ---
 
 ## 3. 核心工具与命令
 
-- **主 Skill**：`skills/it-lesson-studio/SKILL.md`
-- **样式与模板**：
+- **模块化 Skills**：`skills/README.md`（全局总则）及 `skills/1-lesson-plan/`、`skills/2-worksheet/`、`skills/3-slides/`、`skills/4-classwork/`
+- **样式、模板与本地库**：
   - Word 模板与 Lua 过滤器：`resources/pandoc/模板.docx`、`resources/pandoc/br.lua`
   - Marp 演示课件主题：`resources/themes/edu-lesson.css`
+  - 课堂作业按需内联库：`resources/libs/chart.umd.min.js`
 - **编译导出流水线**：
   ```bash
   node scripts/export-lesson.mjs <课程目录或Markdown文件路径>
@@ -114,7 +114,7 @@ flowchart TD
   - **八上（DOM数据 + 密码安全）**：凯撒密码移位转盘、网页 DOM 树节点探针、密码散列防伪；
   - **八下（AI原理级拆解）**：2D 平面 KNN 动态分类面（加点动态画线）、卷积核滤波、神经网络权重计算。
 - **具体攻坚任务**：
-  1. ✅ **模式库代码沉淀**：已在 `references/patterns.md` 与 `skills/it-lesson-studio/SKILL.md` 中沉淀 12 册教材典型微型仿真器原生 JS 组件库与数字化探究舱规范；
+  1. ✅ **模式库代码沉淀**：已在 `skills/4-classwork/SKILL.md` 中沉淀 6 种通用 UI 交互积木与数字化探究舱规范；
   2. ✅ **生成引擎 Phase 2 升级**：已在 `web/services/ai.js` 中实现 `resolveSimulationBlueprint`（支持教师设想最高优先级 + 课题关键词识别 12 册仿真原型与状态机骨架注入）与 `getGradeLimits`（严格对齐 `output-spec.md` 门禁参数）；
   3. ✅ **终极关卡与平台评价闭环**：内置 `sanitizeGeneratedClassworkHtml` 静态合规微调器，保障测验先选后判、累计徽章点亮、含“还没完全懂”自评、零 `alert` 拦截一键秒下凭单 `.txt` 与现场通关奖状卡；
   4. 🔄 **课型生成实测与真机试玩**：选取代表性课例实测生成，进浏览器全流程试玩体验手感，并通过 `check_lesson.py` 自动化检测。

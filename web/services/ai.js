@@ -17,10 +17,10 @@ function readSkillFile(...relParts) {
 }
 
 function loadGlobalRules() {
-  const text = readSkillFile('skills', 'it-lesson-studio', 'SKILL.md');
+  const text = readSkillFile('skills', 'README.md');
   if (!text) return '你是一位中小学信息科技教师，负责设计教案、导学单、课件和随堂作业。';
   const start = text.indexOf('## 🎯');
-  const end = text.indexOf('## ⚙️');
+  const end = text.indexOf('## 📂');
   return start !== -1 && end !== -1 ? text.slice(start, end).trim() : text;
 }
 

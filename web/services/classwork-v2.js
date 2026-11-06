@@ -28,8 +28,8 @@ export function readHtmlLimits(grade, specText = read('references/output-spec.md
 }
 
 export function buildV2Prompt({ gradeNum, grade, lessonTitle, requirements, materialsText, planContent, worksheetContent, slidesContent, simBlueprint }) {
-  const skill = read('skills/it-lesson-studio/SKILL.md');
-  const globalRules = skill.slice(skill.indexOf('## 🎯'), skill.indexOf('## ⚙️'));
+  const skill = read('skills/README.md');
+  const globalRules = skill.slice(skill.indexOf('## 🎯'), skill.indexOf('## 📂')).trim();
   const patterns = read('references/classwork-v2-patterns.md');
   const cn = { 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八' }[gradeNum];
   const term = /上/.test(grade) && !/下/.test(grade) ? '上' : /下/.test(grade) && !/上/.test(grade) ? '下' : '';
